@@ -3107,6 +3107,18 @@ document.addEventListener('DOMContentLoaded', () => {
       uiDirty = false;
       updateUI();
     }, UI_TICK);
+
+    // ======= 헤더 현금 표시(고빈도, 경량) =======
+    // 전체 updateUI()를 50ms로 돌리면 DOM 갱신량이 커져서 부담이 큼.
+    // 대신 cash 칩만 50ms 주기로 갱신해서 “카운트가 빨리 올라가는” 체감만 개선.
+    let __lastCashText = '';
+    setInterval(() => {
+      if (!elCash) return;
+      const nextText = formatCashDisplay(cash);
+      if (nextText === __lastCashText) return;
+      __lastCashText = nextText;
+      elCash.textContent = nextText;
+    }, TICK);
     
     // ======= 자동 저장 시스템 =======
     setInterval(()=>{
