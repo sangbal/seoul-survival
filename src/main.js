@@ -2746,8 +2746,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function shareGame() {
       const gameUrl = window.location.href;
       const gameTitle = '서울 역세권 타이쿤';
-      const gameDescription = `💰 부동산과 금융 투자로 부자가 되는 게임!\n현재 자산: ${formatNumber(cash)}원\n초당 수익: ${formatNumber(getRps())}원/s`;
-      const shareText = `${gameTitle}\n\n${gameDescription}\n\n${gameUrl}`;
+      const gameDescription = `💰 부동산과 금융 투자로 부자가 되는 게임!\n현재 자산: ${formatCashDisplay(cash)}\n초당 수익: ${formatKoreanNumber(getRps())}원/s`;
+
+      const labelEl = elShareBtn?.querySelector?.('.share-label');
+      const originalLabel = labelEl?.textContent ?? '';
+      const originalTitle = elShareBtn?.getAttribute?.('title') ?? '';
 
       // Web Share API 사용 (모바일)
       if (navigator.share) {
@@ -2770,16 +2773,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 클립보드 복사 (데스크톱 또는 Web Share API 실패 시)
       try {
-        await navigator.clipboard.writeText(shareText);
+        // 길고 복잡한 텍스트 대신 URL만 복사(호환성/직관성 우선)
+        await navigator.clipboard.writeText(gameUrl);
         addLog('✅ 게임 링크가 클립보드에 복사되었습니다!');
-        
-        // 버튼에 피드백 표시
-        const originalText = elShareBtn.innerHTML;
-        elShareBtn.innerHTML = '<span>✓</span><span>복사됨!</span>';
-        elShareBtn.style.background = 'var(--good)';
+
+        // 버튼에 피드백 표시(아이콘은 유지)
+        if (elShareBtn) {
+          elShareBtn.classList.add('copied');
+          if (labelEl) labelEl.textContent = '복사됨';
+          if (originalTitle) elShareBtn.setAttribute('title', '링크가 복사되었습니다');
+        }
         setTimeout(() => {
-          elShareBtn.innerHTML = originalText;
-          elShareBtn.style.background = '';
+          if (elShareBtn) {
+            elShareBtn.classList.remove('copied');
+            if (labelEl) labelEl.textContent = originalLabel || '공유';
+            if (originalTitle) elShareBtn.setAttribute('title', originalTitle);
+          }
         }, 2000);
       } catch (err) {
         console.error('클립보드 복사 실패:', err);
@@ -2787,7 +2796,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 대체 방법: 텍스트 영역 사용
         const textArea = document.createElement('textarea');
-        textArea.value = shareText;
+        textArea.value = gameUrl;
         textArea.style.position = 'fixed';
         textArea.style.opacity = '0';
         document.body.appendChild(textArea);

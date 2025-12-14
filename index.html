@@ -605,6 +605,18 @@
       box-shadow: 0 2px 8px rgba(96, 165, 250, 0.3);
       white-space: nowrap;
     }
+
+    .share-btn .share-icon {
+      width: 18px;
+      height: 18px;
+      display: block;
+      fill: currentColor;
+      flex: 0 0 auto;
+    }
+
+    .share-btn.copied {
+      background: var(--good);
+    }
     
     .share-btn:hover {
       background: #4a90e2;
@@ -641,12 +653,19 @@
       }
       
       .share-btn {
-        padding: 6px 10px;
+        /* 모바일에서 항상 우상단 고정 */
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 3000;
+
+        padding: 10px 12px;
         font-size: 12px;
-        margin-top: 4px;
+        margin: 0;
+        border-radius: 999px;
       }
       
-      .share-btn span:last-child {
+      .share-btn .share-label {
         display: none;
       }
       
@@ -1165,9 +1184,11 @@
         <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
         <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당 수익</span><b id="rps">0</b><span class="muted">₩/s</span></div>
       </div>
-      <button class="share-btn" id="shareBtn" title="게임 공유하기">
-        <span>🔗</span>
-        <span>공유</span>
+      <button class="share-btn" id="shareBtn" type="button" title="게임 공유하기" aria-label="게임 공유하기">
+        <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.6 2.6 0 0 0 0-1.39l7.02-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .06.59L7.03 9.7A3 3 0 1 0 7 14.3l7.02 4.11A3 3 0 1 0 18 16.08z"></path>
+        </svg>
+        <span class="share-label">공유</span>
       </button>
     </header>
 
