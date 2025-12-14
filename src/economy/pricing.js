@@ -74,3 +74,4 @@ export function getPriceMultiplierByTier(count) {
   if (count < 30) return 1.20;
   return 1.25;
 }
+

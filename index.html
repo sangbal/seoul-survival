@@ -2,9 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <!-- iOS Safari 더블탭 확대 방지(게임 UX) -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <title>서울 역세권 타이쿤 — v3.5.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>서울 역세권 타이쿤 — v3.1.0</title>
   <style>
     :root {
       --bg:#0b1220; --panel:#121a2b; --accent:#5eead4; --muted:#94a3b8; --text:#e5e7eb; --btn:#1f2a44; --btn2:#192238; --good:#34d399; --bad:#fb7185;
@@ -12,7 +11,7 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; background:linear-gradient(180deg,#0b1220,#0b1324 40%,#0c1428); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial, Apple Color Emoji, Segoe UI Emoji; -webkit-text-size-adjust: 100%;}
+    body{margin:0; background:linear-gradient(180deg,#0b1220,#0b1324 40%,#0c1428); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial, Apple Color Emoji, Segoe UI Emoji}
     .app{max-width:1400px; margin:0 auto; padding:16px; padding-top:80px;}
     .grid{display:grid; grid-template-columns: 1.1fr 0.9fr; gap:16px}
     header{position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:100; background:linear-gradient(180deg,#0b1220,#0b1324); box-shadow:0 4px 20px rgba(0,0,0,.5); padding:12px 16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; max-width:1400px; width:100%;}
@@ -24,7 +23,34 @@
     .card{background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,.3)}
     .card h2{margin:0 0 10px; font-size:18px}
 
-    .work{display:flex; align-items:center; justify-content:center; height:300px; border:1px dashed rgba(255,255,255,.08); border-radius:16px; background:radial-gradient(1200px 400px at 50% -50%, rgba(94,234,212,.1), transparent 60%)}
+    .work{
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      height:300px; 
+      border:1px dashed rgba(255,255,255,.08); 
+      border-radius:16px; 
+      background-size: cover;
+      background-position: center top;
+      background-repeat: no-repeat;
+      position: relative;
+      overflow: hidden;
+    }
+    .work::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(to top, rgba(11, 18, 32, 0.6), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .work > * {
+      position: relative;
+      z-index: 1;
+    }
     .btn{
       cursor:pointer; 
       border:none; 
@@ -37,7 +63,6 @@
       letter-spacing:.2px; 
       transition:all 0.2s ease;
       pointer-events:auto;
-      touch-action: manipulation; /* iOS 더블탭 줌 방지 */
     }
     .btn:hover{
       filter:brightness(1.1);
@@ -55,7 +80,8 @@
       background:linear-gradient(180deg,#1f2a44,#1a2340);
       color:var(--text);
       border:1px solid rgba(255,255,255,.1);
-      touch-action: manipulation; /* iOS 더블탭 줌 방지(연타 대상) */
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
     }
 
     .upg-list{display:flex; flex-direction:column; gap:8px}
@@ -144,6 +170,86 @@
       color: var(--text) !important;
       opacity: 0.7 !important;
       cursor: not-allowed !important;
+    }
+    
+    /* 리스크 표시 스타일 */
+    .risk-indicator {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    
+    .risk-level {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    
+    .risk-low { 
+      color: #4CAF50; 
+      background: rgba(76, 175, 80, 0.1);
+    }
+    .risk-medium { 
+      color: #FF9800; 
+      background: rgba(255, 152, 0, 0.1);
+    }
+    .risk-high { 
+      color: #F44336; 
+      background: rgba(244, 67, 54, 0.1);
+    }
+    .risk-extreme { 
+      color: #9C27B0; 
+      background: rgba(156, 39, 176, 0.1);
+    }
+    
+    .risk-bar {
+      width: 60px;
+      height: 4px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-left: 5px;
+    }
+    
+    .risk-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    
+    .risk-fill.low { 
+      width: 20%; 
+      background: #4CAF50; 
+    }
+    .risk-fill.medium { 
+      width: 40%; 
+      background: #FF9800; 
+    }
+    .risk-fill.high { 
+      width: 60%; 
+      background: #F44336; 
+    }
+    .risk-fill.extreme { 
+      width: 80%; 
+      background: #9C27B0; 
+    }
+    
+    /* 업그레이드 아이템에 리스크 정보 추가 */
+    .upgrade-item .risk-info {
+      margin-top: 8px;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    
+    /* 상품 설명에 리스크 정보 추가 */
+    .product-risk-info {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
     }
     
     /* 구매 가능한 버튼 애니메이션 */
@@ -1087,7 +1193,7 @@
         <div class="chip"><span>💵 현금</span><b id="cash">0</b></div>
         <div class="chip stat-tooltip" id="financialChip" title=""><span>💰 금융</span><b id="financial">0</b><span class="muted">개</span></div>
         <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
-        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당 수익</span><b id="rps">0</b><span class="muted">원</span></div>
+        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당 수익</span><b id="rps">0</b><span class="muted">₩/s</span></div>
         <button class="chip share-btn" id="shareBtn" type="button" title="게임 공유하기" aria-label="게임 공유하기">
           <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.6 2.6 0 0 0 0-1.39l7.02-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .06.59L7.03 9.7A3 3 0 1 0 7 14.3l7.02 4.11A3 3 0 1 0 18 16.08z"></path>
@@ -1260,7 +1366,7 @@
 
             <div class="row building-item" id="buildingItem">
               <div class="meta">
-                <span class="title">🏙️ 빌딩</span>
+                <span class="title">🏗️ 빌딩</span>
                 <span class="desc">• 각 빌딩이 초당 <b id="rentPerBuilding">5,000원</b> 생산</span>
                 <span class="desc">• <b id="buildingCount">0</b>채 빌딩이 초당 <b id="buildingTotalIncome">0원</b> 생산 (총 수익의 <b id="buildingPercent">0%</b>)</span>
                 <span class="desc">• 지금까지 <b id="buildingLifetimeDisplay">0원</b> 생산</span>
@@ -1477,7 +1583,7 @@
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
         <div>
           <div style="margin-bottom:4px;">
-            <span style="color:var(--muted); font-size:12px;">v3.5.0</span>
+            <span style="color:var(--muted); font-size:12px;">v3.1.0</span>
             <span style="background:var(--primary); color:white; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">순차 해금</span>
           </div>
           <div style="font-size:11px;">

@@ -19,3 +19,4 @@ export function createAchievementsSystem(achievements, deps) {
 
   return { checkAchievements };
 }
+

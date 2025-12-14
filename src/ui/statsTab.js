@@ -179,3 +179,4 @@ export function updateStatsTab(deps) {
     console.error('Stats tab update failed:', e);
   }
 }
+

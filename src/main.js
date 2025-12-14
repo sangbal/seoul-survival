@@ -1146,16 +1146,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let careerLevel = 0;        // 현재 커리어 레벨
     let totalLaborIncome = 0;   // 총 노동 수익
     const CAREER_LEVELS = [
-      { name: "알바", multiplier: 1, requiredIncome: 0, requiredClicks: 0 },                    // 1만원/클릭 (연봉 2000만)
-      { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 50 },        // 1.5만원/클릭 (연봉 3000만)
-      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 100 },          // 2만원/클릭 (연봉 4000만)
-      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 200 },        // 2.5만원/클릭 (연봉 5000만)
-      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 350 },          // 3만원/클릭 (연봉 6000만)
-      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 550 },        // 3.5만원/클릭 (연봉 7000만)
-      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 800 },          // 4만원/클릭 (연봉 8000만)
-      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 1100 },         // 5만원/클릭 (연봉 1억)
-      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 1500 },       // 10만원/클릭 (연봉 2억)
-      { name: "CEO", multiplier: 25, requiredIncome: 250000000, requiredClicks: 2000 }         // 25만원/클릭 (연봉 5억)
+      { name: "알바", multiplier: 1, requiredIncome: 0, requiredClicks: 0, bgImage: "assets/images/work_bg_01_alba_night.png" },                    // 1만원/클릭 (연봉 2000만)
+      { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 50, bgImage: "assets/images/work_bg_02_gyeyakjik_night.png" },        // 1.5만원/클릭 (연봉 3000만)
+      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 100, bgImage: "assets/images/work_bg_03_sawon_night.png" },          // 2만원/클릭 (연봉 4000만)
+      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 200, bgImage: "assets/images/work_bg_04_daeri_night.png" },        // 2.5만원/클릭 (연봉 5000만)
+      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 350, bgImage: "assets/images/work_bg_05_gwajang_night.png" },          // 3만원/클릭 (연봉 6000만)
+      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 550, bgImage: "assets/images/work_bg_06_chajang_night.png" },        // 3.5만원/클릭 (연봉 7000만)
+      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 800, bgImage: "assets/images/work_bg_07_bujang_night.png" },          // 4만원/클릭 (연봉 8000만)
+      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 1100, bgImage: "assets/images/work_bg_08_sangmu_night.png" },         // 5만원/클릭 (연봉 1억)
+      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 1500, bgImage: "assets/images/work_bg_09_jeonmu_night.png" },       // 10만원/클릭 (연봉 2억)
+      { name: "CEO", multiplier: 25, requiredIncome: 250000000, requiredClicks: 2000, bgImage: "assets/images/work_bg_10_ceo_night.png" }         // 25만원/클릭 (연봉 5억)
     ];
     
     // 가격은 이제 동적으로 계산됨 (getPropertyCost 함수 사용)
@@ -1352,6 +1352,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const elProperties = document.getElementById('properties');
     const elRps  = document.getElementById('rps');
     const elWork = document.getElementById('workBtn');
+    const elWorkArea = document.querySelector('.work'); // 노동 배경 영역
     const elLog  = document.getElementById('log');
     const elShareBtn = document.getElementById('shareBtn');
     const elClickIncomeButton = document.getElementById('clickIncomeButton');
@@ -1395,6 +1396,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 저장 상태 표시
     const elSaveStatus = document.getElementById('saveStatus');
+    const elResetBtn = document.getElementById('resetBtn');
     
     // 현재가 표시 요소들
     const elDepositCurrentPrice = document.getElementById('depositCurrentPrice');
@@ -1895,6 +1897,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const clickIncome = getClickIncome();
         addLog(`🎉 ${newCareer.name}으로 승진했습니다! (클릭당 ${formatKoreanNumber(clickIncome)}원)`);
         
+        // 승진 시 배경 이미지 페이드 전환
+        if (elWorkArea && newCareer.bgImage) {
+          elWorkArea.style.transition = 'background-image 0.5s ease-in-out';
+          elWorkArea.style.backgroundImage = `url('${newCareer.bgImage}')`;
+        } else if (elWorkArea && !newCareer.bgImage) {
+          elWorkArea.style.transition = 'background-image 0.5s ease-in-out';
+          elWorkArea.style.backgroundImage = 'radial-gradient(1200px 400px at 50% -50%, rgba(94,234,212,.1), transparent 60%)';
+        }
+        
         // 승진 후 즉시 UI 업데이트
         console.log('=== PROMOTION DEBUG ===');
         console.log('Promoted to:', newCareer.name);
@@ -2245,6 +2256,14 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(elCurrentCareer, currentCareer.name);
         safeText(elClickIncomeButton, formatKoreanNumber(getClickIncome()));
         safeText(elClickIncomeLabel, formatKoreanNumber(getClickIncome()));
+        
+        // 직급별 배경 이미지 업데이트
+        if (elWorkArea && currentCareer.bgImage) {
+          elWorkArea.style.backgroundImage = `url('${currentCareer.bgImage}')`;
+        } else if (elWorkArea && !currentCareer.bgImage) {
+          // 배경 이미지가 없으면 기본 그라데이션으로 복원
+          elWorkArea.style.backgroundImage = 'radial-gradient(1200px 400px at 50% -50%, rgba(94,234,212,.1), transparent 60%)';
+        }
         
         if (nextCareer) {
           safeText(elNextCareerDesc, `다음: ${nextCareer.name} (${nextCareer.multiplier}배 수익)`);
@@ -2817,6 +2836,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elShareBtn.addEventListener('click', shareGame);
 
+    // 새로 시작 버튼 이벤트 리스너
+    if (elResetBtn) {
+      elResetBtn.addEventListener('click', resetGame);
+    }
+
     // 떨어지는 지폐 애니메이션 함수 (노동 클릭 시)
     function createFallingCookie(clickX, clickY) {
       const cookie = document.createElement('div');
@@ -3126,6 +3150,12 @@ document.addEventListener('DOMContentLoaded', () => {
       addLog('저장된 게임을 불러왔습니다.');
     } else {
       addLog('환영합니다! 노동으로 종잣돈을 모아 첫 부동산을 구입해보세요.');
+    }
+    
+    // 초기 배경 이미지 설정
+    const initialCareer = getCurrentCareer();
+    if (elWorkArea && initialCareer && initialCareer.bgImage) {
+      elWorkArea.style.backgroundImage = `url('${initialCareer.bgImage}')`;
     }
     
     // 판매 시스템 테스트 로그

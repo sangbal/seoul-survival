@@ -93,3 +93,4 @@ export function getDomRefs() {
     elCareerProgressText: document.getElementById('careerProgressText'),
   };
 }
+
