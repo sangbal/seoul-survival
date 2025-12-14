@@ -588,6 +588,40 @@
       transform: translateY(-2px);
     }
     
+    /* 공유하기 버튼 스타일 */
+    .share-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(96, 165, 250, 0.3);
+      white-space: nowrap;
+    }
+    
+    .share-btn:hover {
+      background: #4a90e2;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
+    }
+    
+    .share-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(96, 165, 250, 0.3);
+    }
+    
+    .share-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
     /* ======= 모바일 최적화 ======= */
     @media (max-width: 768px) {
       /* 그리드를 1열로 변경 */
@@ -598,11 +632,22 @@
       /* 헤더 최적화 */
       header {
         padding: 8px 12px;
+        flex-wrap: wrap;
       }
       
       .statbar {
         gap: 6px;
         width: 100%;
+      }
+      
+      .share-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        margin-top: 4px;
+      }
+      
+      .share-btn span:last-child {
+        display: none;
       }
       
       .chip {
@@ -1120,6 +1165,10 @@
         <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
         <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당 수익</span><b id="rps">0</b><span class="muted">₩/s</span></div>
       </div>
+      <button class="share-btn" id="shareBtn" title="게임 공유하기">
+        <span>🔗</span>
+        <span>공유</span>
+      </button>
     </header>
 
     <div class="tab-wrapper">
@@ -2884,6 +2933,7 @@
     const elRps  = document.getElementById('rps');
     const elWork = document.getElementById('workBtn');
     const elLog  = document.getElementById('log');
+    const elShareBtn = document.getElementById('shareBtn');
     const elClickIncomeButton = document.getElementById('clickIncomeButton');
     const elClickIncomeLabel = document.getElementById('clickIncomeLabel');
     const elClickMultiplier = document.getElementById('clickMultiplier');
@@ -4384,6 +4434,68 @@
       
       updateUI();
     });
+
+    // ======= 공유하기 기능 =======
+    async function shareGame() {
+      const gameUrl = window.location.href;
+      const gameTitle = '서울 역세권 타이쿤';
+      const gameDescription = `💰 부동산과 금융 투자로 부자가 되는 게임!\n현재 자산: ${formatNumber(cash)}원\n초당 수익: ${formatNumber(getRps())}원/s`;
+      const shareText = `${gameTitle}\n\n${gameDescription}\n\n${gameUrl}`;
+
+      // Web Share API 사용 (모바일)
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: gameTitle,
+            text: gameDescription,
+            url: gameUrl
+          });
+          addLog('✅ 게임이 공유되었습니다!');
+          return;
+        } catch (err) {
+          // 사용자가 공유를 취소한 경우
+          if (err.name !== 'AbortError') {
+            console.error('공유 실패:', err);
+          }
+          // 취소된 경우 클립보드 복사로 대체
+        }
+      }
+
+      // 클립보드 복사 (데스크톱 또는 Web Share API 실패 시)
+      try {
+        await navigator.clipboard.writeText(shareText);
+        addLog('✅ 게임 링크가 클립보드에 복사되었습니다!');
+        
+        // 버튼에 피드백 표시
+        const originalText = elShareBtn.innerHTML;
+        elShareBtn.innerHTML = '<span>✓</span><span>복사됨!</span>';
+        elShareBtn.style.background = 'var(--good)';
+        setTimeout(() => {
+          elShareBtn.innerHTML = originalText;
+          elShareBtn.style.background = '';
+        }, 2000);
+      } catch (err) {
+        console.error('클립보드 복사 실패:', err);
+        addLog('❌ 공유에 실패했습니다. URL을 수동으로 복사해주세요.');
+        
+        // 대체 방법: 텍스트 영역 사용
+        const textArea = document.createElement('textarea');
+        textArea.value = shareText;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          addLog('✅ 게임 링크가 복사되었습니다!');
+        } catch (err2) {
+          addLog('❌ 공유 기능을 사용할 수 없습니다.');
+        }
+        document.body.removeChild(textArea);
+      }
+    }
+
+    elShareBtn.addEventListener('click', shareGame);
 
     // 떨어지는 지폐 애니메이션 함수 (노동 클릭 시)
     function createFallingCookie(clickX, clickY) {
