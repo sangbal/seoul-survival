@@ -496,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const buildingIcons = {
           deposit: '💰', savings: '🏦', bond: '📈',
           villa: '🏠', officetel: '🏢',
-          apartment: '🏘️', shop: '🏪', building: '🏬'
+          apartment: '🏘️', shop: '🏪', building: '🏙️'
         };
         createFallingBuilding(buildingIcons[type] || '🏠', qty);
         
@@ -944,10 +944,10 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // === 빌딩 관련 ===
       building_boost_1: {
-        name: "🏗️ 빌딩 테넌트 확보",
+        name: "🏙️ 빌딩 테넌트 확보",
         desc: "빌딩 수익 2배",
         cost: 50000000000,
-        icon: "🏗️",
+        icon: "🏙️",
         unlockCondition: () => buildings >= 5,
         effect: () => { BASE_RENT.building *= 2; },
         category: "building",
@@ -1254,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // === 전문가 업적 (8개) ===
       { id: "financial_expert", name: "금융 전문가", desc: "모든 금융상품을 보유했다", icon: "💼", condition: () => deposits > 0 && savings > 0 && bonds > 0 && usStocks > 0 && cryptos > 0, unlocked: false },
       { id: "property_collector", name: "부동산 수집가", desc: "5채의 부동산을 보유했다", icon: "🏘️", condition: () => getTotalProperties() >= 5, unlocked: false },
-      { id: "property_tycoon", name: "부동산 타이쿤", desc: "모든 부동산 종류를 보유했다", icon: "🏗️", condition: () => villas > 0 && officetels > 0 && apartments > 0 && shops > 0 && buildings > 0, unlocked: false },
+      { id: "property_tycoon", name: "부동산 타이쿤", desc: "모든 부동산 종류를 보유했다", icon: "🏙️", condition: () => villas > 0 && officetels > 0 && apartments > 0 && shops > 0 && buildings > 0, unlocked: false },
       { id: "investment_guru", name: "투자 고수", desc: "모든 업그레이드를 구입했다", icon: "📊", condition: () => Object.values(UPGRADES).every(upgrade => upgrade.purchased), unlocked: false },
       { id: "gangnam_rich", name: "강남 부자", desc: "강남 부동산 3채를 보유했다", icon: "🏙️", condition: () => apartments >= 3, unlocked: false },
       { id: "global_investor", name: "글로벌 투자자", desc: "해외 투자 1억원을 달성했다", icon: "🌍", condition: () => usStocks * 1000000 + cryptos * 1000000 >= 100000000, unlocked: false },
