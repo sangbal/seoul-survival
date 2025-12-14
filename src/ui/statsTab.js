@@ -34,6 +34,8 @@
  *    deposits:number,
  *    savings:number,
  *    bonds:number,
+ *    usStocks:number,
+ *    cryptos:number,
  *    villas:number,
  *    officetels:number,
  *    apartments:number,
@@ -150,6 +152,12 @@ export function updateStatsTab(deps) {
 
     safeText(document.getElementById('bondsOwnedStats'), state.bonds + '개');
     safeText(document.getElementById('bondsLifetimeStats'), formatCashDisplay(state.bondsLifetime));
+
+    safeText(document.getElementById('usStocksOwnedStats'), state.usStocks + '개');
+    safeText(document.getElementById('usStocksLifetimeStats'), formatCashDisplay(state.usStocksLifetime));
+
+    safeText(document.getElementById('cryptosOwnedStats'), state.cryptos + '개');
+    safeText(document.getElementById('cryptosLifetimeStats'), formatCashDisplay(state.cryptosLifetime));
 
     // 5. 부동산 상세
     safeText(document.getElementById('villasOwnedStats'), state.villas + '채');

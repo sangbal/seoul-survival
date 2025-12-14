@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
           deposit: '💰', savings: '🏦', bond: '📈',
           usStock: '🇺🇸', crypto: '₿',
           villa: '🏠', officetel: '🏢',
-          apartment: '🏘️', shop: '🏪', building: '🏬'
+          apartment: '🏘️', shop: '🏪', building: '🏙️'
         };
         if (settings.particles) {
           createFallingBuilding(buildingIcons[type] || '🏠', qty);
@@ -561,11 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 한국식 숫자 표기 함수 (일반용)
     function formatKoreanNumber(num) {
-      // 짧은 숫자 설정이 꺼져있으면 전체 숫자 표시
-      if (!settings.shortNumbers) {
-        return Math.floor(num).toLocaleString('ko-KR');
-      }
-      
+      // 통계 섹션에서는 항상 짧은 숫자 형식 사용
       // 짧은 숫자 형식 (천의자리 콤마 포함)
       if (num >= 1000000000000) {
         const value = (num / 1000000000000).toFixed(1);
@@ -581,6 +577,47 @@ document.addEventListener('DOMContentLoaded', () => {
         return parseFloat(value).toLocaleString('ko-KR') + '천';
       } else {
         return Math.floor(num).toString();
+      }
+    }
+    
+    // 통계 섹션 전용 포맷 함수 (#,##0만원, 억 단위 넘어가면 0.00억)
+    function formatStatsNumber(num) {
+      if (num >= 100000000) {
+        // 억 단위: 0.00억 형식
+        const value = (num / 100000000).toFixed(2);
+        return parseFloat(value).toLocaleString('ko-KR') + '억';
+      } else if (num >= 10000) {
+        // 만원 단위: #,##0만원 형식
+        const man = Math.floor(num / 10000);
+        return man.toLocaleString('ko-KR') + '만원';
+      } else if (num >= 1000) {
+        // 천원 단위
+        const cheon = Math.floor(num / 1000);
+        return cheon.toLocaleString('ko-KR') + '천원';
+      } else {
+        return Math.floor(num).toLocaleString('ko-KR') + '원';
+      }
+    }
+    
+    // 상단 헤더 현금 표시용 포맷 (짧은 숫자 설정 반영, 형식은 formatStatsNumber와 동일)
+    function formatHeaderCash(num) {
+      // 짧은 숫자 설정이 꺼져있으면 전체 숫자 표시
+      if (!settings.shortNumbers) {
+        return Math.floor(num).toLocaleString('ko-KR') + '원';
+      }
+      
+      // 짧은 숫자 형식 사용 (#,##0만원, 억 단위 넘어가면 0.00억)
+      if (num >= 100000000) {
+        const value = (num / 100000000).toFixed(2);
+        return parseFloat(value).toLocaleString('ko-KR') + '억';
+      } else if (num >= 10000) {
+        const man = Math.floor(num / 10000);
+        return man.toLocaleString('ko-KR') + '만원';
+      } else if (num >= 1000) {
+        const cheon = Math.floor(num / 1000);
+        return cheon.toLocaleString('ko-KR') + '천원';
+      } else {
+        return Math.floor(num).toLocaleString('ko-KR') + '원';
       }
     }
     
@@ -1424,10 +1461,10 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // === 빌딩 관련 ===
       building_boost_1: {
-        name: "🏗️ 빌딩 테넌트 확보",
+        name: "🏙️ 빌딩 테넌트 확보",
         desc: "빌딩 수익 2배",
         cost: 6000000000, // 기본가 30억원 × 2
-        icon: "🏗️",
+        icon: "🏙️",
         unlockCondition: () => buildings >= 5,
         effect: () => { BASE_RENT.building *= 2; },
         category: "building",
@@ -1587,14 +1624,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const CAREER_LEVELS = [
       { name: "알바", multiplier: 1, requiredIncome: 0, requiredClicks: 0, bgImage: "assets/images/work_bg_01_alba_night.png" },                    // 1만원/클릭 (연봉 2000만)
       { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 50, bgImage: "assets/images/work_bg_02_gyeyakjik_night.png" },        // 1.5만원/클릭 (연봉 3000만)
-      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 100, bgImage: "assets/images/work_bg_03_sawon_night.png" },          // 2만원/클릭 (연봉 4000만)
-      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 200, bgImage: "assets/images/work_bg_04_daeri_night.png" },        // 2.5만원/클릭 (연봉 5000만)
-      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 350, bgImage: "assets/images/work_bg_05_gwajang_night.png" },          // 3만원/클릭 (연봉 6000만)
-      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 550, bgImage: "assets/images/work_bg_06_chajang_night.png" },        // 3.5만원/클릭 (연봉 7000만)
-      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 800, bgImage: "assets/images/work_bg_07_bujang_night.png" },          // 4만원/클릭 (연봉 8000만)
-      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 1100, bgImage: "assets/images/work_bg_08_sangmu_night.png" },         // 5만원/클릭 (연봉 1억)
-      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 1500, bgImage: "assets/images/work_bg_09_jeonmu_night.png" },       // 10만원/클릭 (연봉 2억)
-      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 2000, bgImage: "assets/images/work_bg_10_ceo_night.png" }         // 12만원/클릭 (밸런싱: 20 → 12)
+      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 150, bgImage: "assets/images/work_bg_03_sawon_night.png" },          // 2만원/클릭 (연봉 4000만) - 간격 2배: 50→100
+      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 350, bgImage: "assets/images/work_bg_04_daeri_night.png" },        // 2.5만원/클릭 (연봉 5000만) - 간격 2배: 100→200
+      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 650, bgImage: "assets/images/work_bg_05_gwajang_night.png" },          // 3만원/클릭 (연봉 6000만) - 간격 2배: 150→300
+      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 1050, bgImage: "assets/images/work_bg_06_chajang_night.png" },        // 3.5만원/클릭 (연봉 7000만) - 간격 2배: 200→400
+      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 1550, bgImage: "assets/images/work_bg_07_bujang_night.png" },          // 4만원/클릭 (연봉 8000만) - 간격 2배: 250→500
+      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 2150, bgImage: "assets/images/work_bg_08_sangmu_night.png" },         // 5만원/클릭 (연봉 1억) - 간격 2배: 300→600
+      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 2950, bgImage: "assets/images/work_bg_09_jeonmu_night.png" },       // 10만원/클릭 (연봉 2억) - 간격 2배: 400→800
+      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 3950, bgImage: "assets/images/work_bg_10_ceo_night.png" }         // 12만원/클릭 (밸런싱: 20 → 12) - 간격 2배: 500→1000
     ];
     
     // 가격은 이제 동적으로 계산됨 (getPropertyCost 함수 사용)
@@ -1757,7 +1794,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // === 전문가 업적 (8개) ===
       { id: "financial_expert", name: "금융 전문가", desc: "모든 금융상품을 보유했다", icon: "💼", condition: () => deposits > 0 && savings > 0 && bonds > 0 && usStocks > 0 && cryptos > 0, unlocked: false },
       { id: "property_collector", name: "부동산 수집가", desc: "5채의 부동산을 보유했다", icon: "🏘️", condition: () => getTotalProperties() >= 5, unlocked: false },
-      { id: "property_tycoon", name: "부동산 타이쿤", desc: "모든 부동산 종류를 보유했다", icon: "🏗️", condition: () => villas > 0 && officetels > 0 && apartments > 0 && shops > 0 && buildings > 0, unlocked: false },
+      { id: "property_tycoon", name: "부동산 타이쿤", desc: "모든 부동산 종류를 보유했다", icon: "🏙️", condition: () => villas > 0 && officetels > 0 && apartments > 0 && shops > 0 && buildings > 0, unlocked: false },
       { id: "investment_guru", name: "투자 고수", desc: "모든 업그레이드를 구입했다", icon: "📊", condition: () => Object.values(UPGRADES).every(upgrade => upgrade.purchased), unlocked: false },
       { id: "gangnam_rich", name: "강남 부자", desc: "강남 부동산 3채를 보유했다", icon: "🏙️", condition: () => apartments >= 3, unlocked: false },
       { id: "global_investor", name: "글로벌 투자자", desc: "해외 투자 1억원을 달성했다", icon: "🌍", condition: () => usStocks * 1000000 + cryptos * 1000000 >= 100000000, unlocked: false },
@@ -1870,7 +1907,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 커리어 관련
     const elCurrentCareer = document.getElementById('currentCareer');
-    const elNextCareerDesc = document.getElementById('nextCareerDesc');
     const elCareerCost = document.getElementById('careerCost');
     const elCareerProgress = document.getElementById('careerProgress');
     const elCareerProgressText = document.getElementById('careerProgressText');
@@ -1895,9 +1931,641 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isDevMessage) {
         return;
       }
-      
+
+      // ======= 일기장 변환 =======
+      const pad2 = (n) => String(n).padStart(2, '0');
+      const now = new Date();
+      const timeStamp = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+
+      function updateDiaryMeta() {
+        const elDate = document.getElementById('diaryMetaDate');
+        const elDay = document.getElementById('diaryMetaDay');
+        if (elDate) {
+          const y = now.getFullYear();
+          const m = pad2(now.getMonth() + 1);
+          const d = pad2(now.getDate());
+          elDate.textContent = `오늘: ${y}.${m}.${d}`;
+        }
+        if (elDay) {
+          // gameStartTime이 있으면 그걸 쓰고, 없으면 sessionStartTime 기준
+          const base = (typeof gameStartTime !== 'undefined' && gameStartTime) ? gameStartTime : sessionStartTime;
+          const days = Math.max(1, Math.floor((Date.now() - base) / 86400000) + 1);
+          elDay.textContent = `일차: ${days}일차`;
+        }
+      }
+
+      function diaryize(raw) {
+        const s = String(raw || '').trim();
+
+        // 업그레이드 잔여 클릭 안내는 일기장에 기록하지 않음
+        // 예: '🎯 다음 업그레이드 "📚 전문 교육"까지 25클릭 남음!'
+        if (/다음\s*업그레이드/.test(s) && /클릭\s*남/.test(s)) {
+          return '';
+        }
+
+        // 공통: 시스템 이모지/접두 제거
+        const stripPrefix = (t) => t.replace(/^[✅❌💸💰🏆🎉🎁📈📉🔓⚠️💡]+\s*/g, '').trim();
+        const rand = (n) => Math.floor(Math.random() * n);
+        const pick = (key, arr) => {
+          if (!Array.isArray(arr) || arr.length === 0) return '';
+          const storeKey = `__diaryLastPick_${key}`;
+          const last = window[storeKey];
+          let idx = rand(arr.length);
+          if (arr.length > 1 && typeof last === 'number' && idx === last) {
+            idx = (idx + 1 + rand(arr.length - 1)) % arr.length;
+          }
+          window[storeKey] = idx;
+          return arr[idx];
+        };
+        const soften = (t) => stripPrefix(t).replace(/\s+/g, ' ').trim();
+
+        // 업적
+        if (s.startsWith('🏆 업적 달성:')) {
+          // "🏆 업적 달성: A - B"
+          const body = stripPrefix(s).replace(/^업적 달성:\s*/,'');
+          const [name, desc] = body.split(/\s*-\s*/);
+          return pick('achievement', [
+            `오늘은 체크 하나를 더했다. (${name || '업적'})`,
+            `작게나마 성취. ${name || '업적'}라니, 나도 꽤 한다.`,
+            `기록해둔다: ${name || '업적'}.\n${desc ? desc : ''}`.trim(),
+            `“${name || '업적'}” 달성.\n${desc ? `메모: ${desc}` : ''}`.trim(),
+            `별거 아닌 듯한데, 이런 게 쌓여서 사람이 된다. (${name || '업적'})`,
+          ]);
+        }
+
+        // 승진
+        if (s.startsWith('🎉') && s.includes('승진했습니다')) {
+          // "🎉 직급으로 승진했습니다! (클릭당 X원)"
+          const m = s.match(/🎉\s*(.+?)으로\s*승진했습니다!?(\s*\(.*\))?/);
+          const career = m?.[1]?.trim();
+          const extra = m?.[2]?.trim();
+          const extraText = extra ? extra.replace(/[()]/g,'').trim() : '';
+          return pick('promotion', [
+            `명함이 바뀌었다. ${career || '다음 단계'}.\n${extraText}`.trim(),
+            `오늘은 좀 뿌듯하다. ${career || '승진'}이라니.\n${extraText}`.trim(),
+            `승진했다. 책임도 같이 딸려온다는데… 일단 축하부터.\n${extraText}`.trim(),
+            `그래, 나도 올라갈 줄 안다. ${career || '승진'}.\n${extraText}`.trim(),
+            `커피가 조금 더 쓰게 느껴진다. ${career || '승진'}의 맛.\n${extraText}`.trim(),
+          ]);
+        }
+
+        // 해금
+        if (s.startsWith('🔓')) {
+          const body = soften(s);
+          const m = s.match(/^🔓\s*(.+?)이\s*해금/);
+          const name = (m?.[1] || '').trim();
+          const unlockByProduct = {
+            '적금': [
+              `자동이체 버튼이 눈에 들어왔다.\n${body}`,
+              `천천히 쌓는 쪽으로 방향을 틀었다.\n${body}`,
+              `오늘은 ‘루틴’이 열렸다.\n${body}`,
+            ],
+            '국내주식': [
+              `이제 차트랑 뉴스랑 싸울 차례다.\n${body}`,
+              `심장이 약하면 못 할 선택지… 열렸다.\n${body}`,
+              `변동성의 문이 열렸다.\n${body}`,
+            ],
+            '미국주식': [
+              `시차를 버티는 돈이 열렸다.\n${body}`,
+              `달러 냄새가 난다.\n${body}`,
+              `밤샘의 선택지… 드디어.\n${body}`,
+            ],
+            '코인': [
+              `롤러코스터 입장권이 생겼다.\n${body}`,
+              `FOMO가 문을 두드린다.\n${body}`,
+              `폭등/폭락의 세계가 열렸다.\n${body}`,
+            ],
+            '빌라': [
+              `첫 ‘집’이라는 단어가 현실이 됐다.\n${body}`,
+              `작아도 내 편이 하나 생긴 기분.\n${body}`,
+            ],
+            '오피스텔': [
+              `출근 동선이 머리에 그려졌다.\n${body}`,
+              `현실적인 선택지가 열렸다.\n${body}`,
+            ],
+            '아파트': [
+              `꿈이 조금 현실 쪽으로 다가왔다.\n${body}`,
+              `안정의 상징이 열렸다.\n${body}`,
+            ],
+            '상가': [
+              `유동인구라는 단어가 갑자기 무겁다.\n${body}`,
+              `장사 잘되길… 진심으로.\n${body}`,
+            ],
+            '빌딩': [
+              `스카이라인에 욕심이 생겼다.\n${body}`,
+              `이제 진짜 ‘엔드게임’ 냄새.\n${body}`,
+            ],
+          };
+          if (name && unlockByProduct[name]) {
+            return pick(`unlock_${name}`, unlockByProduct[name]);
+          }
+          return pick('unlock', [
+            `문이 하나 열렸다.\n${body}`,
+            `다음 장으로 넘어갈 수 있게 됐다.\n${body}`,
+            `아직 초반인데도, 벌써 선택지가 늘었다.\n${body}`,
+            `드디어. ${body}`,
+          ]);
+        }
+
+        // 구매/판매/부족
+        if (s.startsWith('💸 자금이 부족합니다')) {
+          const body = soften(s);
+          return pick('noMoney', [
+            `지갑이 얇아서 아무것도 못 했다.\n${body}`,
+            `현실 체크. 돈이 없다.\n${body}`,
+            `오늘은 참는다. 아직은 무리.\n${body}`,
+            `계산기만 두드리고 끝.\n${body}`,
+          ]);
+        }
+        if (s.startsWith('✅') && s.includes('구입했습니다')) {
+          const body = soften(s);
+          const m = s.match(/^✅\s*(.+?)\s+\d/);
+          const name = (m?.[1] || '').trim();
+
+          const buyByProduct = {
+            '예금': [
+              `일단은 안전한 데에 묶어두자.\n${body}`,
+              `불안할 땐 예금이 답이다.\n${body}`,
+              `통장에 ‘쿠션’을 하나 깔았다.\n${body}`,
+            ],
+            '적금': [
+              `루틴을 샀다. 매일이 쌓이면 언젠가.\n${body}`,
+              `천천히, 꾸준히. 적금은 배신을 덜 한다.\n${body}`,
+              `버티기 모드 ON.\n${body}`,
+            ],
+            '국내주식': [
+              `차트가 나를 보더니 웃는 것 같았다.\n${body}`,
+              `기대 반, 긴장 반.\n${body}`,
+              `뉴스 알람을 켜야 할 것 같다.\n${body}`,
+            ],
+            '미국주식': [
+              `달러 환율부터 떠올랐다.\n${body}`,
+              `밤에 울리는 알림을 각오했다.\n${body}`,
+              `세계로 한 걸음.\n${body}`,
+            ],
+            '코인': [
+              `심장 단단히 붙잡고 탔다.\n${body}`,
+              `오늘은 FOMO가 이겼다.\n${body}`,
+              `롤러코스터에 표를 끊었다.\n${body}`,
+            ],
+            '빌라': [
+              `작아도 시작은 시작이다.\n${body}`,
+              `첫 집 느낌… 마음이 조금 놓였다.\n${body}`,
+              `벽지 냄새를 상상했다.\n${body}`,
+            ],
+            '오피스텔': [
+              `현실적인 선택을 했다.\n${body}`,
+              `출근길이 짧아지는 상상을 했다.\n${body}`,
+              `관리비 생각은 내일 하자.\n${body}`,
+            ],
+            '아파트': [
+              `꿈이 조금 더 선명해졌다.\n${body}`,
+              `안정의 상징을 손에 쥐었다.\n${body}`,
+              `괜히 뿌듯하다.\n${body}`,
+            ],
+            '상가': [
+              `유동인구가 돈이 되는 세계.\n${body}`,
+              `임차인 운이 따라주길.\n${body}`,
+              `간판 불빛을 상상했다.\n${body}`,
+            ],
+            '빌딩': [
+              `스카이라인을 한 조각 샀다.\n${body}`,
+              `이건… 진짜 끝판왕 느낌이다.\n${body}`,
+              `도시가 내 편인 것 같았다.\n${body}`,
+            ],
+          };
+
+          if (name && buyByProduct[name]) {
+            return pick(`buy_${name}`, buyByProduct[name]);
+          }
+
+          return pick('buy', [
+            `결심하고 질렀다.\n${body}`,
+            `통장 잔고가 줄어들었다. 대신 미래를 샀다.\n${body}`,
+            `이건 소비가 아니라 투자라고… 스스로에게 말했다.\n${body}`,
+            `한 발 더 나아갔다.\n${body}`,
+            `손이 먼저 움직였다.\n${body}`,
+          ]);
+        }
+        if (s.startsWith('💰') && s.includes('판매했습니다')) {
+          const body = soften(s);
+          const m = s.match(/^💰\s*(.+?)\s+\d/);
+          const name = (m?.[1] || '').trim();
+          const sellByProduct = {
+            '코인': [
+              `손이 떨리기 전에 내렸다.\n${body}`,
+              `욕심을 접었다. 오늘은 이쯤.\n${body}`,
+              `살아남는 게 먼저다.\n${body}`,
+            ],
+            '국내주식': [
+              `수익이든 손절이든, 결론은 냈다.\n${body}`,
+              `차트와 잠깐 이별.\n${body}`,
+              `정리하고 숨 돌린다.\n${body}`,
+            ],
+            '미국주식': [
+              `시차도 같이 정리했다.\n${body}`,
+              `달러 생각은 잠시 접는다.\n${body}`,
+              `잠깐 쉬어가기로 했다.\n${body}`,
+            ],
+            '예금': [
+              `안전벨트를 풀었다.\n${body}`,
+              `현금이 필요했다.\n${body}`,
+            ],
+            '적금': [
+              `꾸준함을 잠깐 멈췄다.\n${body}`,
+              `루틴을 깼다. 사정이 있었다.\n${body}`,
+            ],
+            '빌라': [
+              `정든 것과 이별.\n${body}`,
+              `현실적으로 정리했다.\n${body}`,
+            ],
+            '오피스텔': [
+              `동선은 이제 안녕.\n${body}`,
+              `정리하고 다음으로.\n${body}`,
+            ],
+            '아파트': [
+              `꿈을 잠시 내려놓았다.\n${body}`,
+              `정리했다. 마음이 좀 쓰다.\n${body}`,
+            ],
+            '상가': [
+              `임차인 걱정이 덜었다.\n${body}`,
+              `상권이란 게 참…\n${body}`,
+            ],
+            '빌딩': [
+              `도시 한 조각을 내려놨다.\n${body}`,
+              `정리했다. 다시 올라가면 된다.\n${body}`,
+            ],
+          };
+          if (name && sellByProduct[name]) {
+            return pick(`sell_${name}`, sellByProduct[name]);
+          }
+          return pick('sell', [
+            `정리할 건 정리했다.\n${body}`,
+            `가끔은 줄여야 산다.\n${body}`,
+            `현금이 필요했다. 그래서 팔았다.\n${body}`,
+            `미련은 접어두고 정리.\n${body}`,
+          ]);
+        }
+        if (s.startsWith('❌')) {
+          const body = soften(s);
+          return pick('fail', [
+            `오늘은 뜻대로 안 됐다.\n${body}`,
+            `계획은 늘 계획대로 안 된다.\n${body}`,
+            `한 번 더. 다음엔 될 거다.\n${body}`,
+            `벽에 부딪혔다.\n${body}`,
+          ]);
+        }
+
+        // 시장 이벤트
+        if (s.startsWith('📈') && s.includes('발생')) {
+          const body = soften(s);
+
+          // 예) "📈 강남 아파트 대박 발생! 30초간 지속"
+          // 예) "📈 시장 이벤트 발생: 강남 아파트 대박 (30초)"
+          const name1 = (s.match(/^📈\s*(.+?)\s*발생/))?.[1]?.trim();
+          const name2 = (s.match(/^📈\s*시장 이벤트 발생:\s*(.+?)\s*\(/))?.[1]?.trim();
+          const eventName = (name2 || name1 || '').trim();
+
+          const detectProduct = (txt) => {
+            const t = String(txt || '');
+            const rules = [
+              ['빌딩', '빌딩'], ['상가', '상가'], ['아파트', '아파트'], ['오피스텔', '오피스텔'], ['빌라', '빌라'],
+              ['코인', '코인'], ['암호', '코인'], ['크립토', '코인'], ['₿', '코인'],
+              ['미국', '미국주식'], ['🇺🇸', '미국주식'], ['달러', '미국주식'],
+              ['주식', '국내주식'], ['코스피', '국내주식'], ['코스닥', '국내주식'],
+              ['적금', '적금'],
+              ['예금', '예금'],
+              ['노동', '노동'], ['클릭', '노동'], ['업무', '노동'],
+            ];
+            for (const [k, v] of rules) if (t.includes(k)) return v;
+            return '';
+          };
+
+          const product = detectProduct(`${eventName} ${body}`) || '시장';
+          window.__diaryLastMarketProduct = product;
+          window.__diaryLastMarketName = eventName || body;
+
+          const byProduct = {
+            '예금': [
+              `예금 쪽은 흔들려도 티가 덜 난다. 그게 장점이자 단점.\n${body}`,
+              `안정은 조용히 돈을 번다. 오늘도 예금은 예금했다.\n${body}`,
+            ],
+            '적금': [
+              `루틴이 흔들리는 날이 있다. 그래도 적금은 적금.\n${body}`,
+              `꾸준함의 세계에도 이벤트는 온다.\n${body}`,
+            ],
+            '국내주식': [
+              `차트가 또 날 시험한다.\n${body}`,
+              `뉴스 한 줄에 심장이 먼저 반응했다.\n${body}`,
+              `국장답게… 오늘도 변동성.\n${body}`,
+            ],
+            '미국주식': [
+              `시차가 오늘따라 더 길게 느껴진다.\n${body}`,
+              `달러랑 감정은 분리… 하자.\n${body}`,
+              `미장 이벤트는 밤에 더 크게 들린다.\n${body}`,
+            ],
+            '코인': [
+              `멘탈이 먼저 흔들린다. 코인은 늘 그렇다.\n${body}`,
+              `롤러코스터가 출발했다.\n${body}`,
+              `FOMO랑 손절 사이에서 줄타기.\n${body}`,
+            ],
+            '빌라': [
+              `동네 분위기가 바뀌면 빌라도 숨을 쉰다.\n${body}`,
+              `작은 집도 결국은 시장을 탄다.\n${body}`,
+            ],
+            '오피스텔': [
+              `현실의 수요가 움직이는 소리가 난다.\n${body}`,
+              `출근 동선이 바뀌면 월세도 같이 흔들린다.\n${body}`,
+            ],
+            '아파트': [
+              `아파트는 ‘상징’이라더니, 이벤트도 상징처럼 크게 온다.\n${body}`,
+              `꿈이 흔들릴 때가 있다.\n${body}`,
+            ],
+            '상가': [
+              `유동인구라는 말이 오늘은 무겁다.\n${body}`,
+              `장사라는 건 결국 파도 타기.\n${body}`,
+            ],
+            '빌딩': [
+              `도시가 요동치면 빌딩도 요동친다.\n${body}`,
+              `스카이라인의 공기가 달라졌다.\n${body}`,
+            ],
+            '노동': [
+              `업무 흐름이 바뀌면 내 하루도 바뀐다.\n${body}`,
+              `오늘은 손이 더 바빠질 것 같다.\n${body}`,
+            ],
+            '시장': [
+              `시장이 시끄럽다.\n${body}`,
+              `뉴스가 난리다.\n${body}`,
+              `분위기가 확 바뀌었다.\n${body}`,
+              `감정은 접고, 상황만 기록.\n${body}`,
+            ]
+          };
+
+          return pick(`market_${product}`, byProduct[product] || byProduct['시장']);
+        }
+        if (s.startsWith('📉') && s.includes('종료')) {
+          const product = window.__diaryLastMarketProduct || '시장';
+          const name = window.__diaryLastMarketName || '';
+          // 종료는 짧게, 여운만
+          const byProduct = {
+            '코인': [
+              `심장이 겨우 진정됐다. (${name ? name : '이벤트 종료'})`,
+              `코인 장은 끝날 때까지 끝난 게 아니다. 오늘은 일단 끝.\n${name ? name : ''}`.trim(),
+            ],
+            '국내주식': [
+              `차트가 잠깐 조용해졌다.\n${name ? name : ''}`.trim(),
+              `국장 소란 종료. 숨 한 번.\n${name ? name : ''}`.trim(),
+            ],
+            '미국주식': [
+              `밤이 지나갔다.\n${name ? name : ''}`.trim(),
+              `미장 이벤트 종료. 알림도 잠잠.\n${name ? name : ''}`.trim(),
+            ],
+            '부동산': [
+              `동네가 다시 평소 얼굴을 찾았다.\n${name ? name : ''}`.trim(),
+            ],
+            '시장': [
+              `소란이 잠잠해졌다.`,
+              `폭풍 지나가고 고요.`,
+              `이제 평소대로.`,
+            ],
+          };
+
+          // 부동산 계열은 한 번 더 묶어 처리
+          const isRealEstate = ['빌라','오피스텔','아파트','상가','빌딩'].includes(product);
+          const key = isRealEstate ? '부동산' : product;
+          const out = pick(`marketEnd_${key}`, byProduct[key] || byProduct['시장']);
+
+          window.__diaryLastMarketProduct = null;
+          window.__diaryLastMarketName = null;
+          return out;
+        }
+        if (s.startsWith('💡')) {
+          const body = soften(s);
+          const product = window.__diaryLastMarketProduct || '';
+          const name = window.__diaryLastMarketName || '';
+
+          const byProduct = {
+            '코인': [
+              `메모(코인): 멘탈 관리가 수익률이다.\n${body}`,
+              `코인 메모.\n${name ? `(${name})\n` : ''}${body}`.trim(),
+            ],
+            '국내주식': [
+              `메모(국장): 뉴스 한 줄에 흔들리지 말 것.\n${body}`,
+              `국장 메모.\n${name ? `(${name})\n` : ''}${body}`.trim(),
+            ],
+            '미국주식': [
+              `메모(미장): 시차 + 환율 = 체력.\n${body}`,
+              `미장 메모.\n${name ? `(${name})\n` : ''}${body}`.trim(),
+            ],
+            '예금': [
+              `메모(예금): 조용히 이기는 쪽.\n${body}`,
+            ],
+            '적금': [
+              `메모(적금): 루틴이 무기.\n${body}`,
+            ],
+            '부동산': [
+              `메모(부동산): 공실은 악몽, 임차인은 복.\n${body}`,
+              `동네 메모.\n${name ? `(${name})\n` : ''}${body}`.trim(),
+            ],
+            '노동': [
+              `메모(노동): 버티는 사람이 이긴다.\n${body}`,
+            ],
+          };
+
+          const isRealEstate = ['빌라','오피스텔','아파트','상가','빌딩'].includes(product);
+          const key = isRealEstate ? '부동산' : product;
+
+          if (key && byProduct[key]) return pick(`memo_${key}`, byProduct[key]);
+          return pick('memo', [
+            `메모.\n${body}`,
+            `적어둔다.\n${body}`,
+            `까먹기 전에 기록.\n${body}`,
+          ]);
+        }
+
+        // 업그레이드
+        if (s.startsWith('🎁') && s.includes('해금')) {
+          const body = soften(s);
+          // 예) "🎁 새 업그레이드 해금: 💰 예금 이자율 상승"
+          const name = (s.match(/해금:\s*(.+)$/))?.[1]?.trim() || '';
+          const detect = (txt) => {
+            const t = String(txt || '');
+            if (t.includes('예금')) return '예금';
+            if (t.includes('적금')) return '적금';
+            if (t.includes('미국주식') || t.includes('미장') || t.includes('🇺🇸')) return '미국주식';
+            if (t.includes('코인') || t.includes('₿') || t.includes('암호')) return '코인';
+            if (t.includes('주식')) return '국내주식';
+            if (t.includes('빌딩')) return '빌딩';
+            if (t.includes('상가')) return '상가';
+            if (t.includes('아파트')) return '아파트';
+            if (t.includes('오피스텔')) return '오피스텔';
+            if (t.includes('빌라')) return '빌라';
+            if (t.includes('월세') || t.includes('부동산')) return '부동산';
+            if (t.includes('클릭') || t.includes('노동') || t.includes('업무') || t.includes('CEO') || t.includes('커리어')) return '노동';
+            return '';
+          };
+          const product = detect(`${name} ${body}`) || '기본';
+
+          const byProduct = {
+            '노동': [
+              `일을 ‘덜 힘들게’ 만드는 방법이 생겼다.\n${name ? name : body}`,
+              `업무 스킬이 하나 늘었다.\n${name ? name : body}`,
+              `손끝이 더 빨라질 준비.\n${name ? name : body}`,
+            ],
+            '예금': [
+              `예금이 더 조용히 벌어다 주겠지.\n${name ? name : body}`,
+              `안정 쪽에 옵션이 하나 추가됐다.\n${name ? name : body}`,
+            ],
+            '적금': [
+              `루틴 강화 카드가 열렸다.\n${name ? name : body}`,
+              `꾸준함을 돕는 장치가 생겼다.\n${name ? name : body}`,
+            ],
+            '국내주식': [
+              `차트 싸움에 새 무기가 생겼다.\n${name ? name : body}`,
+              `국장 대응력이 올라갈 것 같다.\n${name ? name : body}`,
+            ],
+            '미국주식': [
+              `시차를 버틸 장비가 하나 생겼다.\n${name ? name : body}`,
+              `달러 쪽 옵션이 열린다.\n${name ? name : body}`,
+            ],
+            '코인': [
+              `코인판에서 버틸 도구가 생겼다.\n${name ? name : body}`,
+              `멘탈을 지키는 업그레이드…였으면.\n${name ? name : body}`,
+            ],
+            '빌라': [
+              `빌라 운영이 조금은 편해질지도.\n${name ? name : body}`,
+            ],
+            '오피스텔': [
+              `오피스텔 쪽이 한 단계 나아간다.\n${name ? name : body}`,
+            ],
+            '아파트': [
+              `아파트는 디테일에서 돈이 난다.\n${name ? name : body}`,
+            ],
+            '상가': [
+              `상가는 세팅이 반이다.\n${name ? name : body}`,
+            ],
+            '빌딩': [
+              `빌딩은 관리가 곧 수익이다.\n${name ? name : body}`,
+            ],
+            '부동산': [
+              `부동산 운영에 옵션이 하나 추가됐다.\n${name ? name : body}`,
+              `월세를 ‘조금 더’ 만들 방법.\n${name ? name : body}`,
+            ],
+            '기본': [
+              `새로운 방법이 보였다.\n${name ? name : body}`,
+              `선택지가 늘었다.\n${name ? name : body}`,
+              `이제부터가 시작일지도.\n${name ? name : body}`,
+            ]
+          };
+
+          return pick(`upgradeUnlock_${product}`, byProduct[product] || byProduct['기본']);
+        }
+        if (s.startsWith('✅') && s.includes('구매!')) {
+          const body = soften(s);
+          // 예) "✅ 💰 예금 이자율 상승 구매! 예금 수익 2배"
+          const m = s.match(/^✅\s*(.+?)\s*구매!\s*(.*)$/);
+          const upName = (m?.[1] || '').trim();
+          const upDesc = (m?.[2] || '').trim();
+
+          const detect = (txt) => {
+            const t = String(txt || '');
+            if (t.includes('예금')) return '예금';
+            if (t.includes('적금')) return '적금';
+            if (t.includes('미국주식') || t.includes('미장') || t.includes('🇺🇸')) return '미국주식';
+            if (t.includes('코인') || t.includes('₿') || t.includes('암호')) return '코인';
+            if (t.includes('주식')) return '국내주식';
+            if (t.includes('빌딩')) return '빌딩';
+            if (t.includes('상가')) return '상가';
+            if (t.includes('아파트')) return '아파트';
+            if (t.includes('오피스텔')) return '오피스텔';
+            if (t.includes('빌라')) return '빌라';
+            if (t.includes('월세') || t.includes('부동산')) return '부동산';
+            if (t.includes('클릭') || t.includes('노동') || t.includes('업무') || t.includes('CEO') || t.includes('커리어')) return '노동';
+            return '';
+          };
+
+          const product = detect(`${upName} ${upDesc} ${body}`) || '기본';
+          const core = [upName, upDesc].filter(Boolean).join(' — ') || body;
+
+          const byProduct = {
+            '노동': [
+              `일하는 방식이 바뀌었다.\n${core}`,
+              `업무 스킬을 장착했다.\n${core}`,
+              `손이 더 빨라질 거다. 아마도.\n${core}`,
+            ],
+            '예금': [
+              `예금은 조용히 강해진다.\n${core}`,
+              `안정 쪽을 더 단단히 했다.\n${core}`,
+            ],
+            '적금': [
+              `루틴을 업그레이드했다.\n${core}`,
+              `꾸준함에 부스터 하나.\n${core}`,
+            ],
+            '국내주식': [
+              `차트 싸움에 장비를 추가했다.\n${core}`,
+              `국장 대응력 상승.\n${core}`,
+            ],
+            '미국주식': [
+              `시차를 버틸 장비 장착.\n${core}`,
+              `달러 쪽을 조금 더 믿어보기로.\n${core}`,
+            ],
+            '코인': [
+              `코인판에서 살아남을 장비.\n${core}`,
+              `멘탈 보호 장치…였으면.\n${core}`,
+            ],
+            '빌라': [
+              `빌라 운영을 손봤다.\n${core}`,
+            ],
+            '오피스텔': [
+              `오피스텔 쪽을 업그레이드했다.\n${core}`,
+            ],
+            '아파트': [
+              `아파트는 디테일.\n${core}`,
+            ],
+            '상가': [
+              `상가는 세팅이 반이다.\n${core}`,
+            ],
+            '빌딩': [
+              `빌딩은 관리가 수익이다.\n${core}`,
+            ],
+            '부동산': [
+              `월세 쪽을 손봤다.\n${core}`,
+              `부동산 운영이 한 단계 올라갔다.\n${core}`,
+            ],
+            '기본': [
+              `필요한 걸 갖췄다.\n${body}`,
+              `업그레이드 완료. 조금은 편해지겠지.\n${body}`,
+              `나 자신에게 투자.\n${body}`,
+            ]
+          };
+
+          return pick(`upgradeBuy_${product}`, byProduct[product] || byProduct['기본']);
+        }
+        if (s.startsWith('⚠️')) {
+          const body = soften(s);
+          return pick('warn', [
+            `찜찜한 기분이 남았다.\n${body}`,
+            `뭔가 삐끗한 느낌.\n${body}`,
+            `일단 기록만 남긴다.\n${body}`,
+          ]);
+        }
+
+        // 기본
+        const base = soften(s);
+        return pick('default', [
+          base,
+          `그냥 적어둔다.\n${base}`,
+          `오늘의 기록.\n${base}`,
+          `아무튼, ${base}`,
+        ]);
+      }
+
+      updateDiaryMeta();
+      const diaryText = diaryize(text);
+      if (!diaryText) return;
+
       const p = document.createElement('p');
-      p.innerText = text;
+      p.innerHTML = `<span class="diary-time">${timeStamp}</span>${diaryText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}`;
       elLog.prepend(p);
     }
     
@@ -1944,18 +2612,43 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       
       const unlock = unlockMessages[productName];
-      // 버그 수정: 아직 해금되지 않았고, 해금 조건을 충족했을 때만 실행
-      if (unlock && !unlockedProducts[unlock.next] && isProductUnlocked(unlock.next)) {
-        unlockedProducts[unlock.next] = true; // 해금 상태 기록
-        addLog(unlock.msg);
-        
-        // 해금 애니메이션
-        const itemId = unlock.next + 'Item';
-        const itemElement = document.getElementById(itemId);
-        if (itemElement) {
-          itemElement.classList.add('just-unlocked');
-          setTimeout(() => itemElement.classList.remove('just-unlocked'), 1000);
-        }
+      if (!unlock) return;
+      
+      // 버그 수정: 이미 해금 기록이 있으면 스킵
+      if (unlockedProducts[unlock.next]) return;
+      
+      // 해금 조건을 충족했는지 확인
+      if (!isProductUnlocked(unlock.next)) return;
+      
+      // 이미 보유하고 있는 상품은 해금 로그를 출력하지 않음 (중복 방지)
+      const productCounts = {
+        'savings': savings,
+        'bond': bonds,
+        'usStock': usStocks,
+        'crypto': cryptos,
+        'villa': villas,
+        'officetel': officetels,
+        'apartment': apartments,
+        'shop': shops,
+        'building': buildings
+      };
+      
+      // 이미 보유하고 있으면 해금 로그를 출력하지 않음
+      if (productCounts[unlock.next] > 0) {
+        unlockedProducts[unlock.next] = true; // 해금 상태만 기록
+        return;
+      }
+      
+      // 새로 해금된 경우에만 로그 출력 및 애니메이션
+      unlockedProducts[unlock.next] = true;
+      addLog(unlock.msg);
+      
+      // 해금 애니메이션
+      const itemId = unlock.next + 'Item';
+      const itemElement = document.getElementById(itemId);
+      if (itemElement) {
+        itemElement.classList.add('just-unlocked');
+        setTimeout(() => itemElement.classList.remove('just-unlocked'), 1000);
       }
     }
     
@@ -2889,7 +3582,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         safeText(elCurrentCareer, currentCareer.name);
         safeText(elClickIncomeButton, formatKoreanNumber(getClickIncome()));
-        safeText(elClickIncomeLabel, formatKoreanNumber(getClickIncome()));
         
         // 직급별 배경 이미지 업데이트
         if (elWorkArea && currentCareer.bgImage) {
@@ -2900,8 +3592,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (nextCareer) {
-          safeText(elNextCareerDesc, `다음: ${nextCareer.name} (${nextCareer.multiplier}배 수익)`);
-          
           // 승진 진행률 계산 및 표시 (개선된 형식)
           const progress = Math.min((totalClicks / nextCareer.requiredClicks) * 100, 100);
           const remaining = Math.max(0, nextCareer.requiredClicks - totalClicks);
@@ -2932,7 +3622,6 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('nextCareer:', nextCareer.name);
           console.log('=============================');
         } else {
-          safeText(elNextCareerDesc, "최고 직급 달성!");
           if (elCareerProgress) {
             elCareerProgress.style.width = '100%';
             elCareerProgress.setAttribute('aria-valuenow', 100);
@@ -2953,7 +3642,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       // --- (B) 나머지 UI 갱신 (금융/부동산/업그레이드 등) ---
-      safeText(elCash, formatCashDisplay(cash));
+      safeText(elCash, formatHeaderCash(cash));
       // 금융상품 집계 및 툴팁
       const totalFinancial = getTotalFinancialProducts();
       safeText(elFinancial, formatKoreanNumber(totalFinancial));
@@ -3203,18 +3892,48 @@ document.addEventListener('DOMContentLoaded', () => {
       // 통계 탭 업데이트
       updateStatsTab();
     }
+    
+    // 통계 섹션 초기화 (DOMContentLoaded 이후에 실행)
+    setTimeout(() => {
+      initStatsCollapsible();
+    }, 100);
 
     // 순차 해금 시스템 - 잠금 상태 업데이트
     function updateProductLockStates() {
+      // 해금 조건 메시지
+      const unlockHints = {
+        'savings': '예금 1개 필요',
+        'bond': '적금 1개 필요',
+        'usStock': '국내주식 1개 필요',
+        'crypto': '미국주식 1개 필요',
+        'villa': '코인 1개 필요',
+        'officetel': '빌라 1채 필요',
+        'apartment': '오피스텔 1채 필요',
+        'shop': '아파트 1채 필요',
+        'building': '상가 1채 필요'
+      };
+      
       // 금융상품 잠금 상태
       const savingsItem = document.getElementById('savingsItem');
       const bondItem = document.getElementById('bondItem');
       
       if (savingsItem) {
-        savingsItem.classList.toggle('locked', !isProductUnlocked('savings'));
+        const isLocked = !isProductUnlocked('savings');
+        savingsItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          savingsItem.setAttribute('data-unlock-hint', unlockHints['savings']);
+        } else {
+          savingsItem.removeAttribute('data-unlock-hint');
+        }
       }
       if (bondItem) {
-        bondItem.classList.toggle('locked', !isProductUnlocked('bond'));
+        const isLocked = !isProductUnlocked('bond');
+        bondItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          bondItem.setAttribute('data-unlock-hint', unlockHints['bond']);
+        } else {
+          bondItem.removeAttribute('data-unlock-hint');
+        }
       }
       
       // 미국주식과 코인 잠금 상태
@@ -3222,10 +3941,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const cryptoItem = document.getElementById('cryptoItem');
       
       if (usStockItem) {
-        usStockItem.classList.toggle('locked', !isProductUnlocked('usStock'));
+        const isLocked = !isProductUnlocked('usStock');
+        usStockItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          usStockItem.setAttribute('data-unlock-hint', unlockHints['usStock']);
+        } else {
+          usStockItem.removeAttribute('data-unlock-hint');
+        }
       }
       if (cryptoItem) {
-        cryptoItem.classList.toggle('locked', !isProductUnlocked('crypto'));
+        const isLocked = !isProductUnlocked('crypto');
+        cryptoItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          cryptoItem.setAttribute('data-unlock-hint', unlockHints['crypto']);
+        } else {
+          cryptoItem.removeAttribute('data-unlock-hint');
+        }
       }
       
       // 부동산 잠금 상태
@@ -3236,19 +3967,49 @@ document.addEventListener('DOMContentLoaded', () => {
       const buildingItem = document.getElementById('buildingItem');
       
       if (villaItem) {
-        villaItem.classList.toggle('locked', !isProductUnlocked('villa'));
+        const isLocked = !isProductUnlocked('villa');
+        villaItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          villaItem.setAttribute('data-unlock-hint', unlockHints['villa']);
+        } else {
+          villaItem.removeAttribute('data-unlock-hint');
+        }
       }
       if (officetelItem) {
-        officetelItem.classList.toggle('locked', !isProductUnlocked('officetel'));
+        const isLocked = !isProductUnlocked('officetel');
+        officetelItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          officetelItem.setAttribute('data-unlock-hint', unlockHints['officetel']);
+        } else {
+          officetelItem.removeAttribute('data-unlock-hint');
+        }
       }
       if (aptItem) {
-        aptItem.classList.toggle('locked', !isProductUnlocked('apartment'));
+        const isLocked = !isProductUnlocked('apartment');
+        aptItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          aptItem.setAttribute('data-unlock-hint', unlockHints['apartment']);
+        } else {
+          aptItem.removeAttribute('data-unlock-hint');
+        }
       }
       if (shopItem) {
-        shopItem.classList.toggle('locked', !isProductUnlocked('shop'));
+        const isLocked = !isProductUnlocked('shop');
+        shopItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          shopItem.setAttribute('data-unlock-hint', unlockHints['shop']);
+        } else {
+          shopItem.removeAttribute('data-unlock-hint');
+        }
       }
       if (buildingItem) {
-        buildingItem.classList.toggle('locked', !isProductUnlocked('building'));
+        const isLocked = !isProductUnlocked('building');
+        buildingItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          buildingItem.setAttribute('data-unlock-hint', unlockHints['building']);
+        } else {
+          buildingItem.removeAttribute('data-unlock-hint');
+        }
       }
     }
     
@@ -3943,6 +4704,222 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ 수량 선택: 1개/10개/100개');
     console.log('💡 사용법: 상단 "구매/판매" 버튼으로 모드 전환 후 거래하세요!');
     
+    // ======= 통계 섹션 접기/펼치기 기능 =======
+    let statsCollapsibleInitialized = false;
+    function initStatsCollapsible() {
+      if (statsCollapsibleInitialized) return;
+      statsCollapsibleInitialized = true;
+      
+      // 이벤트 위임 사용 (동적으로 추가되는 요소도 처리)
+      const statsTab = document.getElementById('statsTab');
+      if (statsTab) {
+        statsTab.addEventListener('click', (e) => {
+          // toggle 아이콘이나 toggle 제목을 클릭했을 때
+          const toggle = e.target.closest('.stats-toggle');
+          const toggleIcon = e.target.closest('.toggle-icon');
+          if (toggle || toggleIcon) {
+            const section = (toggle || toggleIcon).closest('.stats-section');
+            if (section && section.classList.contains('collapsible')) {
+              section.classList.toggle('collapsed');
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }
+        });
+      }
+    }
+    
+    // ======= 성장 추적 데이터 저장 =======
+    let hourlyEarningsHistory = []; // 최근 1시간 수익 기록
+    let dailyEarningsHistory = []; // 최근 24시간 수익 기록
+    let lastEarningsSnapshot = 0; // 마지막 수익 스냅샷
+    let lastSnapshotTime = Date.now();
+    
+    function updateGrowthTracking() {
+      const now = Date.now();
+      const currentEarnings = depositsLifetime + savingsLifetime + bondsLifetime + 
+                              usStocksLifetime + cryptosLifetime +
+                              villasLifetime + officetelsLifetime + apartmentsLifetime +
+                              shopsLifetime + buildingsLifetime + totalLaborIncome;
+      
+      // 1시간 이내 기록 유지
+      hourlyEarningsHistory = hourlyEarningsHistory.filter(entry => now - entry.time < 3600000);
+      // 24시간 이내 기록 유지
+      dailyEarningsHistory = dailyEarningsHistory.filter(entry => now - entry.time < 86400000);
+      
+      // 1분마다 스냅샷 저장
+      if (now - lastSnapshotTime >= 60000) {
+        hourlyEarningsHistory.push({ time: now, earnings: currentEarnings });
+        dailyEarningsHistory.push({ time: now, earnings: currentEarnings });
+        lastSnapshotTime = now;
+      }
+      
+      // 최근 1시간 수익 계산
+      const oneHourAgo = now - 3600000;
+      const hourlyEarnings = hourlyEarningsHistory.length > 0
+        ? currentEarnings - hourlyEarningsHistory[0].earnings
+        : 0;
+      
+      // 최근 24시간 수익 계산
+      const oneDayAgo = now - 86400000;
+      const dailyEarnings = dailyEarningsHistory.length > 0
+        ? currentEarnings - dailyEarningsHistory[0].earnings
+        : 0;
+      
+      // 성장 속도 계산 (시간당 증가율)
+      const growthRate = lastEarningsSnapshot > 0 && (now - lastSnapshotTime) > 0
+        ? ((currentEarnings - lastEarningsSnapshot) / lastEarningsSnapshot) * (3600000 / (now - lastSnapshotTime)) * 100
+        : 0;
+      
+      // 마일스톤 계산
+      const milestones = [1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000];
+      let nextMilestone = milestones.find(m => m > currentEarnings) || '최고 달성';
+      if (nextMilestone !== '최고 달성') {
+        const remaining = nextMilestone - currentEarnings;
+        nextMilestone = `${formatStatsNumber(remaining)} 남음`;
+      }
+      
+      // UI 업데이트
+      safeText(document.getElementById('hourlyEarnings'), formatCashDisplay(Math.max(0, hourlyEarnings)));
+      safeText(document.getElementById('dailyEarnings'), formatCashDisplay(Math.max(0, dailyEarnings)));
+      safeText(document.getElementById('growthRate'), `${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(1)}%/시간`);
+      safeText(document.getElementById('nextMilestone'), nextMilestone);
+      
+      lastEarningsSnapshot = currentEarnings;
+    }
+    
+    // ======= 도넛 차트 그리기 =======
+    function drawDonutChart() {
+      const canvas = document.getElementById('assetDonutChart');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = 80;
+      const innerRadius = 50;
+      
+      // 자산 비율 계산
+      const totalAssets = cash + calculateTotalAssetValue();
+      const financialValue = calculateFinancialValue();
+      const propertyValue = calculatePropertyValue();
+      
+      const cashPercent = totalAssets > 0 ? (cash / totalAssets) * 100 : 0;
+      const financialPercent = totalAssets > 0 ? (financialValue / totalAssets) * 100 : 0;
+      const propertyPercent = totalAssets > 0 ? (propertyValue / totalAssets) * 100 : 0;
+      
+      // 배경 원
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.fill();
+      
+      // 각 섹션 그리기
+      let currentAngle = -Math.PI / 2;
+      
+      // 현금
+      if (cashPercent > 0) {
+        const angle = (cashPercent / 100) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + angle);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(94, 234, 212, 0.3)';
+        ctx.fill();
+        currentAngle += angle;
+      }
+      
+      // 금융
+      if (financialPercent > 0) {
+        const angle = (financialPercent / 100) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + angle);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
+        ctx.fill();
+        currentAngle += angle;
+      }
+      
+      // 부동산
+      if (propertyPercent > 0) {
+        const angle = (propertyPercent / 100) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + angle);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.5)';
+        ctx.fill();
+      }
+      
+      // 내부 원 (도넛 효과)
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'var(--bg)';
+      ctx.fill();
+    }
+    
+    function calculateFinancialValue() {
+      let value = 0;
+      if (deposits > 0) {
+        for (let i = 0; i < deposits; i++) {
+          value += getFinancialCost('deposit', i);
+        }
+      }
+      if (savings > 0) {
+        for (let i = 0; i < savings; i++) {
+          value += getFinancialCost('savings', i);
+        }
+      }
+      if (bonds > 0) {
+        for (let i = 0; i < bonds; i++) {
+          value += getFinancialCost('bond', i);
+        }
+      }
+      if (usStocks > 0) {
+        for (let i = 0; i < usStocks; i++) {
+          value += getFinancialCost('usStock', i);
+        }
+      }
+      if (cryptos > 0) {
+        for (let i = 0; i < cryptos; i++) {
+          value += getFinancialCost('crypto', i);
+        }
+      }
+      return value;
+    }
+    
+    function calculatePropertyValue() {
+      let value = 0;
+      if (villas > 0) {
+        for (let i = 0; i < villas; i++) {
+          value += getPropertyCost('villa', i);
+        }
+      }
+      if (officetels > 0) {
+        for (let i = 0; i < officetels; i++) {
+          value += getPropertyCost('officetel', i);
+        }
+      }
+      if (apartments > 0) {
+        for (let i = 0; i < apartments; i++) {
+          value += getPropertyCost('apartment', i);
+        }
+      }
+      if (shops > 0) {
+        for (let i = 0; i < shops; i++) {
+          value += getPropertyCost('shop', i);
+        }
+      }
+      if (buildings > 0) {
+        for (let i = 0; i < buildings; i++) {
+          value += getPropertyCost('building', i);
+        }
+      }
+      return value;
+    }
+    
     // ======= 통계 탭 업데이트 함수 =======
     
     function updateStatsTab() {
@@ -3954,14 +4931,14 @@ document.addEventListener('DOMContentLoaded', () => {
                               villasLifetime + officetelsLifetime + apartmentsLifetime +
                               shopsLifetime + buildingsLifetime + totalLaborIncome;
         
-        safeText(document.getElementById('totalAssets'), formatCashDisplay(totalAssets));
-        safeText(document.getElementById('totalEarnings'), formatCashDisplay(totalEarnings));
+        safeText(document.getElementById('totalAssets'), formatStatsNumber(totalAssets));
+        safeText(document.getElementById('totalEarnings'), formatStatsNumber(totalEarnings));
         safeText(document.getElementById('rpsStats'), formatKoreanNumber(getRps()) + '원/초');
         safeText(document.getElementById('clickIncomeStats'), formatCashDisplay(getClickIncome()));
         
         // 2. 플레이 정보
         safeText(document.getElementById('totalClicksStats'), totalClicks.toLocaleString('ko-KR') + '회');
-        safeText(document.getElementById('laborIncomeStats'), formatCashDisplay(totalLaborIncome));
+        safeText(document.getElementById('laborIncomeStats'), formatStatsNumber(totalLaborIncome));
         
         // 플레이 시간 계산 (누적 플레이시간 시스템)
         const currentSessionTime = Date.now() - sessionStartTime;
@@ -3999,29 +4976,44 @@ document.addEventListener('DOMContentLoaded', () => {
         const propertyPercent = totalEarnings > 0 ? (propertyTotal / totalEarnings * 100) : 0;
         
         // 수익 구조 바
+        const incomeBar = document.querySelector('.income-bar');
         const laborSegment = document.getElementById('laborSegment');
         const financialSegment = document.getElementById('financialSegment');
         const propertySegment = document.getElementById('propertySegment');
         
+        // 애니메이션 클래스 추가
+        if (incomeBar && !incomeBar.classList.contains('animated')) {
+          incomeBar.classList.add('animated');
+        }
+        
         if (laborSegment) {
           laborSegment.style.width = laborPercent.toFixed(1) + '%';
-          laborSegment.querySelector('span').textContent = laborPercent >= 5 
-            ? `🛠️ ${laborPercent.toFixed(1)}%` 
-            : '';
+          const span = laborSegment.querySelector('span');
+          if (span) {
+            span.textContent = laborPercent >= 5 
+              ? `🛠️ ${laborPercent.toFixed(1)}%` 
+              : '';
+          }
         }
         
         if (financialSegment) {
           financialSegment.style.width = financialPercent.toFixed(1) + '%';
-          financialSegment.querySelector('span').textContent = financialPercent >= 5 
-            ? `💰 ${financialPercent.toFixed(1)}%` 
-            : '';
+          const span = financialSegment.querySelector('span');
+          if (span) {
+            span.textContent = financialPercent >= 5 
+              ? `💰 ${financialPercent.toFixed(1)}%` 
+              : '';
+          }
         }
         
         if (propertySegment) {
           propertySegment.style.width = propertyPercent.toFixed(1) + '%';
-          propertySegment.querySelector('span').textContent = propertyPercent >= 5 
-            ? `🏢 ${propertyPercent.toFixed(1)}%` 
-            : '';
+          const span = propertySegment.querySelector('span');
+          if (span) {
+            span.textContent = propertyPercent >= 5 
+              ? `🏢 ${propertyPercent.toFixed(1)}%` 
+              : '';
+          }
         }
         
         // 범례 업데이트
@@ -4029,31 +5021,98 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('financialLegend'), `금융: ${financialPercent.toFixed(1)}%`);
         safeText(document.getElementById('propertyLegend'), `부동산: ${propertyPercent.toFixed(1)}%`);
         
-        // 4. 금융상품 상세
+        // 성장 추적 업데이트
+        updateGrowthTracking();
+        
+        // 도넛 차트 업데이트
+        drawDonutChart();
+        
+        // 4. 금융상품 상세 (수익 기여도 및 총 가치 추가)
+        const totalEarningsForContribution = totalEarnings || 1;
+        
+        // 통계 섹션 잠금 상태 업데이트
+        updateStatsLockStates();
+        
+        // 예금
         safeText(document.getElementById('depositsOwnedStats'), deposits + '개');
-        safeText(document.getElementById('depositsLifetimeStats'), formatCashDisplay(depositsLifetime));
+        safeText(document.getElementById('depositsLifetimeStats'), formatStatsNumber(depositsLifetime));
+        const depositsContribution = totalEarningsForContribution > 0 ? (depositsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('depositsContribution'), `(${depositsContribution}%)`);
+        const depositsValue = deposits > 0 ? calculateFinancialValueForType('deposit', deposits) : 0;
+        safeText(document.getElementById('depositsValue'), formatKoreanNumber(depositsValue));
         
+        // 적금
         safeText(document.getElementById('savingsOwnedStats'), savings + '개');
-        safeText(document.getElementById('savingsLifetimeStats'), formatCashDisplay(savingsLifetime));
+        safeText(document.getElementById('savingsLifetimeStats'), formatStatsNumber(savingsLifetime));
+        const savingsContribution = totalEarningsForContribution > 0 ? (savingsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('savingsContribution'), `(${savingsContribution}%)`);
+        const savingsValue = savings > 0 ? calculateFinancialValueForType('savings', savings) : 0;
+        safeText(document.getElementById('savingsValue'), formatKoreanNumber(savingsValue));
         
+        // 주식
         safeText(document.getElementById('bondsOwnedStats'), bonds + '개');
-        safeText(document.getElementById('bondsLifetimeStats'), formatCashDisplay(bondsLifetime));
+        safeText(document.getElementById('bondsLifetimeStats'), formatStatsNumber(bondsLifetime));
+        const bondsContribution = totalEarningsForContribution > 0 ? (bondsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('bondsContribution'), `(${bondsContribution}%)`);
+        const bondsValue = bonds > 0 ? calculateFinancialValueForType('bond', bonds) : 0;
+        safeText(document.getElementById('bondsValue'), formatKoreanNumber(bondsValue));
         
-        // 5. 부동산 상세
+        // 미국주식
+        safeText(document.getElementById('usStocksOwnedStats'), usStocks + '개');
+        safeText(document.getElementById('usStocksLifetimeStats'), formatStatsNumber(usStocksLifetime));
+        const usStocksContribution = totalEarningsForContribution > 0 ? (usStocksLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('usStocksContribution'), `(${usStocksContribution}%)`);
+        const usStocksValue = usStocks > 0 ? calculateFinancialValueForType('usStock', usStocks) : 0;
+        safeText(document.getElementById('usStocksValue'), formatKoreanNumber(usStocksValue));
+        
+        // 코인
+        safeText(document.getElementById('cryptosOwnedStats'), cryptos + '개');
+        safeText(document.getElementById('cryptosLifetimeStats'), formatStatsNumber(cryptosLifetime));
+        const cryptosContribution = totalEarningsForContribution > 0 ? (cryptosLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('cryptosContribution'), `(${cryptosContribution}%)`);
+        const cryptosValue = cryptos > 0 ? calculateFinancialValueForType('crypto', cryptos) : 0;
+        safeText(document.getElementById('cryptosValue'), formatKoreanNumber(cryptosValue));
+        
+        // 5. 부동산 상세 (수익 기여도 및 총 가치 추가)
+        // 빌라
         safeText(document.getElementById('villasOwnedStats'), villas + '채');
         safeText(document.getElementById('villasLifetimeStats'), formatCashDisplay(villasLifetime));
+        const villasContribution = totalEarningsForContribution > 0 ? (villasLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('villasContribution'), `(${villasContribution}%)`);
+        const villasValue = villas > 0 ? calculatePropertyValueForType('villa', villas) : 0;
+        safeText(document.getElementById('villasValue'), formatCashDisplay(villasValue));
         
+        // 오피스텔
         safeText(document.getElementById('officetelsOwnedStats'), officetels + '채');
         safeText(document.getElementById('officetelsLifetimeStats'), formatCashDisplay(officetelsLifetime));
+        const officetelsContribution = totalEarningsForContribution > 0 ? (officetelsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('officetelsContribution'), `(${officetelsContribution}%)`);
+        const officetelsValue = officetels > 0 ? calculatePropertyValueForType('officetel', officetels) : 0;
+        safeText(document.getElementById('officetelsValue'), formatCashDisplay(officetelsValue));
         
+        // 아파트
         safeText(document.getElementById('apartmentsOwnedStats'), apartments + '채');
         safeText(document.getElementById('apartmentsLifetimeStats'), formatCashDisplay(apartmentsLifetime));
+        const apartmentsContribution = totalEarningsForContribution > 0 ? (apartmentsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('apartmentsContribution'), `(${apartmentsContribution}%)`);
+        const apartmentsValue = apartments > 0 ? calculatePropertyValueForType('apartment', apartments) : 0;
+        safeText(document.getElementById('apartmentsValue'), formatCashDisplay(apartmentsValue));
         
+        // 상가
         safeText(document.getElementById('shopsOwnedStats'), shops + '채');
         safeText(document.getElementById('shopsLifetimeStats'), formatCashDisplay(shopsLifetime));
+        const shopsContribution = totalEarningsForContribution > 0 ? (shopsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('shopsContribution'), `(${shopsContribution}%)`);
+        const shopsValue = shops > 0 ? calculatePropertyValueForType('shop', shops) : 0;
+        safeText(document.getElementById('shopsValue'), formatCashDisplay(shopsValue));
         
+        // 빌딩
         safeText(document.getElementById('buildingsOwnedStats'), buildings + '채');
         safeText(document.getElementById('buildingsLifetimeStats'), formatCashDisplay(buildingsLifetime));
+        const buildingsContribution = totalEarningsForContribution > 0 ? (buildingsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
+        safeText(document.getElementById('buildingsContribution'), `(${buildingsContribution}%)`);
+        const buildingsValue = buildings > 0 ? calculatePropertyValueForType('building', buildings) : 0;
+        safeText(document.getElementById('buildingsValue'), formatCashDisplay(buildingsValue));
         
         // 6. 효율 분석
         const efficiencies = calculateEfficiencies();
@@ -4067,6 +5126,70 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) {
         console.error('Stats tab update failed:', e);
       }
+    }
+    
+    // 금융상품 타입별 가치 계산
+    function calculateFinancialValueForType(type, count) {
+      let value = 0;
+      for (let i = 0; i < count; i++) {
+        value += getFinancialCost(type, i);
+      }
+      return value;
+    }
+    
+    // 부동산 타입별 가치 계산
+    function calculatePropertyValueForType(type, count) {
+      let value = 0;
+      for (let i = 0; i < count; i++) {
+        value += getPropertyCost(type, i);
+      }
+      return value;
+    }
+    
+    // 통계 섹션 잠금 상태 업데이트
+    function updateStatsLockStates() {
+      // 금융상품 잠금 상태
+      const statsProductMap = {
+        'savings': { id: 'savingsOwnedStats', name: '적금' },
+        'bond': { id: 'bondsOwnedStats', name: '주식' },
+        'usStock': { id: 'usStocksOwnedStats', name: '미국주식' },
+        'crypto': { id: 'cryptosOwnedStats', name: '코인' }
+      };
+      
+      // 부동산 잠금 상태
+      const statsPropertyMap = {
+        'villa': { id: 'villasOwnedStats', name: '빌라' },
+        'officetel': { id: 'officetelsOwnedStats', name: '오피스텔' },
+        'apartment': { id: 'apartmentsOwnedStats', name: '아파트' },
+        'shop': { id: 'shopsOwnedStats', name: '상가' },
+        'building': { id: 'buildingsOwnedStats', name: '빌딩' }
+      };
+      
+      // 금융상품 잠금 상태 적용
+      Object.keys(statsProductMap).forEach(productName => {
+        const productInfo = statsProductMap[productName];
+        const statElement = document.getElementById(productInfo.id);
+        if (statElement) {
+          const assetRow = statElement.closest('.asset-row');
+          if (assetRow) {
+            const isLocked = !isProductUnlocked(productName);
+            assetRow.classList.toggle('locked', isLocked);
+          }
+        }
+      });
+      
+      // 부동산 잠금 상태 적용
+      Object.keys(statsPropertyMap).forEach(propertyName => {
+        const propertyInfo = statsPropertyMap[propertyName];
+        const statElement = document.getElementById(propertyInfo.id);
+        if (statElement) {
+          const assetRow = statElement.closest('.asset-row');
+          if (assetRow) {
+            const isLocked = !isProductUnlocked(propertyName);
+            assetRow.classList.toggle('locked', isLocked);
+          }
+        }
+      });
     }
     
     // 총 자산 가치 계산 (현재 보유 자산을 현재가로 환산)
@@ -4156,21 +5279,158 @@ document.addEventListener('DOMContentLoaded', () => {
       const achievementGrid = document.getElementById('achievementGrid');
       if (!achievementGrid) return;
       
+      // ======= 업적 툴팁(포털) 시스템 =======
+      // - 툴팁 DOM은 1개만 사용 (겹침/누수/overflow 문제 방지)
+      // - 이벤트는 그리드에 위임
+      if (!window.__achievementTooltipPortalInitialized) {
+        window.__achievementTooltipPortalInitialized = true;
+
+        const ensureTooltipEl = () => {
+          let el = document.getElementById('achievementTooltip');
+          if (!el) {
+            el = document.createElement('div');
+            el.id = 'achievementTooltip';
+            el.className = 'achievement-tooltip';
+            el.setAttribute('role', 'tooltip');
+            el.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(el);
+          }
+          return el;
+        };
+
+        const getAchText = (achId) => {
+          const ach = ACHIEVEMENTS.find(a => a.id === achId);
+          if (!ach) return '';
+          return ach.unlocked
+            ? `${ach.name}\n${ach.desc}\n✅ 달성!`
+            : `${ach.name}\n${ach.desc}\n🔒 미달성`;
+        };
+
+        const hideTooltip = () => {
+          const el = document.getElementById('achievementTooltip');
+          if (!el) return;
+          el.classList.remove('active', 'bottom');
+          el.style.left = '';
+          el.style.top = '';
+          el.style.bottom = '';
+          el.style.opacity = '';
+          el.style.visibility = '';
+          el.style.pointerEvents = '';
+          el.setAttribute('aria-hidden', 'true');
+          window.__achievementTooltipAnchorId = null;
+        };
+
+        const showTooltipForIcon = (iconEl) => {
+          const el = ensureTooltipEl();
+          const achId = iconEl?.dataset?.achievementId || iconEl?.id?.replace(/^ach_/, '');
+          if (!achId) return;
+
+          // 동일 아이콘 재클릭: 토글
+          if (window.__achievementTooltipAnchorId === achId && el.classList.contains('active')) {
+            hideTooltip();
+            return;
+          }
+
+          // 항상 1개만 보이도록 초기화
+          hideTooltip();
+
+          el.textContent = getAchText(achId);
+          el.setAttribute('aria-hidden', 'false');
+
+          // 측정을 위해 "보이되 투명/비활성" 상태로 먼저 활성화
+          el.classList.add('active');
+          el.style.opacity = '0';
+          el.style.visibility = 'hidden';
+          el.style.pointerEvents = 'none';
+          el.style.left = '0px';
+          el.style.top = '0px';
+          el.style.bottom = 'auto';
+
+          // 크기 측정
+          void el.offsetHeight;
+          const tooltipRect = el.getBoundingClientRect();
+
+          const iconRect = iconEl.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+
+          // 아이콘 중앙 기준
+          let left = iconRect.left + (iconRect.width / 2);
+          let top = iconRect.top - tooltipRect.height - 8;
+          let showBelow = false;
+
+          if (top < 10) {
+            top = iconRect.bottom + 8;
+            showBelow = true;
+          }
+          if (top + tooltipRect.height > viewportHeight - 10) {
+            top = viewportHeight - tooltipRect.height - 10;
+          }
+
+          // 좌/우 경계
+          if (left + (tooltipRect.width / 2) > viewportWidth - 10) {
+            left = viewportWidth - (tooltipRect.width / 2) - 10;
+          }
+          if (left - (tooltipRect.width / 2) < 10) {
+            left = (tooltipRect.width / 2) + 10;
+          }
+
+          el.style.left = `${left}px`;
+          el.style.top = `${top}px`;
+          el.style.bottom = 'auto';
+          el.classList.toggle('bottom', showBelow);
+
+          // 즉시 표시
+          el.style.visibility = 'visible';
+          el.style.opacity = '1';
+          el.style.pointerEvents = 'none'; // 요구사항: 아이콘에서 벗어나면 사라짐 (툴팁 상호작용 불필요)
+
+          window.__achievementTooltipAnchorId = achId;
+        };
+
+        // 클릭: 즉시 표시/토글
+        achievementGrid.addEventListener('click', (e) => {
+          const iconEl = e.target.closest('.achievement-icon');
+          if (!iconEl) return;
+          e.stopPropagation();
+          showTooltipForIcon(iconEl);
+        });
+
+        // 아이콘에서 커서가 벗어나면 닫기
+        // mouseleave는 버블링이 없어 pointerout으로 위임 처리
+        achievementGrid.addEventListener('pointerout', (e) => {
+          const fromIcon = e.target.closest?.('.achievement-icon');
+          if (!fromIcon) return;
+          // 아이콘 밖으로 나가는 순간 닫기 (요구사항)
+          hideTooltip();
+        });
+
+        // 바깥 클릭/스크롤/탭 전환 등으로 정리
+        document.addEventListener('click', () => hideTooltip(), true);
+        window.addEventListener('scroll', () => hideTooltip(), true);
+        window.addEventListener('resize', () => hideTooltip(), true);
+      }
+
       // 이미 생성되어 있으면 업데이트만
       if (achievementGrid.children.length > 0) {
         let unlockedCount = 0;
         Object.values(ACHIEVEMENTS).forEach(ach => {
           const icon = document.getElementById('ach_' + ach.id);
-          if (icon) {
-            if (ach.unlocked) {
-              icon.classList.add('unlocked');
-              icon.classList.remove('locked');
-              unlockedCount++;
-            } else {
-              icon.classList.add('locked');
-              icon.classList.remove('unlocked');
-            }
+          if (!icon) return;
+
+          if (ach.unlocked) {
+            icon.classList.add('unlocked');
+            icon.classList.remove('locked');
+            unlockedCount++;
+          } else {
+            icon.classList.add('locked');
+            icon.classList.remove('unlocked');
           }
+
+          // 네이티브 title은 항상 최신으로 유지 (툴팁 대체/접근성)
+          icon.title = ach.unlocked
+            ? `${ach.name}\n${ach.desc}\n✅ 달성!`
+            : `${ach.name}\n${ach.desc}\n🔒 미달성`;
         });
         
         const totalAchievements = Object.keys(ACHIEVEMENTS).length;
@@ -4187,6 +5447,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const icon = document.createElement('div');
         icon.className = 'achievement-icon';
         icon.id = 'ach_' + ach.id;
+        icon.dataset.achievementId = ach.id;
         icon.textContent = ach.icon;
         icon.title = ach.unlocked 
           ? `${ach.name}\n${ach.desc}\n✅ 달성!` 

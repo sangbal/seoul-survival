@@ -147,6 +147,43 @@
 
     .log{max-height:140px; overflow:auto; padding-right:6px}
     .log p{margin:0 0 6px}
+    /* ======= 일기장(노동 섹션) ======= */
+    .diary-card h2{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:10px;
+      margin:0 0 8px;
+      font-size:16px;
+    }
+    .diary-meta{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+    .diary-meta b{color:var(--text); font-weight:600}
+    .diary-log{
+      max-height:180px;
+      padding:10px 10px;
+      border-radius:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .diary-log p{
+      margin:0 0 10px;
+      line-height:1.6;
+      white-space:pre-line;
+    }
+    .diary-log p:last-child{margin-bottom:0}
+    .diary-time{
+      color:var(--muted);
+      font-variant-numeric: tabular-nums;
+      margin-right:6px;
+    }
+
     .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:rgba(94,234,212,.12); color:var(--accent); font-size:12px}
     
     /* 진행률 바 스타일 */
@@ -460,11 +497,22 @@
     
     /* 순차 해금 시스템 - 잠김 상태 */
     .row.locked {
-      opacity: 0.3;
+      opacity: 0.5;
       cursor: not-allowed;
       filter: grayscale(0.9);
       position: relative;
       pointer-events: none;
+    }
+    
+    /* 잠긴 상품의 내용 숨기기 */
+    .row.locked .meta .desc {
+      display: none;
+    }
+    
+    /* 잠긴 상품의 제목만 표시 (회색 처리) */
+    .row.locked .meta .title {
+      color: var(--muted);
+      opacity: 0.6;
     }
     
     .row.locked::before {
@@ -1118,10 +1166,74 @@
       box-shadow: 0 4px 8px rgba(0,0,0,.2);
     }
     
+    .stats-section {
+      position: relative;
+    }
+    
+    .stats-section.stats-pinned {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg);
+      padding: 12px;
+      margin: -12px -12px 12px -12px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    
     .stats-section h3 {
       margin: 0 0 12px 0;
       font-size: 16px;
       color: var(--accent);
+    }
+    
+    .stats-toggle {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: var(--accent);
+      transition: color 0.2s;
+    }
+    
+    .stats-toggle:hover {
+      color: var(--accent);
+      opacity: 0.8;
+    }
+    
+    .toggle-icon {
+      font-size: 12px;
+      transition: transform 0.3s;
+    }
+    
+    .stats-section.collapsed .toggle-icon {
+      transform: rotate(-90deg);
+    }
+    
+    .stats-content {
+      max-height: 2000px;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, opacity 0.3s;
+      opacity: 1;
+    }
+    
+    .stats-section.collapsed .stats-content {
+      max-height: 0;
+      opacity: 0;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .stat-item.highlight {
+      background: linear-gradient(135deg, rgba(94, 234, 212, 0.1), rgba(94, 234, 212, 0.05));
+      border: 1px solid rgba(94, 234, 212, 0.2);
+    }
+    
+    .stat-item.milestone {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+      border: 1px solid rgba(245, 158, 11, 0.2);
     }
     
     /* 통계 그리드 */
@@ -1173,8 +1285,40 @@
       font-size: 12px;
       font-weight: 600;
       color: white;
-      transition: all 0.3s;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
       min-width: 2%;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .income-segment::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    .income-bar.animated .income-segment {
+      animation: slideIn 0.6s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        width: 0% !important;
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
     }
     
     .income-segment.labor {
@@ -1235,6 +1379,69 @@
       background: var(--panel);
       border-radius: 8px;
       border: 1px solid rgba(255,255,255,.04);
+      transition: all 0.2s;
+    }
+    
+    /* 통계 섹션 잠금 상태 */
+    .asset-row.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(0.9);
+      position: relative;
+      pointer-events: none;
+    }
+    
+    .asset-row.locked .asset-info {
+      opacity: 0.6;
+    }
+    
+    .asset-row.locked::before {
+      content: '🔒';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      z-index: 10;
+      pointer-events: none;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+    
+    .asset-contribution {
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    
+    .asset-value {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    
+    /* 도넛 차트 */
+    .donut-chart-container {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 20px auto;
+    }
+    
+    #assetDonutChart {
+      transform: rotate(-90deg);
+    }
+    
+    .donut-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    
+    .donut-label {
+      font-size: 12px;
+      color: var(--muted);
     }
     
     .asset-icon {
@@ -1316,6 +1523,7 @@
       cursor: pointer;
       transition: all 0.2s;
       position: relative;
+      user-select: none;
     }
     
     .achievement-icon.unlocked {
@@ -1330,6 +1538,72 @@
     
     .achievement-icon:hover {
       transform: scale(1.1);
+    }
+    
+    /* 업적 툴팁 스타일 */
+    .achievement-tooltip {
+      position: fixed;
+      background: var(--panel);
+      color: var(--text);
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid var(--accent);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      white-space: pre-line;
+      font-size: 12px;
+      line-height: 1.5;
+      z-index: 10000;
+      min-width: 200px;
+      max-width: 300px;
+      text-align: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      /* 요구사항: 클릭 즉시 표시/해제 */
+      transition: none;
+      transform: translateX(-50%);
+    }
+    
+    .achievement-tooltip.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    
+    /* 툴팁 화살표 */
+    .achievement-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: var(--accent);
+    }
+
+    /* 툴팁이 아래에 표시될 때(아이콘 아래): 화살표를 위로 */
+    .achievement-tooltip.bottom::after {
+      top: auto;
+      bottom: 100%;
+      border-top-color: transparent;
+      border-bottom-color: var(--accent);
+    }
+    
+    /* 모바일에서 툴팁 위치 조정 */
+    @media (max-width: 768px) {
+      .achievement-tooltip {
+        bottom: auto;
+        top: calc(100% + 8px);
+        min-width: 250px;
+        max-width: 90vw;
+      }
+      
+      .achievement-tooltip::after {
+        top: auto;
+        bottom: 100%;
+        border-top-color: transparent;
+        border-bottom-color: var(--accent);
+      }
     }
     
     /* 태블릿: 2열 그리드 (노동 + 투자), 통계는 하단 */
@@ -1479,30 +1753,31 @@
     <!-- 노동 탭 -->
     <div id="workTab" class="tab-content active">
       <section class="card">
-        <h2>🛠️ 노동</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h2 style="margin: 0;">🛠️ 노동</h2>
+          <span style="font-weight: 600; font-size: 16px; color: var(--accent);">💼 <span id="currentCareer" aria-live="polite">알바</span></span>
+        </div>
         <div class="work">
           <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼, 클릭당 수익" aria-describedby="clickIncomeButton">🛠️ 노동 +<span id="clickIncomeButton" aria-label="클릭당 수익 금액">1만</span>원</button>
         </div>
-        <div style="margin-top: 12px; padding: 12px; background: var(--bg2); border-radius: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-weight: 600;">💼 <span id="currentCareer">알바</span></span>
-            <span style="font-size: 14px; color: var(--muted);">클릭당: <b id="clickIncomeLabel">1만</b>원 (<span id="clickMultiplier">1.0</span>배)</span>
+        <!-- 승진 진행 카드 -->
+        <div class="career-progress-card" style="margin-top: 12px; padding: 12px; background: var(--bg2); border-radius: 8px;">
+          <div class="progress-container" style="margin-bottom: 6px;">
+            <div class="progress-bar" id="careerProgress" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="승진 진행률"></div>
           </div>
-          <div style="margin-bottom: 8px;">
-            <span class="desc" id="nextCareerDesc">다음: 신입사원 (1.2배 수익)</span>
-            <span class="desc" id="careerCost">40클릭 필요</span>
-          </div>
-          <div class="progress-container" style="margin-bottom: 4px;">
-            <div class="progress-bar" id="careerProgress" style="width: 0%"></div>
-          </div>
-          <span class="desc" id="careerProgressText" style="font-size: 12px;">승진 진행률: 0% (0/40클릭)</span>
-          <div style="margin-top: 8px; font-size: 11px; color: var(--muted);">
-            💡 8클릭 = 1일 근무 | 주 5일 근무 기준
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="desc" id="careerProgressText" style="font-size: 12px;" aria-live="polite">0% (0/40)</span>
+            <span class="desc" id="careerRemaining" style="font-size: 12px; color: var(--accent);" aria-live="polite">다음 승진까지 40클릭 남음</span>
           </div>
         </div>
-        <div class="card" style="margin-top:12px">
-          <h2>로그</h2>
-          <div id="log" class="log"></div>
+        <div class="card diary-card" style="margin-top:12px">
+          <h2><span>📓 일기장</span></h2>
+          <div class="diary-meta">
+            <span id="diaryMetaDate">오늘: --.--.--</span>
+            <span>·</span>
+            <span id="diaryMetaDay">일차: 1일차</span>
+          </div>
+          <div id="log" class="log diary-log" aria-label="일기장"></div>
         </div>
       </section>
     </div>
@@ -1513,6 +1788,12 @@
         <div class="card">
           <h2>💰 투자</h2>
           
+          <!-- 업그레이드 리스트 - Cookie Clicker 스타일 -->
+          <h3>업그레이드 <span class="upgrade-count" id="upgradeCount">(0)</span> <span class="toggle-btn" id="toggleUpgrades" aria-label="업그레이드 섹션 토글">▼</span></h3>
+          <div class="upgrade-list" id="upgradeList">
+            <!-- 동적으로 생성됨 -->
+          </div>
+
           <!-- 구매 수량 선택 시스템 -->
           <div class="purchase-options">
             <div class="mode-toggle">
@@ -1524,12 +1805,6 @@
               <button id="qty5">5</button>
               <button id="qty10">10</button>
             </div>
-          </div>
-          
-          <!-- 업그레이드 리스트 - Cookie Clicker 스타일 -->
-          <h3>업그레이드 <span class="upgrade-count" id="upgradeCount">(0)</span> <span class="toggle-btn" id="toggleUpgrades" aria-label="업그레이드 섹션 토글">▼</span></h3>
-          <div class="upgrade-list" id="upgradeList">
-            <!-- 동적으로 생성됨 -->
           </div>
           
           <h3>금융상품 <span class="toggle-btn" id="toggleFinancial" aria-label="금융상품 섹션 토글">▼</span></h3>
@@ -1638,7 +1913,7 @@
 
             <div class="row building-item" id="buildingItem">
               <div class="meta">
-                <span class="title">🏗️ 빌딩</span>
+                <span class="title">🏙️ 빌딩</span>
                 <span class="desc">• 각 빌딩이 초당 <b id="rentPerBuilding">5,000원</b> 생산</span>
                 <span class="desc">• <b id="buildingCount">0</b>채 빌딩이 초당 <b id="buildingTotalIncome">0원</b> 생산 (총 수익의 <b id="buildingPercent">0%</b>)</span>
                 <span class="desc">• 지금까지 <b id="buildingLifetimeDisplay">0원</b> 생산</span>
@@ -1656,15 +1931,15 @@
       <section class="card">
         <h2>📊 통계</h2>
         
-        <!-- 1. 핵심 지표 -->
-        <div class="stats-section">
+        <!-- 1. 핵심 지표 (고정) -->
+        <div class="stats-section stats-pinned">
           <h3>💰 전체 수익</h3>
           <div class="stat-grid">
-            <div class="stat-item">
+            <div class="stat-item highlight">
               <span class="stat-label">총 자산</span>
               <span class="stat-value" id="totalAssets">0원</span>
             </div>
-            <div class="stat-item">
+            <div class="stat-item highlight">
               <span class="stat-label">총 누적 수익</span>
               <span class="stat-value" id="totalEarnings">0원</span>
             </div>
@@ -1679,155 +1954,223 @@
           </div>
         </div>
 
+        <!-- 성장 추적 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">📈 성장 추적 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="stat-grid">
+              <div class="stat-item">
+                <span class="stat-label">최근 1시간 수익</span>
+                <span class="stat-value" id="hourlyEarnings">0원</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">최근 24시간 수익</span>
+                <span class="stat-value" id="dailyEarnings">0원</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">성장 속도</span>
+                <span class="stat-value" id="growthRate">0%/시간</span>
+              </div>
+              <div class="stat-item milestone">
+                <span class="stat-label">다음 마일스톤</span>
+                <span class="stat-value" id="nextMilestone">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 2. 플레이 정보 -->
-        <div class="stats-section">
-          <h3>⏱️ 플레이 정보</h3>
-          <div class="stat-grid">
-            <div class="stat-item">
-              <span class="stat-label">총 클릭 횟수</span>
-              <span class="stat-value" id="totalClicksStats">0회</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">노동 수익</span>
-              <span class="stat-value" id="laborIncomeStats">0원</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">플레이 시간</span>
-              <span class="stat-value" id="playTimeStats">0분</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">시간당 수익</span>
-              <span class="stat-value" id="hourlyRate">0원/시간</span>
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">⏱️ 플레이 정보 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="stat-grid">
+              <div class="stat-item">
+                <span class="stat-label">총 클릭 횟수</span>
+                <span class="stat-value" id="totalClicksStats">0회</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">노동 수익</span>
+                <span class="stat-value" id="laborIncomeStats">0원</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">플레이 시간</span>
+                <span class="stat-value" id="playTimeStats">0분</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">시간당 수익</span>
+                <span class="stat-value" id="hourlyRate">0원/시간</span>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- 3. 수익 구조 -->
-        <div class="stats-section">
-          <h3>📈 수익 구조</h3>
-          <div class="income-breakdown">
-            <div class="income-bar">
-              <div class="income-segment labor" id="laborSegment" style="width: 0%">
-                <span>🛠️ 0%</span>
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">📈 수익 구조 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="income-breakdown">
+              <div class="income-bar animated">
+                <div class="income-segment labor" id="laborSegment" style="width: 0%">
+                  <span>🛠️ 0%</span>
+                </div>
+                <div class="income-segment financial" id="financialSegment" style="width: 0%">
+                  <span>💰 0%</span>
+                </div>
+                <div class="income-segment property" id="propertySegment" style="width: 0%">
+                  <span>🏢 0%</span>
+                </div>
               </div>
-              <div class="income-segment financial" id="financialSegment" style="width: 0%">
-                <span>💰 0%</span>
-              </div>
-              <div class="income-segment property" id="propertySegment" style="width: 0%">
-                <span>🏢 0%</span>
+              <div class="income-legend">
+                <div class="legend-item">
+                  <span class="legend-color labor"></span>
+                  <span id="laborLegend">노동: 0%</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-color financial"></span>
+                  <span id="financialLegend">금융: 0%</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-color property"></span>
+                  <span id="propertyLegend">부동산: 0%</span>
+                </div>
               </div>
             </div>
-            <div class="income-legend">
-              <div class="legend-item">
-                <span class="legend-color labor"></span>
-                <span id="laborLegend">노동: 0%</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color financial"></span>
-                <span id="financialLegend">금융: 0%</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color property"></span>
-                <span id="propertyLegend">부동산: 0%</span>
+            <!-- 자산 비율 도넛 차트 -->
+            <div class="donut-chart-container">
+              <canvas id="assetDonutChart" width="200" height="200"></canvas>
+              <div class="donut-center">
+                <span class="donut-label">자산 비율</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- 4. 금융상품 상세 -->
-        <div class="stats-section">
-          <h3>💼 금융상품</h3>
-          <div class="asset-stats">
-            <div class="asset-row">
-              <span class="asset-icon">📈</span>
-              <div class="asset-info">
-                <div class="asset-name">예금 <span id="depositsOwnedStats">0개</span></div>
-                <div class="asset-production">누적 수익: <b id="depositsLifetimeStats">0원</b></div>
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">💼 금융상품 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="asset-stats">
+              <div class="asset-row">
+                <span class="asset-icon">💰</span>
+                <div class="asset-info">
+                  <div class="asset-name">예금 <span id="depositsOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="depositsLifetimeStats">0원</b> <span class="asset-contribution" id="depositsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="depositsValue">0원</b></div>
+                </div>
               </div>
-            </div>
-            <div class="asset-row">
-              <span class="asset-icon">📊</span>
-              <div class="asset-info">
-                <div class="asset-name">적금 <span id="savingsOwnedStats">0개</span></div>
-                <div class="asset-production">누적 수익: <b id="savingsLifetimeStats">0원</b></div>
+              <div class="asset-row">
+                <span class="asset-icon">🏦</span>
+                <div class="asset-info">
+                  <div class="asset-name">적금 <span id="savingsOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="savingsLifetimeStats">0원</b> <span class="asset-contribution" id="savingsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="savingsValue">0원</b></div>
+                </div>
               </div>
-            </div>
-            <div class="asset-row">
-              <span class="asset-icon">📈</span>
-              <div class="asset-info">
-                <div class="asset-name">주식 <span id="bondsOwnedStats">0개</span></div>
-                <div class="asset-production">누적 수익: <b id="bondsLifetimeStats">0원</b></div>
+              <div class="asset-row">
+                <span class="asset-icon">📈</span>
+                <div class="asset-info">
+                  <div class="asset-name">주식 <span id="bondsOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="bondsLifetimeStats">0원</b> <span class="asset-contribution" id="bondsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="bondsValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">🇺🇸</span>
+                <div class="asset-info">
+                  <div class="asset-name">미국주식 <span id="usStocksOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="usStocksLifetimeStats">0원</b> <span class="asset-contribution" id="usStocksContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="usStocksValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">₿</span>
+                <div class="asset-info">
+                  <div class="asset-name">코인 <span id="cryptosOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="cryptosLifetimeStats">0원</b> <span class="asset-contribution" id="cryptosContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="cryptosValue">0원</b></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- 5. 부동산 상세 -->
-        <div class="stats-section">
-          <h3>🏢 부동산</h3>
-          <div class="asset-stats">
-            <div class="asset-row">
-              <span class="asset-icon">🏘️</span>
-              <div class="asset-info">
-                <div class="asset-name">빌라 <span id="villasOwnedStats">0채</span></div>
-                <div class="asset-production">누적 수익: <b id="villasLifetimeStats">0원</b></div>
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">🏢 부동산 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="asset-stats">
+              <div class="asset-row">
+                <span class="asset-icon">🏘️</span>
+                <div class="asset-info">
+                  <div class="asset-name">빌라 <span id="villasOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="villasLifetimeStats">0원</b> <span class="asset-contribution" id="villasContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="villasValue">0원</b></div>
+                </div>
               </div>
-            </div>
-            <div class="asset-row">
-              <span class="asset-icon">🏢</span>
-              <div class="asset-info">
-                <div class="asset-name">오피스텔 <span id="officetelsOwnedStats">0채</span></div>
-                <div class="asset-production">누적 수익: <b id="officetelsLifetimeStats">0원</b></div>
+              <div class="asset-row">
+                <span class="asset-icon">🏢</span>
+                <div class="asset-info">
+                  <div class="asset-name">오피스텔 <span id="officetelsOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="officetelsLifetimeStats">0원</b> <span class="asset-contribution" id="officetelsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="officetelsValue">0원</b></div>
+                </div>
               </div>
-            </div>
-            <div class="asset-row">
-              <span class="asset-icon">🏡</span>
-              <div class="asset-info">
-                <div class="asset-name">아파트 <span id="apartmentsOwnedStats">0채</span></div>
-                <div class="asset-production">누적 수익: <b id="apartmentsLifetimeStats">0원</b></div>
+              <div class="asset-row">
+                <span class="asset-icon">🏘️</span>
+                <div class="asset-info">
+                  <div class="asset-name">아파트 <span id="apartmentsOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="apartmentsLifetimeStats">0원</b> <span class="asset-contribution" id="apartmentsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="apartmentsValue">0원</b></div>
+                </div>
               </div>
-            </div>
-            <div class="asset-row">
-              <span class="asset-icon">🏪</span>
-              <div class="asset-info">
-                <div class="asset-name">상가 <span id="shopsOwnedStats">0채</span></div>
-                <div class="asset-production">누적 수익: <b id="shopsLifetimeStats">0원</b></div>
+              <div class="asset-row">
+                <span class="asset-icon">🏪</span>
+                <div class="asset-info">
+                  <div class="asset-name">상가 <span id="shopsOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="shopsLifetimeStats">0원</b> <span class="asset-contribution" id="shopsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="shopsValue">0원</b></div>
+                </div>
               </div>
-            </div>
-            <div class="asset-row">
-              <span class="asset-icon">🏢</span>
-              <div class="asset-info">
-                <div class="asset-name">빌딩 <span id="buildingsOwnedStats">0채</span></div>
-                <div class="asset-production">누적 수익: <b id="buildingsLifetimeStats">0원</b></div>
+              <div class="asset-row">
+                <span class="asset-icon">🏙️</span>
+                <div class="asset-info">
+                  <div class="asset-name">빌딩 <span id="buildingsOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="buildingsLifetimeStats">0원</b> <span class="asset-contribution" id="buildingsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="buildingsValue">0원</b></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- 6. 효율 분석 -->
-        <div class="stats-section">
-          <h3>⚡ 효율 순위 (개당 초당 수익)</h3>
-          <div class="efficiency-list">
-            <div class="efficiency-item best">
-              <span class="rank">🥇</span>
-              <span id="bestEfficiency">-</span>
-            </div>
-            <div class="efficiency-item">
-              <span class="rank">🥈</span>
-              <span id="secondEfficiency">-</span>
-            </div>
-            <div class="efficiency-item">
-              <span class="rank">🥉</span>
-              <span id="thirdEfficiency">-</span>
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">⚡ 효율 순위 (개당 초당 수익) <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="efficiency-list">
+              <div class="efficiency-item best">
+                <span class="rank">🥇</span>
+                <span id="bestEfficiency">-</span>
+              </div>
+              <div class="efficiency-item">
+                <span class="rank">🥈</span>
+                <span id="secondEfficiency">-</span>
+              </div>
+              <div class="efficiency-item">
+                <span class="rank">🥉</span>
+                <span id="thirdEfficiency">-</span>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- 7. 업적 그리드 -->
-        <div class="stats-section">
-          <h3>🏆 업적 (<span id="achievementProgress">0/0</span>)</h3>
-          <div class="achievement-grid" id="achievementGrid">
-            <!-- JavaScript로 동적 생성 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">🏆 업적 (<span id="achievementProgress">0/0</span>) <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="achievement-grid" id="achievementGrid">
+              <!-- JavaScript로 동적 생성 -->
+            </div>
           </div>
         </div>
 
