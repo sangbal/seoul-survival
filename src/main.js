@@ -4,9 +4,12 @@ import { createMarketSystem } from './systems/market.js';
 import { createAchievementsSystem } from './systems/achievements.js';
 import { createUpgradeUnlockSystem } from './systems/upgrades.js';
 
-// 프로덕션에 디버깅 로그/치트가 남지 않도록 콘솔을 무력화합니다.
-// (모듈화 이행 과정에서 기존 인라인 코드의 console.* 호출이 많아, 1차로 안전하게 차단)
-const console = { log() {}, warn() {}, error() {} };
+// 개발 모드에서는 콘솔을 유지하고, 프로덕션 빌드에서는 로그를 무력화합니다.
+if (!import.meta.env.DEV) {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
