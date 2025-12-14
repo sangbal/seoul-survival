@@ -1,7 +1,7 @@
-# 서울 역세권 타이쿤 - GitHub 자동 배포 스크립트
+# Capital Clicker - GitHub 자동 배포 스크립트
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  서울 역세권 타이쿤 - GitHub 배포" -ForegroundColor Cyan
+Write-Host "  Capital Clicker - GitHub 배포" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

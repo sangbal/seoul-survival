@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     [새 기능]
     • 📊 PC 버전에 통계 탭 상시 표시 (3열 그리드)
     • 🖥️ 화면 크기별 반응형 레이아웃
-      - 1367px 이상: 3열 (노동 + 상점 + 통계)
+      - 1367px 이상: 4열 (노동 + 투자 + 통계 + 설정)
       - 769px~1366px: 2열 + 통계 하단
       - 768px 이하: 모바일 탭 네비게이션
     • 📐 통계 탭 컴팩트 스타일링 (PC 최적화)
@@ -505,20 +505,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const newCount = currentCount + qty;
         const unit = category === 'financial' ? '개' : '채';
         const names = {
-          deposit: '예금', savings: '적금', bond: '주식',
+          deposit: '예금', savings: '적금', bond: '국내주식',
+          usStock: '미국주식', crypto: '코인',
           villa: '빌라', officetel: '오피스텔',
           apartment: '아파트', shop: '상가', building: '빌딩'
         };
         
-        addLog(`✅ ${names[type]} ${qty}${unit}를 구입했습니다. (보유 ${newCount}${unit})`);
+        const productName = names[type] || type;
+        addLog(`✅ ${productName} ${qty}${unit}를 구입했습니다. (보유 ${newCount}${unit})`);
         
         // 구매 성공 시 떨어지는 애니메이션
         const buildingIcons = {
           deposit: '💰', savings: '🏦', bond: '📈',
+          usStock: '🇺🇸', crypto: '₿',
           villa: '🏠', officetel: '🏢',
           apartment: '🏘️', shop: '🏪', building: '🏬'
         };
-        createFallingBuilding(buildingIcons[type] || '🏠', qty);
+        if (settings.particles) {
+          createFallingBuilding(buildingIcons[type] || '🏠', qty);
+        }
         
         return { success: true, newCount };
         
@@ -537,12 +542,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const newCount = currentCount - qty;
         const unit = category === 'financial' ? '개' : '채';
         const names = {
-          deposit: '예금', savings: '적금', bond: '주식',
+          deposit: '예금', savings: '적금', bond: '국내주식',
+          usStock: '미국주식', crypto: '코인',
           villa: '빌라', officetel: '오피스텔',
           apartment: '아파트', shop: '상가', building: '빌딩'
         };
         
-        addLog(`💰 ${names[type]} ${qty}${unit}를 판매했습니다. (+${formatKoreanNumber(sellPrice)}원, 보유 ${newCount}${unit})`);
+        const productName = names[type] || type;
+        addLog(`💰 ${productName} ${qty}${unit}를 판매했습니다. (+${formatKoreanNumber(sellPrice)}원, 보유 ${newCount}${unit})`);
         return { success: true, newCount };
       }
       
@@ -554,14 +561,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 한국식 숫자 표기 함수 (일반용)
     function formatKoreanNumber(num) {
+      // 짧은 숫자 설정이 꺼져있으면 전체 숫자 표시
+      if (!settings.shortNumbers) {
+        return Math.floor(num).toLocaleString('ko-KR');
+      }
+      
+      // 짧은 숫자 형식 (천의자리 콤마 포함)
       if (num >= 1000000000000) {
-        return (num / 1000000000000).toFixed(1) + '조';
+        const value = (num / 1000000000000).toFixed(1);
+        return parseFloat(value).toLocaleString('ko-KR') + '조';
       } else if (num >= 100000000) {
-        return (num / 100000000).toFixed(1) + '억';
+        const value = (num / 100000000).toFixed(1);
+        return parseFloat(value).toLocaleString('ko-KR') + '억';
       } else if (num >= 10000) {
-        return (num / 10000).toFixed(1) + '만';
+        const value = (num / 10000).toFixed(1);
+        return parseFloat(value).toLocaleString('ko-KR') + '만';
       } else if (num >= 1000) {
-        return (num / 1000).toFixed(1) + '천';
+        const value = (num / 1000).toFixed(1);
+        return parseFloat(value).toLocaleString('ko-KR') + '천';
       } else {
         return Math.floor(num).toString();
       }
@@ -601,9 +618,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // 현금 표시용 함수 (원단위까지 모두 표기)
+    // 현금 표시용 함수 (짧은 숫자 설정 반영)
     function formatCashDisplay(num) {
-      return Math.floor(num).toLocaleString('ko-KR') + '원';
+      if (!settings.shortNumbers) {
+        return Math.floor(num).toLocaleString('ko-KR') + '원';
+      }
+      // 짧은 숫자 형식 사용
+      return formatKoreanNumber(num) + '원';
     }
     
     // 단계별 가격 증가율 시스템 (Cookie Clicker 스타일)
@@ -1142,6 +1163,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let autoClickEnabled = false; // 자동 클릭 활성화 여부
     let managerLevel = 0;       // 관리인 레벨
     
+    // 설정 옵션
+    const SETTINGS_KEY = 'capitalClicker_settings';
+    let settings = {
+      particles: true,        // 파티클 애니메이션
+      fancyGraphics: true,    // 화려한 그래픽
+      shortNumbers: false     // 짧은 숫자 표시 (기본값: 끔)
+    };
+    
     // 노동 커리어 시스템 (현실적 승진)
     let careerLevel = 0;        // 현재 커리어 레벨
     let totalLaborIncome = 0;   // 총 노동 수익
@@ -1440,6 +1469,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ======= 유틸 =======
     function addLog(text){
+      // 개발/디버깅 관련 메시지 필터링
+      const devKeywords = [
+        '🧪', 'v2.', 'v3.', 'Cookie Clicker', '업그레이드 시스템', 
+        'DOM 참조', '성능 최적화', '자동 저장 시스템', '업그레이드 클릭',
+        '커리어 진행률', '구현 완료', '수정 완료', '정상화', '작동 중',
+        '활성화', '해결', '버그 수정', '최적화', '개편', '벤치마킹'
+      ];
+      
+      // 개발 관련 메시지인지 확인
+      const isDevMessage = devKeywords.some(keyword => text.includes(keyword));
+      
+      // 개발 메시지는 로그에 표시하지 않음
+      if (isDevMessage) {
+        return;
+      }
+      
       const p = document.createElement('p');
       p.innerText = text;
       elLog.prepend(p);
@@ -2225,6 +2270,77 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 600);
     }
     
+    // 설정 저장 함수
+    function saveSettings() {
+      try {
+        safeSetJSON(SETTINGS_KEY, settings);
+      } catch (error) {
+        console.error('설정 저장 실패:', error);
+      }
+    }
+    
+    // 설정 불러오기 함수
+    function loadSettings() {
+      try {
+        const saved = safeGetJSON(SETTINGS_KEY, null);
+        if (saved) {
+          settings = { ...settings, ...saved };
+        }
+      } catch (error) {
+        console.error('설정 불러오기 실패:', error);
+      }
+    }
+    
+    // 저장 내보내기 함수
+    function exportSave() {
+      try {
+        const saveData = localStorage.getItem(SAVE_KEY);
+        if (!saveData) {
+          alert('저장된 게임 데이터가 없습니다.');
+          return;
+        }
+        
+        const blob = new Blob([saveData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `capital-clicker-save-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        addLog('✅ 저장 파일이 다운로드되었습니다.');
+      } catch (error) {
+        console.error('저장 내보내기 실패:', error);
+        alert('저장 내보내기 중 오류가 발생했습니다.');
+      }
+    }
+    
+    // 저장 가져오기 함수
+    function importSave(file) {
+      try {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const saveData = JSON.parse(e.target.result);
+            localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+            addLog('✅ 저장 파일을 불러왔습니다. 페이지를 새로고침합니다...');
+            setTimeout(() => {
+              location.reload();
+            }, 1000);
+          } catch (error) {
+            console.error('저장 파일 파싱 실패:', error);
+            alert('저장 파일 형식이 올바르지 않습니다.');
+          }
+        };
+        reader.readAsText(file);
+      } catch (error) {
+        console.error('저장 가져오기 실패:', error);
+        alert('저장 가져오기 중 오류가 발생했습니다.');
+      }
+    }
+    
     // 저장 상태 UI 업데이트 함수
     function updateSaveStatus() {
       if (elSaveStatus) {
@@ -2233,6 +2349,16 @@ document.addEventListener('DOMContentLoaded', () => {
           minute: '2-digit' 
         });
         elSaveStatus.textContent = `저장됨 · ${timeStr}`;
+      }
+      // 설정 탭의 마지막 저장 시간 업데이트
+      const elLastSaveTimeSettings = document.getElementById('lastSaveTimeSettings');
+      if (elLastSaveTimeSettings) {
+        const timeStr = lastSaveTime.toLocaleTimeString('ko-KR', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        elLastSaveTimeSettings.textContent = timeStr;
       }
     }
 
@@ -2737,11 +2863,13 @@ document.addEventListener('DOMContentLoaded', () => {
         addLog('💰 성과급 지급! 6배 수익!');
       }
       
-      // 떨어지는 쿠키 애니메이션 생성
-      const rect = elWork.getBoundingClientRect();
-      const clickX = e.clientX;
-      const clickY = e.clientY;
-      createFallingCookie(clickX, clickY);
+      // 떨어지는 쿠키 애니메이션 생성 (설정에서 활성화된 경우만)
+      if (settings.particles) {
+        const rect = elWork.getBoundingClientRect();
+        const clickX = e.clientX;
+        const clickY = e.clientY;
+        createFallingCookie(clickX, clickY);
+      }
       
       cash += income;
       totalClicks += 1; // 클릭 수 증가
@@ -2777,7 +2905,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ======= 공유하기 기능 =======
     async function shareGame() {
       const gameUrl = window.location.href;
-      const gameTitle = '서울 역세권 타이쿤';
+      const gameTitle = 'Capital Clicker: Seoul Survival';
       const gameDescription = `💰 부동산과 금융 투자로 부자가 되는 게임!\n현재 자산: ${formatNumber(cash)}원\n초당 수익: ${formatNumber(getRps())}원/s`;
       const shareText = `${gameTitle}\n\n${gameDescription}\n\n${gameUrl}`;
 
@@ -2836,9 +2964,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elShareBtn.addEventListener('click', shareGame);
 
-    // 새로 시작 버튼 이벤트 리스너
+    // 새로 시작 버튼 이벤트 리스너 (footer와 설정 탭 모두)
     if (elResetBtn) {
       elResetBtn.addEventListener('click', resetGame);
+    }
+    const elResetBtnSettings = document.getElementById('resetBtnSettings');
+    if (elResetBtnSettings) {
+      elResetBtnSettings.addEventListener('click', resetGame);
     }
 
     // 떨어지는 지폐 애니메이션 함수 (노동 클릭 시)
@@ -3086,6 +3218,13 @@ document.addEventListener('DOMContentLoaded', () => {
         saveGame();
         addLog('💾 수동 저장 완료!');
       }
+      // Ctrl + O: 저장 가져오기
+      if (e.ctrlKey && e.key === 'o') {
+        e.preventDefault();
+        if (elImportFileInput) {
+          elImportFileInput.click();
+        }
+      }
     });
 
     // ======= 수익 틱 =======
@@ -3144,6 +3283,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, Math.random() * 180000 + 120000); // 2-5분 랜덤
 
+    // 설정 불러오기
+    loadSettings();
+    
+    // 푸터 연도 동적 설정
+    const elCurrentYear = document.getElementById('currentYear');
+    if (elCurrentYear) {
+      elCurrentYear.textContent = new Date().getFullYear();
+    }
+    
     // 초기 렌더
     const gameLoaded = loadGame(); // 게임 데이터 불러오기 시도
     if (gameLoaded) {
@@ -3156,6 +3304,66 @@ document.addEventListener('DOMContentLoaded', () => {
     const initialCareer = getCurrentCareer();
     if (elWorkArea && initialCareer && initialCareer.bgImage) {
       elWorkArea.style.backgroundImage = `url('${initialCareer.bgImage}')`;
+    }
+    
+    // 설정 탭 UI 초기화
+    const elToggleParticles = document.getElementById('toggleParticles');
+    const elToggleFancyGraphics = document.getElementById('toggleFancyGraphics');
+    const elToggleShortNumbers = document.getElementById('toggleShortNumbers');
+    
+    if (elToggleParticles) elToggleParticles.checked = settings.particles;
+    if (elToggleFancyGraphics) elToggleFancyGraphics.checked = settings.fancyGraphics;
+    if (elToggleShortNumbers) elToggleShortNumbers.checked = settings.shortNumbers;
+    
+    // 설정 탭 이벤트 리스너
+    const elExportSaveBtn = document.getElementById('exportSaveBtn');
+    const elImportSaveBtn = document.getElementById('importSaveBtn');
+    const elImportFileInput = document.getElementById('importFileInput');
+    
+    if (elExportSaveBtn) {
+      elExportSaveBtn.addEventListener('click', exportSave);
+    }
+    
+    if (elImportSaveBtn) {
+      elImportSaveBtn.addEventListener('click', () => {
+        if (elImportFileInput) {
+          elImportFileInput.click();
+        }
+      });
+    }
+    
+    if (elImportFileInput) {
+      elImportFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          importSave(file);
+        }
+      });
+    }
+    
+    // 토글 스위치 이벤트 리스너
+    if (elToggleParticles) {
+      elToggleParticles.addEventListener('change', (e) => {
+        settings.particles = e.target.checked;
+        saveSettings();
+      });
+    }
+    
+    if (elToggleFancyGraphics) {
+      elToggleFancyGraphics.addEventListener('change', (e) => {
+        settings.fancyGraphics = e.target.checked;
+        saveSettings();
+        // 화려한 그래픽 설정 적용 (향후 확장 가능)
+      });
+    }
+    
+    if (elToggleShortNumbers) {
+      elToggleShortNumbers.addEventListener('change', (e) => {
+        settings.shortNumbers = e.target.checked;
+        saveSettings();
+        // UI 즉시 업데이트 (숫자 포맷 변경 반영)
+        updateUI();
+      });
     }
     
     // 판매 시스템 테스트 로그

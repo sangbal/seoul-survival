@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ========================================
-echo   서울 역세권 타이쿤 - GitHub 배포
+echo   Capital Clicker - GitHub 배포
 echo ========================================
 echo.
 

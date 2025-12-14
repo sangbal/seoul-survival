@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>서울 역세권 타이쿤 — v3.1.0</title>
+    <title>Capital Clicker: Seoul Survival — v1.0</title>
   <style>
     :root {
       --bg:#0b1220; --panel:#121a2b; --accent:#5eead4; --muted:#94a3b8; --text:#e5e7eb; --btn:#1f2a44; --btn2:#192238; --good:#34d399; --bad:#fb7185;
@@ -15,7 +15,8 @@
     .app{max-width:1400px; margin:0 auto; padding:16px; padding-top:80px;}
     .grid{display:grid; grid-template-columns: 1.1fr 0.9fr; gap:16px}
     header{position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:100; background:linear-gradient(180deg,#0b1220,#0b1324); box-shadow:0 4px 20px rgba(0,0,0,.5); padding:12px 16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; max-width:1400px; width:100%;}
-    .statbar{display:flex; gap:10px; flex-wrap:wrap}
+    .statbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; flex:1; min-width:0;}
+    .share-btn{flex-shrink:0}
     .chip{background:var(--panel); padding:10px 12px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px}
     .chip b{font-size:16px}
     .muted{color:var(--muted)}
@@ -707,7 +708,7 @@
         font-size: 16px;
       }
       
-      /* 상점 섹션 */
+      /* 투자 섹션 */
       .mode-toggle button,
       .quantity-selector button {
         min-height: 40px;
@@ -805,7 +806,7 @@
     /* PC에서 grid 레이아웃 컨테이너 */
     .tab-wrapper {
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr 1.0fr; /* 3열: 노동 + 상점 + 통계 */
+      grid-template-columns: 1fr 1fr 1fr 1fr; /* 4열: 노동 + 투자 + 통계 + 설정 (동일 넓이) */
       gap: 16px;
     }
     
@@ -814,26 +815,32 @@
       display: block;
     }
     
-    /* 통계 탭은 PC에서도 표시 */
-    #statsTab {
+    /* 통계 탭과 설정 탭은 PC에서도 표시 */
+    #statsTab, #settingsTab {
       display: block;
     }
     
-    /* 통계 탭 컴팩트 스타일 (PC용) */
-    #statsTab .stats-section {
+    /* 통계 탭과 설정 탭 컴팩트 스타일 (PC용) */
+    #statsTab .stats-section,
+    #settingsTab .stats-section {
       margin-bottom: 16px;
       padding: 12px;
     }
     
-    #statsTab .stat-value {
+    #statsTab .stat-value,
+    #settingsTab .stat-value {
       font-size: 16px;
     }
     
-    #statsTab h2 {
+    #workTab h2,
+    #shopTab h2,
+    #statsTab h2,
+    #settingsTab h2 {
       font-size: 16px;
     }
     
-    #statsTab h3 {
+    #statsTab h3,
+    #settingsTab h3 {
       font-size: 14px;
       margin-bottom: 10px;
     }
@@ -845,6 +852,212 @@
       background: var(--bg2);
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,.06);
+    }
+    
+    /* 토글 스위치 스타일 */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--muted);
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: var(--good);
+    }
+    
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+    
+    .toggle-switch input:focus + .toggle-slider {
+      box-shadow: 0 0 1px var(--good);
+    }
+    
+    /* 설정 탭 전용 스타일 */
+    .settings-button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .settings-btn {
+      width: 100%;
+      margin: 0;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .settings-desc {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 0 4px;
+      line-height: 1.4;
+    }
+    
+    .settings-warning {
+      padding: 12px;
+      background: var(--panel);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    
+    .settings-toggle-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .settings-toggle-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: var(--panel);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    
+    .settings-toggle-item:hover {
+      background: var(--btn2);
+    }
+    
+    .settings-toggle-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .settings-toggle-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .settings-toggle-desc {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    
+    .settings-shortcut-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .settings-shortcut-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: var(--panel);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    
+    .settings-shortcut-item:hover {
+      background: var(--btn2);
+    }
+    
+    .settings-shortcut-label {
+      font-size: 13px;
+      color: var(--text);
+    }
+    
+    .settings-shortcut-key {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .settings-info-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .settings-info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    
+    .settings-info-item:last-child {
+      border-bottom: none;
+    }
+    
+    .settings-info-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .settings-info-value {
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    
+    .settings-link-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .settings-link {
+      color: var(--accent);
+      text-decoration: none;
+      padding: 10px;
+      background: var(--panel);
+      border-radius: 8px;
+      font-size: 13px;
+      transition: all 0.2s;
+      display: block;
+      text-align: center;
+    }
+    
+    .settings-link:hover {
+      background: var(--bg2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,.2);
     }
     
     .stats-section h3 {
@@ -1061,7 +1274,7 @@
       transform: scale(1.1);
     }
     
-    /* 태블릿: 2열 그리드 (노동 + 상점), 통계는 하단 */
+    /* 태블릿: 2열 그리드 (노동 + 투자), 통계는 하단 */
     @media (max-width: 1366px) {
       .tab-wrapper {
         grid-template-columns: 1.1fr 0.9fr; /* 2열로 변경 */
@@ -1110,18 +1323,19 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 4px;
-        padding: 8px;
+        gap: 3px;
+        padding: 6px 4px;
         background: none;
         border: none;
         color: var(--muted);
         cursor: pointer;
         transition: all 0.2s;
-        font-size: 20px;
+        font-size: 18px;
+        min-width: 0;
       }
       
       .nav-btn span {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 500;
       }
       
@@ -1143,12 +1357,12 @@
         display: block;
       }
       
-      /* 통계 탭 표시 */
-      #statsTab {
+      /* 통계 탭과 설정 탭 표시 */
+      #statsTab, #settingsTab {
         display: none;
       }
       
-      #statsTab.active {
+      #statsTab.active, #settingsTab.active {
         display: block;
       }
       
@@ -1193,21 +1407,21 @@
         <div class="chip"><span>💵 현금</span><b id="cash">0</b></div>
         <div class="chip stat-tooltip" id="financialChip" title=""><span>💰 금융</span><b id="financial">0</b><span class="muted">개</span></div>
         <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
-        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당 수익</span><b id="rps">0</b><span class="muted">₩/s</span></div>
-        <button class="chip share-btn" id="shareBtn" type="button" title="게임 공유하기" aria-label="게임 공유하기">
-          <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.6 2.6 0 0 0 0-1.39l7.02-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .06.59L7.03 9.7A3 3 0 1 0 7 14.3l7.02 4.11A3 3 0 1 0 18 16.08z"></path>
-          </svg>
-          <span class="share-label">공유</span>
-        </button>
+        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당 수익</span><b id="rps">0</b><span class="muted">원</span></div>
       </div>
+      <button class="chip share-btn" id="shareBtn" type="button" title="게임 공유하기" aria-label="게임 공유하기">
+        <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.6 2.6 0 0 0 0-1.39l7.02-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .06.59L7.03 9.7A3 3 0 1 0 7 14.3l7.02 4.11A3 3 0 1 0 18 16.08z"></path>
+        </svg>
+        <span class="share-label">공유</span>
+      </button>
     </header>
 
     <div class="tab-wrapper">
     <!-- 노동 탭 -->
     <div id="workTab" class="tab-content active">
       <section class="card">
-        <h2>노동하기</h2>
+        <h2>🛠️ 노동</h2>
         <div class="work">
           <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼">🛠️ 노동 +<span id="clickIncomeButton">1만</span>원</button>
         </div>
@@ -1235,11 +1449,11 @@
       </section>
     </div>
 
-    <!-- 상점 탭 -->
+    <!-- 투자 탭 -->
     <div id="shopTab" class="tab-content">
       <section>
         <div class="card">
-          <h2>상점</h2>
+          <h2>💰 투자</h2>
           
           <!-- 구매 수량 선택 시스템 -->
           <div class="purchase-options">
@@ -1382,7 +1596,7 @@
     <!-- 통계 탭 -->
     <div id="statsTab" class="tab-content">
       <section class="card">
-        <h2>📊 게임 통계</h2>
+        <h2>📊 통계</h2>
         
         <!-- 1. 핵심 지표 -->
         <div class="stats-section">
@@ -1561,6 +1775,163 @@
 
       </section>
     </div>
+
+    <!-- 설정 탭 -->
+    <div id="settingsTab" class="tab-content">
+      <section class="card">
+        <h2>⚙️ 설정</h2>
+        
+        <!-- 게임 정보 -->
+        <div class="stats-section">
+          <h3>📋 게임 정보</h3>
+          <div class="stat-grid">
+            <div class="stat-item" style="grid-column: 1 / 3;">
+              <span class="stat-label">게임 제목</span>
+              <span class="stat-value">Capital Clicker: Seoul Survival</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">개발자</span>
+              <span class="stat-value">sangbal</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">버전</span>
+              <span class="stat-value">v1.0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 저장 관리 -->
+        <div class="stats-section">
+          <h3>💾 저장 관리</h3>
+          <div class="settings-button-group">
+            <button class="btn settings-btn" id="exportSaveBtn" style="background: var(--primary);">
+              📤 저장 내보내기
+            </button>
+            <div class="settings-desc">
+              저장 내용을 백업하거나 다른 컴퓨터로 전송
+            </div>
+            <button class="btn settings-btn" id="importSaveBtn" style="background: var(--secondary);">
+              📥 저장 가져오기
+            </button>
+            <div class="settings-desc">
+              백업한 저장 파일 불러오기 (단축키: Ctrl+O)
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+          </div>
+        </div>
+
+        <!-- 게임 관리 -->
+        <div class="stats-section">
+          <h3>🎮 게임 관리</h3>
+          <div class="settings-button-group">
+            <button class="reset-btn settings-btn" id="resetBtnSettings">
+              🔄 게임 새로 시작
+            </button>
+            <div class="settings-warning">
+              ⚠️ 게임을 새로 시작하면 모든 진행 상황이 삭제되며 복구할 수 없습니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- 시각 효과 설정 -->
+        <div class="stats-section">
+          <h3>🎨 시각 효과</h3>
+          <div class="settings-toggle-group">
+            <div class="settings-toggle-item">
+              <div class="settings-toggle-info">
+                <span class="settings-toggle-label">파티클 켬</span>
+                <div class="settings-toggle-desc">
+                  떨어지는 지폐/상품 애니메이션
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleParticles" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="settings-toggle-item">
+              <div class="settings-toggle-info">
+                <span class="settings-toggle-label">화려한 그래픽 켬</span>
+                <div class="settings-toggle-desc">
+                  시각 효과 향상 (비활성화 시 성능 향상)
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleFancyGraphics" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 숫자 표시 설정 -->
+        <div class="stats-section">
+          <h3>🔢 숫자 표시</h3>
+          <div class="settings-toggle-group">
+            <div class="settings-toggle-item">
+              <div class="settings-toggle-info">
+                <span class="settings-toggle-label">짧은 숫자 켬</span>
+                <div class="settings-toggle-desc">
+                  큰 숫자를 간단하게 표시 (예: 1,000만 → 1천만)
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleShortNumbers">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 키보드 단축키 -->
+        <div class="stats-section">
+          <h3>⌨️ 키보드 단축키</h3>
+          <div class="settings-shortcut-group">
+            <div class="settings-shortcut-item">
+              <span class="settings-shortcut-label">게임 초기화</span>
+              <span class="settings-shortcut-key">Ctrl + Shift + R</span>
+            </div>
+            <div class="settings-shortcut-item">
+              <span class="settings-shortcut-label">수동 저장</span>
+              <span class="settings-shortcut-key">Ctrl + S</span>
+            </div>
+            <div class="settings-shortcut-item">
+              <span class="settings-shortcut-label">저장 가져오기</span>
+              <span class="settings-shortcut-key">Ctrl + O</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 저장 정보 -->
+        <div class="stats-section">
+          <h3>💾 저장 정보</h3>
+          <div class="settings-info-group">
+            <div class="settings-info-item">
+              <span class="settings-info-label">자동 저장 주기</span>
+              <span class="settings-info-value">5초마다</span>
+            </div>
+            <div class="settings-info-item">
+              <span class="settings-info-label">저장 위치</span>
+              <span class="settings-info-value">브라우저 LocalStorage</span>
+            </div>
+            <div class="settings-info-item">
+              <span class="settings-info-label">마지막 저장</span>
+              <span class="settings-info-value" id="lastSaveTimeSettings">--:--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 링크 -->
+        <div class="stats-section">
+          <h3>🔗 링크</h3>
+          <div class="settings-link-group">
+            <a href="https://sangbal.github.io/budongsan-tycoon/" target="_blank" rel="noopener noreferrer" class="settings-link">
+              🌐 온라인 플레이
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
     </div><!-- /.tab-wrapper -->
 
     <!-- 하단 네비게이션 -->
@@ -1570,28 +1941,25 @@
         <span>노동</span>
       </button>
       <button class="nav-btn" data-tab="shopTab">
-        <div>🏪</div>
-        <span>상점</span>
+        <div>💰</div>
+        <span>투자</span>
       </button>
       <button class="nav-btn" data-tab="statsTab">
         <div>📊</div>
         <span>통계</span>
+      </button>
+      <button class="nav-btn" data-tab="settingsTab">
+        <div>⚙️</div>
+        <span>설정</span>
       </button>
     </nav>
 
     <footer>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
         <div>
-          <div style="margin-bottom:4px;">
-            <span style="color:var(--muted); font-size:12px;">v3.1.0</span>
-            <span style="background:var(--primary); color:white; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">순차 해금</span>
-          </div>
-          <div style="font-size:11px;">
-            ⓘ 예금→적금→주식→빌라→...빌딩 순서로 단계적 해금!
-          </div>
+          <span style="color:var(--muted); font-size:12px;">© 2024 Capital Clicker: Seoul Survival v1.0</span>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
-          <button class="reset-btn" id="resetBtn" aria-label="게임 초기화">🔄 새로 시작</button>
           <span class="save-status" id="saveStatus">저장됨 · --:--</span>
         </div>
       </div>
