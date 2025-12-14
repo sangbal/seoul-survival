@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
     D. 판매 가격 계산 시스템 완성 ✅
     - getFinancialSellPrice(), getPropertySellPrice()
     - 판매 가격: 현재가의 80% (일관된 정책)
-    - 다중 수량 판매 지원 (1/5/10개)
+    - 다중 수량 판매 지원 (1/10/100개)
     
     E. 가격 계산 함수 개선 ✅
     - 다중 구매/판매 지원 (quantity 파라미터)
@@ -466,6 +466,28 @@ document.addEventListener('DOMContentLoaded', () => {
     */
     
     // ======= 유틸리티 함수 =======
+    function safeText(element, text) {
+      if (element && element.textContent !== undefined) {
+        element.textContent = text;
+      }
+    }
+    
+    function safeHTML(element, html) {
+      if (element && element.innerHTML !== undefined) {
+        element.innerHTML = html;
+      }
+    }
+    
+    function safeClass(element, className, add = true) {
+      if (element && element.classList) {
+        if (add) {
+          element.classList.add(className);
+        } else {
+          element.classList.remove(className);
+        }
+      }
+    }
+    
     // 구매/판매 통합 함수
     function handleTransaction(category, type, currentCount) {
       const qty = purchaseQuantity;
@@ -473,7 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (purchaseMode === 'buy') {
         // 구매 로직
         const cost = category === 'financial' 
-          ? getFinancialCost(type, currentCount, qty)
+          ? getFinancialCost(type, currentCount) * qty
           : getPropertyCost(type, currentCount, qty);
         
         if (cash < cost) {
@@ -496,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const buildingIcons = {
           deposit: '💰', savings: '🏦', bond: '📈',
           villa: '🏠', officetel: '🏢',
-          apartment: '🏘️', shop: '🏪', building: '🏙️'
+          apartment: '🏘️', shop: '🏪', building: '🏬'
         };
         createFallingBuilding(buildingIcons[type] || '🏠', qty);
         
@@ -510,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const sellPrice = category === 'financial'
-          ? getFinancialSellPrice(type, currentCount, qty)
+          ? getFinancialSellPrice(type, currentCount) * qty
           : getPropertySellPrice(type, currentCount, qty);
         
         cash += sellPrice;
@@ -586,7 +608,81 @@ document.addEventListener('DOMContentLoaded', () => {
       return Math.floor(num).toLocaleString('ko-KR') + '원';
     }
     
-    // 가격/판매 계산 로직은 src/economy/pricing.js 로 이동
+    // 단계별 가격 증가율 시스템 (Cookie Clicker 스타일)
+    function getPriceMultiplier(count) {
+      if (count < 5) return 1.10;      // 초기: 10% (빠른 성취감)
+      else if (count < 15) return 1.15; // 중기: 15% (현재와 동일)
+      else if (count < 30) return 1.20; // 후기: 20% (도전적)
+      else return 1.25;                 // 최종: 25% (희소성)
+    }
+    
+    // 금융상품별 기본 가격
+    const FINANCIAL_COSTS = {
+      deposit: 50000,       // 예금: 5만원
+      savings: 500000,      // 적금: 50만원
+      bond: 5000000,        // 국내주식: 500만원
+      usStock: 25000000,    // 미국주식: 2,500만원
+      crypto: 100000000     // 코인: 1억원
+    };
+    
+    // 부동산별 기본 가격
+    const BASE_COSTS = {
+      villa: 250000000,     // 빌라: 2.5억원
+      officetel: 350000000, // 오피스텔: 3.5억원
+      apartment: 800000000, // 아파트: 8억원
+      shop: 1200000000,     // 상가: 12억원
+      building: 3000000000  // 빌딩: 30억원
+    };
+    
+    // 금융상품 가격 계산 함수
+    function getFinancialCost(type, count, quantity = 1) {
+      const baseCost = FINANCIAL_COSTS[type];
+      let totalCost = 0;
+      for (let i = 0; i < quantity; i++) {
+        const currentIndex = count + i;
+        // 첫 번째 아이템(index=0)은 기본 가격, 그 이후부터 배수 적용
+        let cost = baseCost * Math.pow(1.15, currentIndex);
+        totalCost += cost;
+      }
+      return Math.floor(totalCost);
+    }
+    
+    // 금융상품 판매 가격 계산 함수 (현재가의 80%)
+    function getFinancialSellPrice(type, count, quantity = 1) {
+      if (count <= 0) return 0;
+      let totalSellPrice = 0;
+      for (let i = 0; i < quantity; i++) {
+        if (count - i <= 0) break;
+        const buyPrice = getFinancialCost(type, count - i - 1, 1);
+        totalSellPrice += Math.floor(buyPrice * 0.8);
+      }
+      return totalSellPrice;
+    }
+    
+    // 부동산 가격 계산 함수
+    function getPropertyCost(type, count, quantity = 1) {
+      const baseCost = BASE_COSTS[type];
+      let totalCost = 0;
+      for (let i = 0; i < quantity; i++) {
+        const currentIndex = count + i;
+        // 첫 번째 아이템(index=0)은 기본 가격, 그 이후부터 배수 적용
+        let cost = baseCost * Math.pow(1.15, currentIndex);
+        totalCost += cost;
+      }
+      return Math.floor(totalCost);
+    }
+    
+    // 부동산 판매 가격 계산 함수 (현재가의 80%)
+    function getPropertySellPrice(type, count, quantity = 1) {
+      if (count <= 0) return 0;
+      let totalSellPrice = 0;
+      for (let i = 0; i < quantity; i++) {
+        if (count - i <= 0) break;
+        const buyPrice = getPropertyCost(type, count - i - 1, 1);
+        totalSellPrice += Math.floor(buyPrice * 0.8);
+      }
+      return totalSellPrice;
+    }
     let cash = 0;
     
     // 누적 플레이시간 시스템 (전역 변수)
@@ -617,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 구매 수량 선택 시스템
     let purchaseMode = 'buy';  // 'buy' or 'sell'
-    let purchaseQuantity = 1;  // 1, 5, 10
+    let purchaseQuantity = 1;  // 1, 10, 100
     
     // 자동 저장 시스템
     const SAVE_KEY = 'seoulTycoonSaveV1';
@@ -944,10 +1040,10 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // === 빌딩 관련 ===
       building_boost_1: {
-        name: "🏙️ 빌딩 테넌트 확보",
+        name: "🏗️ 빌딩 테넌트 확보",
         desc: "빌딩 수익 2배",
         cost: 50000000000,
-        icon: "🏙️",
+        icon: "🏗️",
         unlockCondition: () => buildings >= 5,
         effect: () => { BASE_RENT.building *= 2; },
         category: "building",
@@ -1236,7 +1332,7 @@ document.addEventListener('DOMContentLoaded', () => {
         description: "정부의 암호화폐 규제 강화로 코인 투자 수익이 급격히 감소합니다."
       }
     ];
-
+    
     // 업적 시스템
     let totalClicks = 0; // 총 클릭 수 추적
     
@@ -1254,7 +1350,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // === 전문가 업적 (8개) ===
       { id: "financial_expert", name: "금융 전문가", desc: "모든 금융상품을 보유했다", icon: "💼", condition: () => deposits > 0 && savings > 0 && bonds > 0 && usStocks > 0 && cryptos > 0, unlocked: false },
       { id: "property_collector", name: "부동산 수집가", desc: "5채의 부동산을 보유했다", icon: "🏘️", condition: () => getTotalProperties() >= 5, unlocked: false },
-      { id: "property_tycoon", name: "부동산 타이쿤", desc: "모든 부동산 종류를 보유했다", icon: "🏙️", condition: () => villas > 0 && officetels > 0 && apartments > 0 && shops > 0 && buildings > 0, unlocked: false },
+      { id: "property_tycoon", name: "부동산 타이쿤", desc: "모든 부동산 종류를 보유했다", icon: "🏗️", condition: () => villas > 0 && officetels > 0 && apartments > 0 && shops > 0 && buildings > 0, unlocked: false },
       { id: "investment_guru", name: "투자 고수", desc: "모든 업그레이드를 구입했다", icon: "📊", condition: () => Object.values(UPGRADES).every(upgrade => upgrade.purchased), unlocked: false },
       { id: "gangnam_rich", name: "강남 부자", desc: "강남 부동산 3채를 보유했다", icon: "🏙️", condition: () => apartments >= 3, unlocked: false },
       { id: "global_investor", name: "글로벌 투자자", desc: "해외 투자 1억원을 달성했다", icon: "🌍", condition: () => usStocks * 1000000 + cryptos * 1000000 >= 100000000, unlocked: false },
@@ -1282,107 +1378,93 @@ document.addEventListener('DOMContentLoaded', () => {
       { id: "legendary_ceo", name: "전설의 CEO", desc: "모든 목표를 달성했다", icon: "⭐", condition: () => careerLevel >= 9 && cash >= 100000000000000, unlocked: false }
     ];
 
-    // ======= 시스템(모듈) 초기화 =======
-    function markDirty() {
-      uiDirty = true;
-    }
-
-    const marketSystem = createMarketSystem(MARKET_EVENTS, {
-      getCurrentEvent: () => currentMarketEvent,
-      setCurrentEvent: (ev) => { currentMarketEvent = ev; },
-      getEventEndTime: () => marketEventEndTime,
-      setEventEndTime: (t) => { marketEventEndTime = t; },
-      setMarketMultiplier: (m) => { marketMultiplier = m; },
-      addLog,
-      notify: showMarketEventNotification,
-      markDirty,
-    });
-
-    const { checkMarketEvent, startMarketEvent, getMarketEventMultiplier } = marketSystem;
-    // scheduleNextMarketEvent()는 하단에서 호출(루프 구성 시점에 맞춤)
-
-    const achievementsSystem = createAchievementsSystem(ACHIEVEMENTS, {
-      notify: showAchievementNotification,
-      addLog,
-    });
-    const { checkAchievements } = achievementsSystem;
-
-    const upgradeUnlockSystem = createUpgradeUnlockSystem(UPGRADES, {
-      addLog,
-      onAnyUnlocked: () => {
-        updateUpgradeList();
-        markDirty();
-      },
-    });
-    const { checkUpgradeUnlocks } = upgradeUnlockSystem;
-
     // ======= DOM =======
-    const {
-      elCash,
-      elFinancial,
-      elProperties,
-      elRps,
-      elWork,
-      elLog,
-      elShareBtn,
-      elClickIncomeButton,
-      elClickIncomeLabel,
-      elClickMultiplier,
-      elRentMultiplier,
-      elDepositCount,
-      elIncomePerDeposit,
-      elBuyDeposit,
-      elSavingsCount,
-      elIncomePerSavings,
-      elBuySavings,
-      elBondCount,
-      elIncomePerBond,
-      elBuyBond,
-      elUsStockCount,
-      elIncomePerUsStock,
-      elBuyUsStock,
-      elCryptoCount,
-      elIncomePerCrypto,
-      elBuyCrypto,
-      elBuyMode,
-      elSellMode,
-      elQty1,
-      elQty5,
-      elQty10,
-      elToggleUpgrades,
-      elToggleFinancial,
-      elToggleProperties,
-      elSaveStatus,
-      elResetBtn,
-      elDepositCurrentPrice,
-      elSavingsCurrentPrice,
-      elBondCurrentPrice,
-      elVillaCurrentPrice,
-      elOfficetelCurrentPrice,
-      elAptCurrentPrice,
-      elShopCurrentPrice,
-      elBuildingCurrentPrice,
-      elVillaCount,
-      elRentPerVilla,
-      elBuyVilla,
-      elOfficetelCount,
-      elRentPerOfficetel,
-      elBuyOfficetel,
-      elAptCount,
-      elRentPerApt,
-      elBuyApt,
-      elShopCount,
-      elRentPerShop,
-      elBuyShop,
-      elBuildingCount,
-      elRentPerBuilding,
-      elBuyBuilding,
-      elCurrentCareer,
-      elNextCareerDesc,
-      elCareerCost,
-      elCareerProgress,
-      elCareerProgressText,
-    } = getDomRefs();
+    const elCash = document.getElementById('cash');
+    const elFinancial = document.getElementById('financial');
+    const elProperties = document.getElementById('properties');
+    const elRps  = document.getElementById('rps');
+    const elWork = document.getElementById('workBtn');
+    const elLog  = document.getElementById('log');
+    const elShareBtn = document.getElementById('shareBtn');
+    const elClickIncomeButton = document.getElementById('clickIncomeButton');
+    const elClickIncomeLabel = document.getElementById('clickIncomeLabel');
+    const elClickMultiplier = document.getElementById('clickMultiplier');
+    const elRentMultiplier = document.getElementById('rentMultiplier');
+
+    // 금융상품 관련
+    const elDepositCount = document.getElementById('depositCount');
+    const elIncomePerDeposit = document.getElementById('incomePerDeposit');
+    const elBuyDeposit = document.getElementById('buyDeposit');
+
+    const elSavingsCount = document.getElementById('savingsCount');
+    const elIncomePerSavings = document.getElementById('incomePerSavings');
+    const elBuySavings = document.getElementById('buySavings');
+
+    const elBondCount = document.getElementById('bondCount');
+    const elIncomePerBond = document.getElementById('incomePerBond');
+    const elBuyBond = document.getElementById('buyBond');
+    
+    // 미국주식과 코인 관련
+    const elUsStockCount = document.getElementById('usStockCount');
+    const elIncomePerUsStock = document.getElementById('incomePerUsStock');
+    const elBuyUsStock = document.getElementById('buyUsStock');
+    
+    const elCryptoCount = document.getElementById('cryptoCount');
+    const elIncomePerCrypto = document.getElementById('incomePerCrypto');
+    const elBuyCrypto = document.getElementById('buyCrypto');
+    
+    // 구매 수량 선택 시스템
+    const elBuyMode = document.getElementById('buyMode');
+    const elSellMode = document.getElementById('sellMode');
+    const elQty1 = document.getElementById('qty1');
+    const elQty5 = document.getElementById('qty5');
+    const elQty10 = document.getElementById('qty10');
+    
+    // 토글 버튼들
+    const elToggleUpgrades = document.getElementById('toggleUpgrades');
+    const elToggleFinancial = document.getElementById('toggleFinancial');
+    const elToggleProperties = document.getElementById('toggleProperties');
+    
+    // 저장 상태 표시
+    const elSaveStatus = document.getElementById('saveStatus');
+    
+    // 현재가 표시 요소들
+    const elDepositCurrentPrice = document.getElementById('depositCurrentPrice');
+    const elSavingsCurrentPrice = document.getElementById('savingsCurrentPrice');
+    const elBondCurrentPrice = document.getElementById('bondCurrentPrice');
+    const elVillaCurrentPrice = document.getElementById('villaCurrentPrice');
+    const elOfficetelCurrentPrice = document.getElementById('officetelCurrentPrice');
+    const elAptCurrentPrice = document.getElementById('aptCurrentPrice');
+    const elShopCurrentPrice = document.getElementById('shopCurrentPrice');
+    const elBuildingCurrentPrice = document.getElementById('buildingCurrentPrice');
+
+    // 부동산 구입 관련
+    const elVillaCount = document.getElementById('villaCount');
+    const elRentPerVilla = document.getElementById('rentPerVilla');
+    const elBuyVilla = document.getElementById('buyVilla');
+
+    const elOfficetelCount = document.getElementById('officetelCount');
+    const elRentPerOfficetel = document.getElementById('rentPerOfficetel');
+    const elBuyOfficetel = document.getElementById('buyOfficetel');
+
+    const elAptCount = document.getElementById('aptCount');
+    const elRentPerApt = document.getElementById('rentPerApt');
+    const elBuyApt = document.getElementById('buyApt');
+
+    const elShopCount = document.getElementById('shopCount');
+    const elRentPerShop = document.getElementById('rentPerShop');
+    const elBuyShop = document.getElementById('buyShop');
+
+    const elBuildingCount = document.getElementById('buildingCount');
+    const elRentPerBuilding = document.getElementById('rentPerBuilding');
+    const elBuyBuilding = document.getElementById('buyBuilding');
+
+    // 커리어 관련
+    const elCurrentCareer = document.getElementById('currentCareer');
+    const elNextCareerDesc = document.getElementById('nextCareerDesc');
+    const elCareerCost = document.getElementById('careerCost');
+    const elCareerProgress = document.getElementById('careerProgress');
+    const elCareerProgressText = document.getElementById('careerProgressText');
     
     // 업그레이드 관련 (구형 DOM 제거됨 - 새로운 Cookie Clicker 스타일 사용)
 
@@ -1451,67 +1533,55 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // 리스크를 적용한 개별 수익 계산 함수
-    function getFinancialIncomeWithRisk(type, count) {
+    // (단순화) 리스크(랜덤 변동) 제거: 초당 수익은 예측 가능하게 유지하고,
+    // 변동성은 '시장 이벤트'만으로 표현합니다.
+    function getFinancialIncome(type, count) {
       const baseIncome = FINANCIAL_INCOME[type];
-      const risk = FINANCIAL_RISK[type];
-      
-      let actualIncome = baseIncome * count;
-      
-      // 리스크 적용
-      if (risk.variance > 0) {
-        const randomFactor = (Math.random() * 2 - 1) * risk.variance;
-        const actualMultiplier = 1 + randomFactor;
-        actualIncome *= actualMultiplier;
-      }
-      
-      // 시장 이벤트 효과 적용
-      const marketMultiplier = getMarketEventMultiplier(type, 'financial');
-      actualIncome *= marketMultiplier;
-      
-      return actualIncome;
+      let income = baseIncome * count;
+      const marketMult = getMarketEventMultiplier(type, 'financial');
+      income *= marketMult;
+      return income;
     }
     
-    function getPropertyIncomeWithRisk(type, count) {
+    function getPropertyIncome(type, count) {
       const baseIncome = BASE_RENT[type];
-      const risk = PROPERTY_RISK[type];
-      
-      let actualIncome = baseIncome * count;
-      
-      // 리스크 적용
-      if (risk.variance > 0) {
-        const randomFactor = (Math.random() * 2 - 1) * risk.variance;
-        const actualMultiplier = 1 + randomFactor;
-        actualIncome *= actualMultiplier;
-      }
-      
-      // 시장 이벤트 효과 적용
-      const marketMultiplier = getMarketEventMultiplier(type, 'property');
-      actualIncome *= marketMultiplier;
-      
-      return actualIncome;
+      let income = baseIncome * count;
+      const marketMult = getMarketEventMultiplier(type, 'property');
+      income *= marketMult;
+      return income;
     }
 
     function getRps() {
-      // 금융상품 수익 (리스크 적용)
+      // 금융상품 수익 (리스크 제거)
       const financialIncome = 
-        getFinancialIncomeWithRisk('deposit', deposits) +
-        getFinancialIncomeWithRisk('savings', savings) +
-        getFinancialIncomeWithRisk('bond', bonds) +
-        getFinancialIncomeWithRisk('usStock', usStocks) +
-        getFinancialIncomeWithRisk('crypto', cryptos);
+        getFinancialIncome('deposit', deposits) +
+        getFinancialIncome('savings', savings) +
+        getFinancialIncome('bond', bonds) +
+        getFinancialIncome('usStock', usStocks) +
+        getFinancialIncome('crypto', cryptos);
       
-      // 부동산 수익 (리스크 적용)
+      // 부동산 수익 (리스크 제거)
       const propertyRent = 
-        getPropertyIncomeWithRisk('villa', villas) +
-        getPropertyIncomeWithRisk('officetel', officetels) +
-        getPropertyIncomeWithRisk('apartment', apartments) +
-        getPropertyIncomeWithRisk('shop', shops) +
-        getPropertyIncomeWithRisk('building', buildings);
+        getPropertyIncome('villa', villas) +
+        getPropertyIncome('officetel', officetels) +
+        getPropertyIncome('apartment', apartments) +
+        getPropertyIncome('shop', shops) +
+        getPropertyIncome('building', buildings);
       
       // 배수 적용 순서: 1) 부동산에 rentMultiplier 적용, 2) 전체에 marketMultiplier 적용
       const totalIncome = financialIncome + (propertyRent * rentMultiplier);
       return totalIncome * marketMultiplier;
+    }
+    
+    // 시장 이벤트 시작
+    function startMarketEvent() {
+      const event = MARKET_EVENTS[Math.floor(Math.random() * MARKET_EVENTS.length)];
+      currentMarketEvent = event;
+      marketEventEndTime = Date.now() + event.duration;
+      
+      addLog(`📈 ${event.name} 발생! ${event.duration/1000}초간 지속`);
+      addLog(`💡 ${event.description}`);
+      showMarketEventNotification(event);
     }
     
     // 시장 이벤트 알림 표시
@@ -1573,6 +1643,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 5000);
     }
     
+    // 시장 이벤트 체크
+    function checkMarketEvent() {
+      if (marketEventEndTime > 0 && Date.now() >= marketEventEndTime) {
+        currentMarketEvent = null;
+        marketEventEndTime = 0;
+        addLog('📉 시장 이벤트가 종료되었습니다.');
+      }
+    }
+    
+    // 현재 시장 이벤트 효과 적용
+    function getMarketEventMultiplier(type, category) {
+      if (!currentMarketEvent || !currentMarketEvent.effects) {
+        return 1.0;
+      }
+      
+      const effects = currentMarketEvent.effects[category];
+      if (!effects || !effects[type]) {
+        return 1.0;
+      }
+      
+      return effects[type];
+    }
+    
     // 리스크 레벨에 따른 클래스명 반환
     function getRiskClass(level) {
       if (level <= 1) return 'risk-low';
@@ -1604,50 +1697,17 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }
     
-    // 금융상품 리스크 정보 업데이트
-    function updateFinancialRiskInfo() {
-      const financialProducts = ['deposit', 'savings', 'bond', 'usStock', 'crypto'];
-      
-      financialProducts.forEach(product => {
-        const risk = FINANCIAL_RISK[product];
-        const productElement = document.getElementById(`${product}Item`);
-        
-        if (productElement) {
-          // 기존 리스크 정보 제거
-          const existingRisk = productElement.querySelector('.product-risk-info');
-          if (existingRisk) {
-            existingRisk.remove();
-          }
-          
-          // 새로운 리스크 정보 추가
-          const riskInfo = document.createElement('div');
-          riskInfo.className = 'product-risk-info';
-          riskInfo.innerHTML = createRiskIndicator(risk.level, risk.name);
-          productElement.appendChild(riskInfo);
-        }
-      });
-    }
+    // 리스크 UI는 비활성화(복잡도 감소). 필요 시 추후 옵션으로 재도입 가능.
+    function updateFinancialRiskInfo() {}
+    function updatePropertyRiskInfo() {}
     
-    // 부동산 리스크 정보 업데이트
-    function updatePropertyRiskInfo() {
-      const properties = ['villa', 'officetel', 'apartment', 'shop', 'building'];
-      
-      properties.forEach(property => {
-        const risk = PROPERTY_RISK[property];
-        const propertyElement = document.getElementById(`${property}Item`);
-        
-        if (propertyElement) {
-          // 기존 리스크 정보 제거
-          const existingRisk = propertyElement.querySelector('.product-risk-info');
-          if (existingRisk) {
-            existingRisk.remove();
-          }
-          
-          // 새로운 리스크 정보 추가
-          const riskInfo = document.createElement('div');
-          riskInfo.className = 'product-risk-info';
-          riskInfo.innerHTML = createRiskIndicator(risk.level, risk.name);
-          propertyElement.appendChild(riskInfo);
+    // 업적 체크
+    function checkAchievements() {
+      ACHIEVEMENTS.forEach(achievement => {
+        if (!achievement.unlocked && achievement.condition()) {
+          achievement.unlocked = true;
+          showAchievementNotification(achievement);
+          addLog(`🏆 업적 달성: ${achievement.name} - ${achievement.desc}`);
         }
       });
     }
@@ -1687,8 +1747,31 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ======= 업그레이드 시스템 함수 =======
     
-    // 업그레이드 해금 체크는 src/systems/upgrades.js 로 이동
-
+    // 업그레이드 해금 조건 체크
+    function checkUpgradeUnlocks() {
+      let newUnlocks = 0;
+      
+      for (const [id, upgrade] of Object.entries(UPGRADES)) {
+        // 이미 구매했거나 해금된 경우 스킵
+        if (upgrade.purchased || upgrade.unlocked) continue;
+        
+        // 해금 조건 체크
+        try {
+          if (upgrade.unlockCondition()) {
+            upgrade.unlocked = true;
+            newUnlocks++;
+            addLog(`🎁 새 업그레이드 해금: ${upgrade.name}`);
+          }
+        } catch (error) {
+          console.error(`업그레이드 해금 조건 체크 실패 (${id}):`, error);
+        }
+      }
+      
+      if (newUnlocks > 0) {
+        updateUpgradeList();
+      }
+    }
+    
     // 업그레이드 구매 가능 여부만 업데이트 (성능 최적화)
     function updateUpgradeAffordability() {
       const upgradeItems = document.querySelectorAll('.upgrade-item');
@@ -2029,7 +2112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       
       try {
-        safeSetJSON(SAVE_KEY, saveData);
+        localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
         lastSaveTime = new Date();
         console.log('게임 저장 완료:', lastSaveTime.toLocaleTimeString());
         updateSaveStatus(); // 저장 상태 UI 업데이트
@@ -2041,14 +2124,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // 게임 데이터 불러오기 함수
     function loadGame() {
       try {
-        const data = safeGetJSON(SAVE_KEY, null);
-        if (!data) {
+        const saveData = localStorage.getItem(SAVE_KEY);
+        if (!saveData) {
           console.log('저장된 게임 데이터가 없습니다.');
           // 새 게임 시작 시 누적 플레이시간 초기화
           totalPlayTime = 0;
           sessionStartTime = Date.now();
           return false;
         }
+        
+        const data = JSON.parse(saveData);
         
         // 게임 상태 복원
         cash = data.cash || 0;
@@ -2162,7 +2247,7 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('✅ User confirmed reset'); // 디버깅용
           
           // 저장 데이터 삭제
-          safeRemove(SAVE_KEY);
+          localStorage.removeItem(SAVE_KEY);
           console.log('✅ LocalStorage cleared'); // 디버깅용
           
           // 즉시 페이지 새로고침
@@ -2508,14 +2593,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateProductLockStates();
       
       // 통계 탭 업데이트
-      // 통계 탭 업데이트(스로틀 + 화면에 보일 때만)
-      const now = Date.now();
-      const statsTab = document.getElementById('statsTab');
-      const statsVisible = !!(statsTab && (statsTab.classList.contains('active') || window.matchMedia('(min-width: 769px)').matches));
-      if (statsVisible && now - lastStatsTabUpdate >= STATS_TAB_UPDATE_INTERVAL) {
-        updateStatsTab();
-        lastStatsTabUpdate = now;
-      }
+      updateStatsTab();
     }
 
     // 순차 해금 시스템 - 잠금 상태 업데이트
@@ -2746,11 +2824,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function shareGame() {
       const gameUrl = window.location.href;
       const gameTitle = '서울 역세권 타이쿤';
-      const gameDescription = `💰 부동산과 금융 투자로 부자가 되는 게임!\n현재 자산: ${formatCashDisplay(cash)}\n초당 수익: ${formatKoreanNumber(getRps())}원/s`;
-
-      const labelEl = elShareBtn?.querySelector?.('.share-label');
-      const originalLabel = labelEl?.textContent ?? '';
-      const originalTitle = elShareBtn?.getAttribute?.('title') ?? '';
+      const gameDescription = `💰 부동산과 금융 투자로 부자가 되는 게임!\n현재 자산: ${formatNumber(cash)}원\n초당 수익: ${formatNumber(getRps())}원/s`;
+      const shareText = `${gameTitle}\n\n${gameDescription}\n\n${gameUrl}`;
 
       // Web Share API 사용 (모바일)
       if (navigator.share) {
@@ -2773,22 +2848,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 클립보드 복사 (데스크톱 또는 Web Share API 실패 시)
       try {
-        // 길고 복잡한 텍스트 대신 URL만 복사(호환성/직관성 우선)
-        await navigator.clipboard.writeText(gameUrl);
+        await navigator.clipboard.writeText(shareText);
         addLog('✅ 게임 링크가 클립보드에 복사되었습니다!');
-
-        // 버튼에 피드백 표시(아이콘은 유지)
-        if (elShareBtn) {
-          elShareBtn.classList.add('copied');
-          if (labelEl) labelEl.textContent = '복사됨';
-          if (originalTitle) elShareBtn.setAttribute('title', '링크가 복사되었습니다');
-        }
+        
+        // 버튼에 피드백 표시
+        const originalText = elShareBtn.innerHTML;
+        elShareBtn.innerHTML = '<span>✓</span><span>복사됨!</span>';
+        elShareBtn.style.background = 'var(--good)';
         setTimeout(() => {
-          if (elShareBtn) {
-            elShareBtn.classList.remove('copied');
-            if (labelEl) labelEl.textContent = originalLabel || '공유';
-            if (originalTitle) elShareBtn.setAttribute('title', originalTitle);
-          }
+          elShareBtn.innerHTML = originalText;
+          elShareBtn.style.background = '';
         }, 2000);
       } catch (err) {
         console.error('클립보드 복사 실패:', err);
@@ -2796,7 +2865,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 대체 방법: 텍스트 영역 사용
         const textArea = document.createElement('textarea');
-        textArea.value = gameUrl;
+        textArea.value = shareText;
         textArea.style.position = 'fixed';
         textArea.style.opacity = '0';
         document.body.appendChild(textArea);
@@ -3060,19 +3129,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // 새로 시작(리셋) 버튼
-    if (elResetBtn) {
-      elResetBtn.addEventListener('click', resetGame);
-    }
-
-    // ======= UI/통계 업데이트 스로틀(성능) =======
-    let uiDirty = true;
-    let lastStatsTabUpdate = 0;
-    const STATS_TAB_UPDATE_INTERVAL = 1000; // ms
-
-    // ======= 수익/로직 틱(계산 전용) =======
-    const TICK = 50; // ms
-    setInterval(() => {
+    // ======= 수익 틱 =======
+    const TICK = 50; // ms (성능 최적화: 250ms → 50ms)
+    setInterval(()=>{
+      checkMarketEvent(); // 시장 이벤트 체크
+      checkAchievements(); // 업적 체크
+      checkUpgradeUnlocks(); // 업그레이드 해금 체크
+      
       const deltaTime = TICK / 1000;
       cash += getRps() * deltaTime;
       
@@ -3087,37 +3150,8 @@ document.addEventListener('DOMContentLoaded', () => {
       apartmentsLifetime += apartments * BASE_RENT.apartment * deltaTime;
       shopsLifetime += shops * BASE_RENT.shop * deltaTime;
       buildingsLifetime += buildings * BASE_RENT.building * deltaTime;
-
-      uiDirty = true;
-    }, TICK);
-
-    // ======= 메타 로직(저빈도) =======
-    const META_TICK = 1000; // ms
-    setInterval(() => {
-      checkMarketEvent(); // 시장 이벤트 종료 체크
-      checkAchievements(); // 업적 체크
-      checkUpgradeUnlocks(); // 업그레이드 해금 체크
-      uiDirty = true;
-    }, META_TICK);
-
-    // ======= UI 렌더(스로틀) =======
-    const UI_TICK = 250; // ms
-    setInterval(() => {
-      if (!uiDirty) return;
-      uiDirty = false;
+      
       updateUI();
-    }, UI_TICK);
-
-    // ======= 헤더 현금 표시(고빈도, 경량) =======
-    // 전체 updateUI()를 50ms로 돌리면 DOM 갱신량이 커져서 부담이 큼.
-    // 대신 cash 칩만 50ms 주기로 갱신해서 “카운트가 빨리 올라가는” 체감만 개선.
-    let __lastCashText = '';
-    setInterval(() => {
-      if (!elCash) return;
-      const nextText = formatCashDisplay(cash);
-      if (nextText === __lastCashText) return;
-      __lastCashText = nextText;
-      elCash.textContent = nextText;
     }, TICK);
     
     // ======= 자동 저장 시스템 =======
@@ -3144,7 +3178,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000); // 1초마다
     
     // ======= 시장 이벤트 시스템 =======
-    marketSystem.scheduleNextMarketEvent();
+    // 2-5분마다 랜덤하게 시장 이벤트 발생
+    setInterval(()=>{
+      if (marketEventEndTime === 0) { // 현재 이벤트가 진행 중이 아닐 때만
+        startMarketEvent();
+      }
+    }, Math.random() * 180000 + 120000); // 2-5분 랜덤
 
     // 초기 렌더
     const gameLoaded = loadGame(); // 게임 데이터 불러오기 시도
@@ -3164,50 +3203,133 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ 금융상품 통합 거래 시스템 (예금/적금/주식)');
     console.log('✅ 부동산 통합 거래 시스템 (빌라/오피스텔/아파트/상가/빌딩)');
     console.log('✅ 판매 가격: 현재가의 80%');
-    console.log('✅ 수량 선택: 1개/5개/10개');
+    console.log('✅ 수량 선택: 1개/10개/100개');
     console.log('💡 사용법: 상단 "구매/판매" 버튼으로 모드 전환 후 거래하세요!');
     
     // ======= 통계 탭 업데이트 함수 =======
-    function getStatsTabState() {
-      return {
-        cash,
-        totalClicks,
-        totalLaborIncome,
-        totalPlayTime,
-        sessionStartTime,
-        depositsLifetime,
-        savingsLifetime,
-        bondsLifetime,
-        usStocksLifetime,
-        cryptosLifetime,
-        villasLifetime,
-        officetelsLifetime,
-        apartmentsLifetime,
-        shopsLifetime,
-        buildingsLifetime,
-        deposits,
-        savings,
-        bonds,
-        villas,
-        officetels,
-        apartments,
-        shops,
-        buildings,
-      };
-    }
-
+    
     function updateStatsTab() {
-      return updateStatsTabImpl({
-        safeText,
-        formatCashDisplay,
-        formatKoreanNumber,
-        getRps,
-        getClickIncome,
-        calculateTotalAssetValue,
-        calculateEfficiencies,
-        updateAchievementGrid,
-        state: getStatsTabState(),
-      });
+      try {
+        // 1. 핵심 지표
+        const totalAssets = cash + calculateTotalAssetValue();
+        const totalEarnings = depositsLifetime + savingsLifetime + bondsLifetime + 
+                              usStocksLifetime + cryptosLifetime +
+                              villasLifetime + officetelsLifetime + apartmentsLifetime +
+                              shopsLifetime + buildingsLifetime + totalLaborIncome;
+        
+        safeText(document.getElementById('totalAssets'), formatCashDisplay(totalAssets));
+        safeText(document.getElementById('totalEarnings'), formatCashDisplay(totalEarnings));
+        safeText(document.getElementById('rpsStats'), formatKoreanNumber(getRps()) + '원/초');
+        safeText(document.getElementById('clickIncomeStats'), formatCashDisplay(getClickIncome()));
+        
+        // 2. 플레이 정보
+        safeText(document.getElementById('totalClicksStats'), totalClicks.toLocaleString('ko-KR') + '회');
+        safeText(document.getElementById('laborIncomeStats'), formatCashDisplay(totalLaborIncome));
+        
+        // 플레이 시간 계산 (누적 플레이시간 시스템)
+        const currentSessionTime = Date.now() - sessionStartTime;
+        const totalPlayTimeMs = totalPlayTime + currentSessionTime;
+        const playTimeMinutes = Math.floor(totalPlayTimeMs / 60000);
+        const playTimeHours = Math.floor(playTimeMinutes / 60);
+        const remainingMinutes = playTimeMinutes % 60;
+        const playTimeText = playTimeHours > 0 
+          ? `${playTimeHours}시간 ${remainingMinutes}분` 
+          : `${playTimeMinutes}분`;
+        
+        // 디버깅 로그
+        console.log('🕐 플레이시간 계산:', {
+          totalPlayTime: totalPlayTime,
+          currentSessionTime: currentSessionTime,
+          totalPlayTimeMs: totalPlayTimeMs,
+          playTimeMinutes: playTimeMinutes,
+          playTimeText: playTimeText
+        });
+        
+        safeText(document.getElementById('playTimeStats'), playTimeText);
+        
+        // 시간당 수익
+        const hourlyRateValue = playTimeMinutes > 0 
+          ? (totalEarnings / playTimeMinutes) * 60 
+          : 0;
+        safeText(document.getElementById('hourlyRate'), formatCashDisplay(hourlyRateValue) + '/시간');
+        
+        // 3. 수익 구조
+        const laborPercent = totalEarnings > 0 ? (totalLaborIncome / totalEarnings * 100) : 0;
+        const financialTotal = depositsLifetime + savingsLifetime + bondsLifetime + 
+                              usStocksLifetime + cryptosLifetime;
+        const financialPercent = totalEarnings > 0 ? (financialTotal / totalEarnings * 100) : 0;
+        const propertyTotal = villasLifetime + officetelsLifetime + apartmentsLifetime + shopsLifetime + buildingsLifetime;
+        const propertyPercent = totalEarnings > 0 ? (propertyTotal / totalEarnings * 100) : 0;
+        
+        // 수익 구조 바
+        const laborSegment = document.getElementById('laborSegment');
+        const financialSegment = document.getElementById('financialSegment');
+        const propertySegment = document.getElementById('propertySegment');
+        
+        if (laborSegment) {
+          laborSegment.style.width = laborPercent.toFixed(1) + '%';
+          laborSegment.querySelector('span').textContent = laborPercent >= 5 
+            ? `🛠️ ${laborPercent.toFixed(1)}%` 
+            : '';
+        }
+        
+        if (financialSegment) {
+          financialSegment.style.width = financialPercent.toFixed(1) + '%';
+          financialSegment.querySelector('span').textContent = financialPercent >= 5 
+            ? `💰 ${financialPercent.toFixed(1)}%` 
+            : '';
+        }
+        
+        if (propertySegment) {
+          propertySegment.style.width = propertyPercent.toFixed(1) + '%';
+          propertySegment.querySelector('span').textContent = propertyPercent >= 5 
+            ? `🏢 ${propertyPercent.toFixed(1)}%` 
+            : '';
+        }
+        
+        // 범례 업데이트
+        safeText(document.getElementById('laborLegend'), `노동: ${laborPercent.toFixed(1)}%`);
+        safeText(document.getElementById('financialLegend'), `금융: ${financialPercent.toFixed(1)}%`);
+        safeText(document.getElementById('propertyLegend'), `부동산: ${propertyPercent.toFixed(1)}%`);
+        
+        // 4. 금융상품 상세
+        safeText(document.getElementById('depositsOwnedStats'), deposits + '개');
+        safeText(document.getElementById('depositsLifetimeStats'), formatCashDisplay(depositsLifetime));
+        
+        safeText(document.getElementById('savingsOwnedStats'), savings + '개');
+        safeText(document.getElementById('savingsLifetimeStats'), formatCashDisplay(savingsLifetime));
+        
+        safeText(document.getElementById('bondsOwnedStats'), bonds + '개');
+        safeText(document.getElementById('bondsLifetimeStats'), formatCashDisplay(bondsLifetime));
+        
+        // 5. 부동산 상세
+        safeText(document.getElementById('villasOwnedStats'), villas + '채');
+        safeText(document.getElementById('villasLifetimeStats'), formatCashDisplay(villasLifetime));
+        
+        safeText(document.getElementById('officetelsOwnedStats'), officetels + '채');
+        safeText(document.getElementById('officetelsLifetimeStats'), formatCashDisplay(officetelsLifetime));
+        
+        safeText(document.getElementById('apartmentsOwnedStats'), apartments + '채');
+        safeText(document.getElementById('apartmentsLifetimeStats'), formatCashDisplay(apartmentsLifetime));
+        
+        safeText(document.getElementById('shopsOwnedStats'), shops + '채');
+        safeText(document.getElementById('shopsLifetimeStats'), formatCashDisplay(shopsLifetime));
+        
+        safeText(document.getElementById('buildingsOwnedStats'), buildings + '채');
+        safeText(document.getElementById('buildingsLifetimeStats'), formatCashDisplay(buildingsLifetime));
+        
+        // 6. 효율 분석
+        const efficiencies = calculateEfficiencies();
+        safeText(document.getElementById('bestEfficiency'), efficiencies[0] || '-');
+        safeText(document.getElementById('secondEfficiency'), efficiencies[1] || '-');
+        safeText(document.getElementById('thirdEfficiency'), efficiencies[2] || '-');
+        
+        // 7. 업적 그리드
+        updateAchievementGrid();
+        
+      } catch (e) {
+        console.error('Stats tab update failed:', e);
+      }
     }
     
     // 총 자산 가치 계산 (현재 보유 자산을 현재가로 환산)
@@ -3375,7 +3497,64 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateUpgradeList(); // 초기 업그레이드 리스트 생성
     
-    // (정리) 디버그/치트 코드는 프로덕션에서 제거
+    // 디버깅: 업그레이드 시스템 상태 확인
+    console.log('=== UPGRADE SYSTEM DEBUG ===');
+    console.log('Total upgrades defined:', Object.keys(UPGRADES).length);
+    console.log('Unlocked upgrades:', Object.values(UPGRADES).filter(u => u.unlocked).length);
+    console.log('Purchased upgrades:', Object.values(UPGRADES).filter(u => u.purchased).length);
+    console.log('First 3 upgrades:', Object.entries(UPGRADES).slice(0, 3).map(([id, u]) => ({
+      id,
+      unlocked: u.unlocked,
+      purchased: u.purchased,
+      cost: u.cost
+    })));
+    console.log('===========================');
+    
+    // 치트 코드 (테스트용 - 콘솔에서 사용 가능)
+    window.cheat = {
+      addCash: (amount) => {
+        cash += amount;
+    updateUI();
+        console.log(`💰 Added ${amount} cash. New total: ${cash}`);
+      },
+      unlockAllUpgrades: () => {
+        Object.values(UPGRADES).forEach(u => u.unlocked = true);
+        updateUpgradeList();
+        console.log('🔓 All upgrades unlocked!');
+        console.log('Upgrade list element:', document.getElementById('upgradeList'));
+        console.log('Upgrade list children:', document.getElementById('upgradeList')?.children.length);
+      },
+      unlockFirstUpgrade: () => {
+        const firstId = Object.keys(UPGRADES)[0];
+        UPGRADES[firstId].unlocked = true;
+        updateUpgradeList();
+        console.log('🔓 First upgrade unlocked:', UPGRADES[firstId].name);
+      },
+      setClicks: (count) => {
+        totalClicks = count;
+        updateUI();
+        checkUpgradeUnlocks();
+        console.log(`👆 Set clicks to ${count}`);
+      },
+      testUpgrade: () => {
+        // 빠른 테스트용
+        const firstId = Object.keys(UPGRADES)[0];
+        UPGRADES[firstId].unlocked = true;
+        cash += 10000000;
+        updateUpgradeList();
+        updateUI();
+        console.log('🧪 Test setup complete:');
+        console.log('  - First upgrade unlocked');
+        console.log('  - Cash: 1000만원');
+        console.log('  - Upgrade list visible:', !document.getElementById('upgradeList')?.classList.contains('collapsed-section'));
+        console.log('  - Upgrade items count:', document.querySelectorAll('.upgrade-item').length);
+      }
+    };
+    console.log('💡 치트 코드 사용 가능:');
+    console.log('  - cheat.testUpgrade() : 빠른 테스트 (첫 업그레이드 해금 + 1000만원)');
+    console.log('  - cheat.addCash(1000000000) : 10억원 추가');
+    console.log('  - cheat.unlockAllUpgrades() : 모든 업그레이드 해금');
+    console.log('  - cheat.setClicks(100) : 클릭 수 설정');
     
     // 유닛성 테스트 로그
     addLog('🧪 v2.6 Cookie Clicker 스타일 업그레이드 시스템 구현 완료');
@@ -3385,5 +3564,18 @@ document.addEventListener('DOMContentLoaded', () => {
     addLog('✅ 자동 저장 시스템 작동 중');
     addLog('⚡ 성능 최적화: 업그레이드 리스트 깜빡임 해결');
     
+    // 디버깅: 초기 상태 확인
+    console.log('Initial state:', {
+      cash,
+      totalClicks,
+      deposits,
+      savings,
+      bonds,
+      villas,
+      officetels,
+      apartments,
+      shops,
+      buildings
+    });
+  
 });
-
