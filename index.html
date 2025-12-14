@@ -13,6 +13,40 @@
       --bg:#0b1220; --panel:#121a2b; --accent:#5eead4; --muted:#94a3b8; --text:#e5e7eb; --btn:#1f2a44; --btn2:#192238; --good:#34d399; --bad:#fb7185;
       --bg2:#0f1628; --bg3:#0c1322; --primary:#60a5fa; --secondary:#a78bfa; --warning:#fbbf24; --info:#3b82f6;
     }
+    
+    /* 스크롤바 스타일링 (웹킷 브라우저: Chrome, Edge, Safari) */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(18, 26, 43, 0.3); /* --panel의 투명 버전 */
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(94, 234, 212, 0.4); /* --accent의 투명 버전 */
+      border-radius: 5px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(94, 234, 212, 0.6); /* 호버 시 더 진하게 */
+      background-clip: padding-box;
+    }
+    
+    ::-webkit-scrollbar-thumb:active {
+      background: rgba(94, 234, 212, 0.8); /* 클릭 시 가장 진하게 */
+      background-clip: padding-box;
+    }
+    
+    /* Firefox 스크롤바 스타일링 */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(94, 234, 212, 0.4) rgba(18, 26, 43, 0.3);
+    }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0; background:linear-gradient(180deg,#0b1220,#0b1324 40%,#0c1428); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial, Apple Color Emoji, Segoe UI Emoji}
@@ -396,6 +430,26 @@
     @keyframes upgradeGlow {
       0%, 100% { box-shadow: 0 0 10px rgba(52, 211, 153, 0.3); }
       50% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.5); }
+    }
+    
+    /* 승진 시 전환 애니메이션 */
+    @keyframes careerPromotion {
+      0% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(94, 234, 212, 0);
+      }
+      50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(94, 234, 212, 0.6);
+      }
+      100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(94, 234, 212, 0);
+      }
+    }
+    
+    .career-card {
+      transition: all 0.3s ease;
     }
     
     .upgrade-item.purchased {
@@ -1427,7 +1481,7 @@
       <section class="card">
         <h2>🛠️ 노동</h2>
         <div class="work">
-          <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼">🛠️ 노동 +<span id="clickIncomeButton">1만</span>원</button>
+          <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼, 클릭당 수익" aria-describedby="clickIncomeButton">🛠️ 노동 +<span id="clickIncomeButton" aria-label="클릭당 수익 금액">1만</span>원</button>
         </div>
         <div style="margin-top: 12px; padding: 12px; background: var(--bg2); border-radius: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -1805,38 +1859,10 @@
               <span class="stat-value">v1.0</span>
             </div>
           </div>
-        </div>
-
-        <!-- 저장 관리 -->
-        <div class="stats-section">
-          <h3>💾 저장 관리</h3>
-          <div class="settings-button-group">
-            <button class="btn settings-btn" id="exportSaveBtn" style="background: var(--primary);">
-              📤 저장 내보내기
-            </button>
-            <div class="settings-desc">
-              저장 내용을 백업하거나 다른 컴퓨터로 전송
-            </div>
-            <button class="btn settings-btn" id="importSaveBtn" style="background: var(--secondary);">
-              📥 저장 가져오기
-            </button>
-            <div class="settings-desc">
-              백업한 저장 파일 불러오기 (단축키: Ctrl+O)
-            </div>
-            <input type="file" id="importFileInput" accept=".json" style="display: none;">
-          </div>
-        </div>
-
-        <!-- 게임 관리 -->
-        <div class="stats-section">
-          <h3>🎮 게임 관리</h3>
-          <div class="settings-button-group">
-            <button class="reset-btn settings-btn" id="resetBtnSettings">
-              🔄 게임 새로 시작
-            </button>
-            <div class="settings-warning">
-              ⚠️ 게임을 새로 시작하면 모든 진행 상황이 삭제되며 복구할 수 없습니다.
-            </div>
+          <div class="settings-link-group" style="margin-top: 16px;">
+            <a href="https://sangbal.github.io/budongsan-tycoon/" target="_blank" rel="noopener noreferrer" class="settings-link">
+              🌐 온라인 플레이
+            </a>
           </div>
         </div>
 
@@ -1928,13 +1954,29 @@
           </div>
         </div>
 
-        <!-- 링크 -->
+        <!-- 저장 및 게임 관리 -->
         <div class="stats-section">
-          <h3>🔗 링크</h3>
-          <div class="settings-link-group">
-            <a href="https://sangbal.github.io/budongsan-tycoon/" target="_blank" rel="noopener noreferrer" class="settings-link">
-              🌐 온라인 플레이
-            </a>
+          <h3>💾 저장 및 게임 관리</h3>
+          <div class="settings-button-group">
+            <button class="btn settings-btn" id="exportSaveBtn" style="background: var(--primary);">
+              📤 저장 내보내기
+            </button>
+            <div class="settings-desc">
+              저장 내용을 백업하거나 다른 컴퓨터로 전송
+            </div>
+            <button class="btn settings-btn" id="importSaveBtn" style="background: var(--secondary);">
+              📥 저장 가져오기
+            </button>
+            <div class="settings-desc">
+              백업한 저장 파일 불러오기 (단축키: Ctrl+O)
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+            <button class="reset-btn settings-btn" id="resetBtnSettings">
+              🔄 게임 새로 시작
+            </button>
+            <div class="settings-warning">
+              ⚠️ 게임을 새로 시작하면 모든 진행 상황이 삭제되며 복구할 수 없습니다.
+            </div>
           </div>
         </div>
       </section>

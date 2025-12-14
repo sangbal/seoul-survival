@@ -660,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let i = 0; i < quantity; i++) {
         const currentIndex = count + i;
         // 첫 번째 아이템(index=0)은 기본 가격, 그 이후부터 배수 적용
-        let cost = baseCost * Math.pow(1.15, currentIndex);
+        let cost = baseCost * Math.pow(1.10, currentIndex); // 밸런싱: 1.15 → 1.10으로 완화
         totalCost += cost;
       }
       return Math.floor(totalCost);
@@ -685,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let i = 0; i < quantity; i++) {
         const currentIndex = count + i;
         // 첫 번째 아이템(index=0)은 기본 가격, 그 이후부터 배수 적용
-        let cost = baseCost * Math.pow(1.15, currentIndex);
+        let cost = baseCost * Math.pow(1.10, currentIndex); // 밸런싱: 1.15 → 1.10으로 완화
         totalCost += cost;
       }
       return Math.floor(totalCost);
@@ -754,40 +754,51 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       internship: {
         name: "📝 인턴십",
-        desc: "클릭 수익 1.3배",
+        desc: "클릭 수익 1.2배",
         cost: 200000,
         icon: "📝",
         unlockCondition: () => totalClicks >= 50,
-        effect: () => { clickMultiplier *= 1.3; },
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       efficient_work: {
         name: "⚡ 효율적인 업무 처리",
-        desc: "클릭 수익 1.5배",
+        desc: "클릭 수익 1.2배",
         cost: 500000,
         icon: "⚡",
         unlockCondition: () => totalClicks >= 100,
-        effect: () => { clickMultiplier *= 1.5; },
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       focus_training: {
         name: "🎯 집중력 강화",
-        desc: "클릭 수익 1.4배",
+        desc: "클릭 수익 1.2배",
         cost: 2000000,
         icon: "🎯",
         unlockCondition: () => totalClicks >= 250,
-        effect: () => { clickMultiplier *= 1.4; },
+        effect: () => { clickMultiplier *= 1.2; },
+        category: "labor",
+        unlocked: false,
+        purchased: false
+      },
+      professional_education: {
+        name: "📚 전문 교육",
+        desc: "클릭 수익 1.2배",
+        cost: 10000000,
+        icon: "📚",
+        unlockCondition: () => totalClicks >= 400,
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       performance_bonus: {
         name: "💰 성과급",
-        desc: "15% 확률로 5배, 85% 확률로 50% 감소",
+        desc: "10% 확률로 2배 수익",
         cost: 10000000,
         icon: "💰",
         unlockCondition: () => totalClicks >= 600,
@@ -796,82 +807,103 @@ document.addEventListener('DOMContentLoaded', () => {
         unlocked: false,
         purchased: false
       },
+      career_recognition: {
+        name: "💼 경력 인정",
+        desc: "클릭 수익 1.2배",
+        cost: 30000000,
+        icon: "💼",
+        unlockCondition: () => totalClicks >= 900,
+        effect: () => { clickMultiplier *= 1.2; },
+        category: "labor",
+        unlocked: false,
+        purchased: false
+      },
       overtime_work: {
         name: "🔥 초과근무",
-        desc: "클릭 수익 +30%, 다른 수익 -10%",
+        desc: "클릭 수익 1.2배",
         cost: 50000000,
         icon: "🔥",
         unlockCondition: () => totalClicks >= 1200,
         effect: () => { 
-          clickMultiplier *= 1.3;
-          // 다른 수익 감소는 별도 처리 필요
+          clickMultiplier *= 1.2;
         },
+        category: "labor",
+        unlocked: false,
+        purchased: false
+      },
+      honor_award: {
+        name: "🎖️ 명예상",
+        desc: "클릭 수익 1.2배",
+        cost: 100000000,
+        icon: "🎖️",
+        unlockCondition: () => totalClicks >= 1800,
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       expertise_development: {
         name: "💎 전문성 개발",
-        desc: "클릭 수익 1.4배",
+        desc: "클릭 수익 1.2배",
         cost: 200000000,
         icon: "💎",
         unlockCondition: () => totalClicks >= 2000,
-        effect: () => { clickMultiplier *= 1.4; },
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       teamwork: {
         name: "🤝 팀워크 향상",
-        desc: "클릭 수익 1.3배",
+        desc: "클릭 수익 1.2배",
         cost: 500000000,
         icon: "🤝",
         unlockCondition: () => totalClicks >= 3000,
-        effect: () => { clickMultiplier *= 1.3; },
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       leadership: {
         name: "👑 리더십",
-        desc: "클릭 수익 1.5배",
+        desc: "클릭 수익 1.2배",
         cost: 2000000000,
         icon: "👑",
         unlockCondition: () => totalClicks >= 5000,
-        effect: () => { clickMultiplier *= 1.5; },
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       ceo_privilege: {
         name: "👔 CEO 특권",
-        desc: "클릭 수익 1.8배",
+        desc: "클릭 수익 1.2배",
         cost: 10000000000,
         icon: "👔",
         unlockCondition: () => careerLevel >= 9,
-        effect: () => { clickMultiplier *= 1.8; },
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       global_experience: {
         name: "🌍 글로벌 경험",
-        desc: "클릭 수익 2배",
+        desc: "클릭 수익 1.2배",
         cost: 50000000000,
         icon: "🌍",
-        unlockCondition: () => totalClicks >= 20000,
-        effect: () => { clickMultiplier *= 2; },
+        unlockCondition: () => totalClicks >= 15000,
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       entrepreneurship: {
         name: "🚀 창업",
-        desc: "클릭 수익 2.5배",
+        desc: "클릭 수익 1.2배",
         cost: 100000000000,
         icon: "🚀",
-        unlockCondition: () => totalClicks >= 50000,
-        effect: () => { clickMultiplier *= 2.5; },
+        unlockCondition: () => totalClicks >= 30000,
+        effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
         purchased: false
@@ -881,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
       deposit_boost_1: {
         name: "💰 예금 이자율 상승",
         desc: "예금 수익 2배",
-        cost: 500000,
+        cost: 100000, // 기본가 5만원 × 2
         icon: "💰",
         unlockCondition: () => deposits >= 5,
         effect: () => { FINANCIAL_INCOME.deposit *= 2; },
@@ -892,9 +924,42 @@ document.addEventListener('DOMContentLoaded', () => {
       deposit_boost_2: {
         name: "💎 프리미엄 예금",
         desc: "예금 수익 2배",
-        cost: 5000000,
+        cost: 250000, // 기본가 5만원 × 5
         icon: "💎",
-        unlockCondition: () => deposits >= 25,
+        unlockCondition: () => deposits >= 15,
+        effect: () => { FINANCIAL_INCOME.deposit *= 2; },
+        category: "deposit",
+        unlocked: false,
+        purchased: false
+      },
+      deposit_boost_3: {
+        name: "💠 다이아몬드 예금",
+        desc: "예금 수익 2배",
+        cost: 500000, // 기본가 5만원 × 10
+        icon: "💠",
+        unlockCondition: () => deposits >= 30,
+        effect: () => { FINANCIAL_INCOME.deposit *= 2; },
+        category: "deposit",
+        unlocked: false,
+        purchased: false
+      },
+      deposit_boost_4: {
+        name: "💍 플래티넘 예금",
+        desc: "예금 수익 2배",
+        cost: 1000000, // 기본가 5만원 × 20
+        icon: "💍",
+        unlockCondition: () => deposits >= 40,
+        effect: () => { FINANCIAL_INCOME.deposit *= 2; },
+        category: "deposit",
+        unlocked: false,
+        purchased: false
+      },
+      deposit_boost_5: {
+        name: "👑 킹 예금",
+        desc: "예금 수익 2배",
+        cost: 2000000, // 기본가 5만원 × 40
+        icon: "👑",
+        unlockCondition: () => deposits >= 50,
         effect: () => { FINANCIAL_INCOME.deposit *= 2; },
         category: "deposit",
         unlocked: false,
@@ -905,7 +970,7 @@ document.addEventListener('DOMContentLoaded', () => {
       savings_boost_1: {
         name: "🏦 적금 복리 효과",
         desc: "적금 수익 2배",
-        cost: 5000000,
+        cost: 1000000, // 기본가 50만원 × 2
         icon: "🏦",
         unlockCondition: () => savings >= 5,
         effect: () => { FINANCIAL_INCOME.savings *= 2; },
@@ -916,9 +981,42 @@ document.addEventListener('DOMContentLoaded', () => {
       savings_boost_2: {
         name: "🏅 골드 적금",
         desc: "적금 수익 2배",
-        cost: 50000000,
+        cost: 2500000, // 기본가 50만원 × 5
         icon: "🏅",
-        unlockCondition: () => savings >= 25,
+        unlockCondition: () => savings >= 15,
+        effect: () => { FINANCIAL_INCOME.savings *= 2; },
+        category: "savings",
+        unlocked: false,
+        purchased: false
+      },
+      savings_boost_3: {
+        name: "💍 플래티넘 적금",
+        desc: "적금 수익 2배",
+        cost: 5000000, // 기본가 50만원 × 10
+        icon: "💍",
+        unlockCondition: () => savings >= 30,
+        effect: () => { FINANCIAL_INCOME.savings *= 2; },
+        category: "savings",
+        unlocked: false,
+        purchased: false
+      },
+      savings_boost_4: {
+        name: "💠 다이아몬드 적금",
+        desc: "적금 수익 2배",
+        cost: 10000000, // 기본가 50만원 × 20
+        icon: "💠",
+        unlockCondition: () => savings >= 40,
+        effect: () => { FINANCIAL_INCOME.savings *= 2; },
+        category: "savings",
+        unlocked: false,
+        purchased: false
+      },
+      savings_boost_5: {
+        name: "👑 킹 적금",
+        desc: "적금 수익 2배",
+        cost: 20000000, // 기본가 50만원 × 40
+        icon: "👑",
+        unlockCondition: () => savings >= 50,
         effect: () => { FINANCIAL_INCOME.savings *= 2; },
         category: "savings",
         unlocked: false,
@@ -929,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
       bond_boost_1: {
         name: "📈 주식 수익률 향상",
         desc: "주식 수익 2배",
-        cost: 50000000,
+        cost: 10000000, // 기본가 500만원 × 2
         icon: "📈",
         unlockCondition: () => bonds >= 5,
         effect: () => { FINANCIAL_INCOME.bond *= 2; },
@@ -940,11 +1038,158 @@ document.addEventListener('DOMContentLoaded', () => {
       bond_boost_2: {
         name: "💹 프리미엄 주식",
         desc: "주식 수익 2배",
-        cost: 500000000,
+        cost: 25000000, // 기본가 500만원 × 5
         icon: "💹",
-        unlockCondition: () => bonds >= 25,
+        unlockCondition: () => bonds >= 15,
         effect: () => { FINANCIAL_INCOME.bond *= 2; },
         category: "bond",
+        unlocked: false,
+        purchased: false
+      },
+      bond_boost_3: {
+        name: "📊 블루칩 주식",
+        desc: "주식 수익 2배",
+        cost: 50000000, // 기본가 500만원 × 10
+        icon: "📊",
+        unlockCondition: () => bonds >= 30,
+        effect: () => { FINANCIAL_INCOME.bond *= 2; },
+        category: "bond",
+        unlocked: false,
+        purchased: false
+      },
+      bond_boost_4: {
+        name: "💎 대형주 포트폴리오",
+        desc: "주식 수익 2배",
+        cost: 100000000, // 기본가 500만원 × 20
+        icon: "💎",
+        unlockCondition: () => bonds >= 40,
+        effect: () => { FINANCIAL_INCOME.bond *= 2; },
+        category: "bond",
+        unlocked: false,
+        purchased: false
+      },
+      bond_boost_5: {
+        name: "👑 킹 주식",
+        desc: "주식 수익 2배",
+        cost: 200000000, // 기본가 500만원 × 40
+        icon: "👑",
+        unlockCondition: () => bonds >= 50,
+        effect: () => { FINANCIAL_INCOME.bond *= 2; },
+        category: "bond",
+        unlocked: false,
+        purchased: false
+      },
+      
+      // === 미국주식 관련 ===
+      usstock_boost_1: {
+        name: "🇺🇸 S&P 500 투자",
+        desc: "미국주식 수익 2배",
+        cost: 50000000, // 기본가 2,500만원 × 2
+        icon: "🇺🇸",
+        unlockCondition: () => usStocks >= 5,
+        effect: () => { FINANCIAL_INCOME.usStock *= 2; },
+        category: "usStock",
+        unlocked: false,
+        purchased: false
+      },
+      usstock_boost_2: {
+        name: "📈 나스닥 투자",
+        desc: "미국주식 수익 2배",
+        cost: 125000000, // 기본가 2,500만원 × 5
+        icon: "📈",
+        unlockCondition: () => usStocks >= 15,
+        effect: () => { FINANCIAL_INCOME.usStock *= 2; },
+        category: "usStock",
+        unlocked: false,
+        purchased: false
+      },
+      usstock_boost_3: {
+        name: "💎 글로벌 주식 포트폴리오",
+        desc: "미국주식 수익 2배",
+        cost: 250000000, // 기본가 2,500만원 × 10
+        icon: "💎",
+        unlockCondition: () => usStocks >= 30,
+        effect: () => { FINANCIAL_INCOME.usStock *= 2; },
+        category: "usStock",
+        unlocked: false,
+        purchased: false
+      },
+      usstock_boost_4: {
+        name: "🌍 글로벌 대형주",
+        desc: "미국주식 수익 2배",
+        cost: 500000000, // 기본가 2,500만원 × 20
+        icon: "🌍",
+        unlockCondition: () => usStocks >= 40,
+        effect: () => { FINANCIAL_INCOME.usStock *= 2; },
+        category: "usStock",
+        unlocked: false,
+        purchased: false
+      },
+      usstock_boost_5: {
+        name: "👑 킹 글로벌 주식",
+        desc: "미국주식 수익 2배",
+        cost: 1000000000, // 기본가 2,500만원 × 40
+        icon: "👑",
+        unlockCondition: () => usStocks >= 50,
+        effect: () => { FINANCIAL_INCOME.usStock *= 2; },
+        category: "usStock",
+        unlocked: false,
+        purchased: false
+      },
+      
+      // === 코인 관련 ===
+      crypto_boost_1: {
+        name: "₿ 비트코인 투자",
+        desc: "코인 수익 2배",
+        cost: 200000000, // 기본가 1억원 × 2
+        icon: "₿",
+        unlockCondition: () => cryptos >= 5,
+        effect: () => { FINANCIAL_INCOME.crypto *= 2; },
+        category: "crypto",
+        unlocked: false,
+        purchased: false
+      },
+      crypto_boost_2: {
+        name: "💎 알트코인 포트폴리오",
+        desc: "코인 수익 2배",
+        cost: 500000000, // 기본가 1억원 × 5
+        icon: "💎",
+        unlockCondition: () => cryptos >= 15,
+        effect: () => { FINANCIAL_INCOME.crypto *= 2; },
+        category: "crypto",
+        unlocked: false,
+        purchased: false
+      },
+      crypto_boost_3: {
+        name: "🚀 디지털 자산 전문가",
+        desc: "코인 수익 2배",
+        cost: 1000000000, // 기본가 1억원 × 10
+        icon: "🚀",
+        unlockCondition: () => cryptos >= 30,
+        effect: () => { FINANCIAL_INCOME.crypto *= 2; },
+        category: "crypto",
+        unlocked: false,
+        purchased: false
+      },
+      crypto_boost_4: {
+        name: "🌐 메타버스 자산",
+        desc: "코인 수익 2배",
+        cost: 2000000000, // 기본가 1억원 × 20
+        icon: "🌐",
+        unlockCondition: () => cryptos >= 40,
+        effect: () => { FINANCIAL_INCOME.crypto *= 2; },
+        category: "crypto",
+        unlocked: false,
+        purchased: false
+      },
+      crypto_boost_5: {
+        name: "👑 킹 암호화폐",
+        desc: "코인 수익 2배",
+        cost: 4000000000, // 기본가 1억원 × 40
+        icon: "👑",
+        unlockCondition: () => cryptos >= 50,
+        effect: () => { FINANCIAL_INCOME.crypto *= 2; },
+        category: "crypto",
         unlocked: false,
         purchased: false
       },
@@ -953,7 +1198,7 @@ document.addEventListener('DOMContentLoaded', () => {
       villa_boost_1: {
         name: "🏘️ 빌라 리모델링",
         desc: "빌라 수익 2배",
-        cost: 500000000,
+        cost: 500000000, // 기본가 2.5억원 × 2
         icon: "🏘️",
         unlockCondition: () => villas >= 5,
         effect: () => { BASE_RENT.villa *= 2; },
@@ -964,9 +1209,42 @@ document.addEventListener('DOMContentLoaded', () => {
       villa_boost_2: {
         name: "🌟 럭셔리 빌라",
         desc: "빌라 수익 2배",
-        cost: 5000000000,
+        cost: 1250000000, // 기본가 2.5억원 × 5
         icon: "🌟",
-        unlockCondition: () => villas >= 25,
+        unlockCondition: () => villas >= 15,
+        effect: () => { BASE_RENT.villa *= 2; },
+        category: "villa",
+        unlocked: false,
+        purchased: false
+      },
+      villa_boost_3: {
+        name: "✨ 프리미엄 빌라 단지",
+        desc: "빌라 수익 2배",
+        cost: 2500000000, // 기본가 2.5억원 × 10
+        icon: "✨",
+        unlockCondition: () => villas >= 30,
+        effect: () => { BASE_RENT.villa *= 2; },
+        category: "villa",
+        unlocked: false,
+        purchased: false
+      },
+      villa_boost_4: {
+        name: "💎 다이아몬드 빌라",
+        desc: "빌라 수익 2배",
+        cost: 5000000000, // 기본가 2.5억원 × 20
+        icon: "💎",
+        unlockCondition: () => villas >= 40,
+        effect: () => { BASE_RENT.villa *= 2; },
+        category: "villa",
+        unlocked: false,
+        purchased: false
+      },
+      villa_boost_5: {
+        name: "👑 킹 빌라",
+        desc: "빌라 수익 2배",
+        cost: 10000000000, // 기본가 2.5억원 × 40
+        icon: "👑",
+        unlockCondition: () => villas >= 50,
         effect: () => { BASE_RENT.villa *= 2; },
         category: "villa",
         unlocked: false,
@@ -977,7 +1255,7 @@ document.addEventListener('DOMContentLoaded', () => {
       officetel_boost_1: {
         name: "🏢 오피스텔 스마트화",
         desc: "오피스텔 수익 2배",
-        cost: 1000000000,
+        cost: 700000000, // 기본가 3.5억원 × 2
         icon: "🏢",
         unlockCondition: () => officetels >= 5,
         effect: () => { BASE_RENT.officetel *= 2; },
@@ -988,9 +1266,42 @@ document.addEventListener('DOMContentLoaded', () => {
       officetel_boost_2: {
         name: "🏙️ 프리미엄 오피스텔",
         desc: "오피스텔 수익 2배",
-        cost: 10000000000,
+        cost: 1750000000, // 기본가 3.5억원 × 5
         icon: "🏙️",
-        unlockCondition: () => officetels >= 25,
+        unlockCondition: () => officetels >= 15,
+        effect: () => { BASE_RENT.officetel *= 2; },
+        category: "officetel",
+        unlocked: false,
+        purchased: false
+      },
+      officetel_boost_3: {
+        name: "🌆 럭셔리 오피스텔 타워",
+        desc: "오피스텔 수익 2배",
+        cost: 3500000000, // 기본가 3.5억원 × 10
+        icon: "🌆",
+        unlockCondition: () => officetels >= 30,
+        effect: () => { BASE_RENT.officetel *= 2; },
+        category: "officetel",
+        unlocked: false,
+        purchased: false
+      },
+      officetel_boost_4: {
+        name: "💎 다이아몬드 오피스텔",
+        desc: "오피스텔 수익 2배",
+        cost: 7000000000, // 기본가 3.5억원 × 20
+        icon: "💎",
+        unlockCondition: () => officetels >= 40,
+        effect: () => { BASE_RENT.officetel *= 2; },
+        category: "officetel",
+        unlocked: false,
+        purchased: false
+      },
+      officetel_boost_5: {
+        name: "👑 킹 오피스텔",
+        desc: "오피스텔 수익 2배",
+        cost: 14000000000, // 기본가 3.5억원 × 40
+        icon: "👑",
+        unlockCondition: () => officetels >= 50,
         effect: () => { BASE_RENT.officetel *= 2; },
         category: "officetel",
         unlocked: false,
@@ -1001,7 +1312,7 @@ document.addEventListener('DOMContentLoaded', () => {
       apartment_boost_1: {
         name: "🏡 아파트 프리미엄화",
         desc: "아파트 수익 2배",
-        cost: 5000000000,
+        cost: 1600000000, // 기본가 8억원 × 2
         icon: "🏡",
         unlockCondition: () => apartments >= 5,
         effect: () => { BASE_RENT.apartment *= 2; },
@@ -1012,9 +1323,42 @@ document.addEventListener('DOMContentLoaded', () => {
       apartment_boost_2: {
         name: "🏰 타워팰리스급 아파트",
         desc: "아파트 수익 2배",
-        cost: 50000000000,
+        cost: 4000000000, // 기본가 8억원 × 5
         icon: "🏰",
-        unlockCondition: () => apartments >= 25,
+        unlockCondition: () => apartments >= 15,
+        effect: () => { BASE_RENT.apartment *= 2; },
+        category: "apartment",
+        unlocked: false,
+        purchased: false
+      },
+      apartment_boost_3: {
+        name: "🏛️ 초고급 아파트 단지",
+        desc: "아파트 수익 2배",
+        cost: 8000000000, // 기본가 8억원 × 10
+        icon: "🏛️",
+        unlockCondition: () => apartments >= 30,
+        effect: () => { BASE_RENT.apartment *= 2; },
+        category: "apartment",
+        unlocked: false,
+        purchased: false
+      },
+      apartment_boost_4: {
+        name: "💎 다이아몬드 아파트",
+        desc: "아파트 수익 2배",
+        cost: 16000000000, // 기본가 8억원 × 20
+        icon: "💎",
+        unlockCondition: () => apartments >= 40,
+        effect: () => { BASE_RENT.apartment *= 2; },
+        category: "apartment",
+        unlocked: false,
+        purchased: false
+      },
+      apartment_boost_5: {
+        name: "👑 킹 아파트",
+        desc: "아파트 수익 2배",
+        cost: 32000000000, // 기본가 8억원 × 40
+        icon: "👑",
+        unlockCondition: () => apartments >= 50,
         effect: () => { BASE_RENT.apartment *= 2; },
         category: "apartment",
         unlocked: false,
@@ -1025,7 +1369,7 @@ document.addEventListener('DOMContentLoaded', () => {
       shop_boost_1: {
         name: "🏪 상가 입지 개선",
         desc: "상가 수익 2배",
-        cost: 10000000000,
+        cost: 2400000000, // 기본가 12억원 × 2
         icon: "🏪",
         unlockCondition: () => shops >= 5,
         effect: () => { BASE_RENT.shop *= 2; },
@@ -1036,9 +1380,42 @@ document.addEventListener('DOMContentLoaded', () => {
       shop_boost_2: {
         name: "🛍️ 프리미엄 상권",
         desc: "상가 수익 2배",
-        cost: 100000000000,
+        cost: 6000000000, // 기본가 12억원 × 5
         icon: "🛍️",
-        unlockCondition: () => shops >= 25,
+        unlockCondition: () => shops >= 15,
+        effect: () => { BASE_RENT.shop *= 2; },
+        category: "shop",
+        unlocked: false,
+        purchased: false
+      },
+      shop_boost_3: {
+        name: "🏬 메가몰 상권",
+        desc: "상가 수익 2배",
+        cost: 12000000000, // 기본가 12억원 × 10
+        icon: "🏬",
+        unlockCondition: () => shops >= 30,
+        effect: () => { BASE_RENT.shop *= 2; },
+        category: "shop",
+        unlocked: false,
+        purchased: false
+      },
+      shop_boost_4: {
+        name: "💎 다이아몬드 상권",
+        desc: "상가 수익 2배",
+        cost: 24000000000, // 기본가 12억원 × 20
+        icon: "💎",
+        unlockCondition: () => shops >= 40,
+        effect: () => { BASE_RENT.shop *= 2; },
+        category: "shop",
+        unlocked: false,
+        purchased: false
+      },
+      shop_boost_5: {
+        name: "👑 킹 상권",
+        desc: "상가 수익 2배",
+        cost: 48000000000, // 기본가 12억원 × 40
+        icon: "👑",
+        unlockCondition: () => shops >= 50,
         effect: () => { BASE_RENT.shop *= 2; },
         category: "shop",
         unlocked: false,
@@ -1049,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', () => {
       building_boost_1: {
         name: "🏗️ 빌딩 테넌트 확보",
         desc: "빌딩 수익 2배",
-        cost: 50000000000,
+        cost: 6000000000, // 기본가 30억원 × 2
         icon: "🏗️",
         unlockCondition: () => buildings >= 5,
         effect: () => { BASE_RENT.building *= 2; },
@@ -1060,9 +1437,42 @@ document.addEventListener('DOMContentLoaded', () => {
       building_boost_2: {
         name: "💼 랜드마크 빌딩",
         desc: "빌딩 수익 2배",
-        cost: 500000000000,
+        cost: 15000000000, // 기본가 30억원 × 5
         icon: "💼",
-        unlockCondition: () => buildings >= 25,
+        unlockCondition: () => buildings >= 15,
+        effect: () => { BASE_RENT.building *= 2; },
+        category: "building",
+        unlocked: false,
+        purchased: false
+      },
+      building_boost_3: {
+        name: "🏢 초고층 마천루",
+        desc: "빌딩 수익 2배",
+        cost: 30000000000, // 기본가 30억원 × 10
+        icon: "🏢",
+        unlockCondition: () => buildings >= 30,
+        effect: () => { BASE_RENT.building *= 2; },
+        category: "building",
+        unlocked: false,
+        purchased: false
+      },
+      building_boost_4: {
+        name: "💎 다이아몬드 빌딩",
+        desc: "빌딩 수익 2배",
+        cost: 60000000000, // 기본가 30억원 × 20
+        icon: "💎",
+        unlockCondition: () => buildings >= 40,
+        effect: () => { BASE_RENT.building *= 2; },
+        category: "building",
+        unlocked: false,
+        purchased: false
+      },
+      building_boost_5: {
+        name: "👑 킹 빌딩",
+        desc: "빌딩 수익 2배",
+        cost: 120000000000, // 기본가 30억원 × 40
+        icon: "👑",
+        unlockCondition: () => buildings >= 50,
         effect: () => { BASE_RENT.building *= 2; },
         category: "building",
         unlocked: false,
@@ -1139,22 +1549,22 @@ document.addEventListener('DOMContentLoaded', () => {
       building: false
     };
     
-    // 금융상품별 기본 수익률 (초당) - 자본주의 메시지: 단계적 성장
+    // 금융상품별 기본 수익률 (초당) - 밸런싱: 투자 수익률 10배 상향
     const FINANCIAL_INCOME = {
-      deposit: 5,     // 예금: 5원/초 (최저 수익률 - 시작점)
-      savings: 75,    // 적금: 75원/초 (1.5배 증가)
-      bond: 1125,     // 국내주식: 1,125원/초 (1.5배 증가)
-      usStock: 6000,  // 미국주식: 6,000원/초 (5.3배 증가)
-      crypto: 25000   // 코인: 25,000원/초 (4.2배 증가)
+      deposit: 50,     // 예금: 50원/초 (10배 상향)
+      savings: 750,    // 적금: 750원/초 (10배 상향)
+      bond: 11250,     // 국내주식: 11,250원/초 (10배 상향)
+      usStock: 60000,  // 미국주식: 60,000원/초 (10배 상향)
+      crypto: 250000   // 코인: 250,000원/초 (10배 상향)
     };
     
-    // 부동산별 기본 수익률 (초당) - 자본주의 메시지: 큰 자본일수록 높은 수익률
+    // 부동산별 기본 수익률 (초당) - 밸런싱: 투자 수익률 10배 상향
     const BASE_RENT = {
-      villa: 8438,     // 빌라: 8,438원/초 (1.5배 증가)
-      officetel: 17719, // 오피스텔: 17,719원/초 (1.5배 증가)
-      apartment: 60750, // 아파트: 60,750원/초 (1.5배 증가)
-      shop: 137000,    // 상가: 137,000원/초 (1.5배 증가)
-      building: 514000 // 빌딩: 514,000원/초 (최고 수익률 - 자본주의 정점)
+      villa: 84380,     // 빌라: 84,380원/초 (10배 상향)
+      officetel: 177190, // 오피스텔: 177,190원/초 (10배 상향)
+      apartment: 607500, // 아파트: 607,500원/초 (10배 상향)
+      shop: 1370000,    // 상가: 1,370,000원/초 (10배 상향)
+      building: 5140000 // 빌딩: 5,140,000원/초 (10배 상향)
     };
     
     // 업그레이드 배수
@@ -1184,7 +1594,7 @@ document.addEventListener('DOMContentLoaded', () => {
       { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 800, bgImage: "assets/images/work_bg_07_bujang_night.png" },          // 4만원/클릭 (연봉 8000만)
       { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 1100, bgImage: "assets/images/work_bg_08_sangmu_night.png" },         // 5만원/클릭 (연봉 1억)
       { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 1500, bgImage: "assets/images/work_bg_09_jeonmu_night.png" },       // 10만원/클릭 (연봉 2억)
-      { name: "CEO", multiplier: 25, requiredIncome: 250000000, requiredClicks: 2000, bgImage: "assets/images/work_bg_10_ceo_night.png" }         // 25만원/클릭 (연봉 5억)
+      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 2000, bgImage: "assets/images/work_bg_10_ceo_night.png" }         // 12만원/클릭 (밸런싱: 20 → 12)
     ];
     
     // 가격은 이제 동적으로 계산됨 (getPropertyCost 함수 사용)
@@ -1464,6 +1874,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const elCareerCost = document.getElementById('careerCost');
     const elCareerProgress = document.getElementById('careerProgress');
     const elCareerProgressText = document.getElementById('careerProgressText');
+    const elCareerRemaining = document.getElementById('careerRemaining');
     
     // 업그레이드 관련 (구형 DOM 제거됨 - 새로운 Cookie Clicker 스타일 사용)
 
@@ -1773,6 +2184,41 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     
+    // 업그레이드 진행률 업데이트
+    function updateUpgradeProgress() {
+      const progressElements = document.querySelectorAll('.upgrade-progress');
+      
+      progressElements.forEach(progressEl => {
+        // 부모 요소에서 업그레이드 ID 찾기
+        const upgradeItem = progressEl.closest('.upgrade-item');
+        if (!upgradeItem) return;
+        
+        const upgradeId = upgradeItem.dataset.upgradeId;
+        if (!upgradeId) return;
+        
+        // 해금되지 않은 업그레이드 중 가장 가까운 것을 찾기
+        const lockedUpgrades = Object.entries(UPGRADES)
+          .filter(([id, u]) => u.category === 'labor' && !u.unlocked && !u.purchased)
+          .map(([id, u]) => {
+            const conditionStr = u.unlockCondition.toString();
+            const match = conditionStr.match(/totalClicks\s*>=\s*(\d+)/);
+            if (match) {
+              return { id, requiredClicks: parseInt(match[1]), upgrade: u };
+            }
+            const careerMatch = conditionStr.match(/careerLevel\s*>=\s*(\d+)/);
+            if (careerMatch) {
+              return { id, requiredClicks: CAREER_LEVELS[parseInt(careerMatch[1])]?.requiredClicks || Infinity, upgrade: u };
+            }
+            return null;
+          })
+          .filter(x => x !== null)
+          .sort((a, b) => a.requiredClicks - b.requiredClicks);
+        
+        // 진행률 표시 제거
+        progressEl.textContent = '';
+      });
+    }
+    
     // 업그레이드 리스트 UI 생성 (해금/구매 시에만 호출)
     function updateUpgradeList() {
       const upgradeList = document.getElementById('upgradeList');
@@ -1825,6 +2271,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const cost = document.createElement('div');
         cost.className = 'upgrade-cost';
         cost.textContent = formatFinancialPrice(upgrade.cost);
+        
+        // 진행률 정보 추가 (해금 조건이 클릭 수인 경우)
+        if (upgrade.category === 'labor' && upgrade.unlockCondition) {
+          try {
+            // 해금 조건을 역으로 계산 (간단한 추정)
+            // 실제로는 unlockCondition 함수를 분석해야 하지만, 
+            // 여기서는 다음 업그레이드까지 남은 클릭 수를 표시
+            const progressInfo = document.createElement('div');
+            progressInfo.className = 'upgrade-progress';
+            progressInfo.style.fontSize = '11px';
+            progressInfo.style.color = 'var(--muted)';
+            progressInfo.style.marginTop = '4px';
+            
+            // 해금되지 않은 업그레이드 중 가장 가까운 것을 찾기
+            const lockedUpgrades = Object.entries(UPGRADES)
+              .filter(([id, u]) => u.category === 'labor' && !u.unlocked && !u.purchased)
+              .map(([id, u]) => {
+                // unlockCondition에서 클릭 수 추출 시도
+                const conditionStr = u.unlockCondition.toString();
+                const match = conditionStr.match(/totalClicks\s*>=\s*(\d+)/);
+                if (match) {
+                  return { id, requiredClicks: parseInt(match[1]), upgrade: u };
+                }
+                return null;
+              })
+              .filter(x => x !== null)
+              .sort((a, b) => a.requiredClicks - b.requiredClicks);
+            
+            // 진행률 표시 제거
+            // progressInfo는 생성하지 않음
+          } catch (e) {
+            // 진행률 계산 실패 시 무시
+          }
+        }
         
         info.appendChild(name);
         info.appendChild(desc);
@@ -1937,18 +2417,46 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkCareerPromotion() {
       const nextCareer = getNextCareer();
       if (nextCareer && totalClicks >= nextCareer.requiredClicks) {
+        const oldCareerLevel = careerLevel;
         careerLevel += 1;
         const newCareer = getCurrentCareer();
         const clickIncome = getClickIncome();
         addLog(`🎉 ${newCareer.name}으로 승진했습니다! (클릭당 ${formatKoreanNumber(clickIncome)}원)`);
         
-        // 승진 시 배경 이미지 페이드 전환
-        if (elWorkArea && newCareer.bgImage) {
-          elWorkArea.style.transition = 'background-image 0.5s ease-in-out';
-          elWorkArea.style.backgroundImage = `url('${newCareer.bgImage}')`;
-        } else if (elWorkArea && !newCareer.bgImage) {
-          elWorkArea.style.transition = 'background-image 0.5s ease-in-out';
-          elWorkArea.style.backgroundImage = 'radial-gradient(1200px 400px at 50% -50%, rgba(94,234,212,.1), transparent 60%)';
+        // 승진 시 전환 애니메이션
+        if (elWorkArea) {
+          // 페이드 아웃 효과
+          elWorkArea.style.transition = 'opacity 0.3s ease-out';
+          elWorkArea.style.opacity = '0.5';
+          
+          setTimeout(() => {
+            // 배경 이미지 변경
+            if (newCareer.bgImage) {
+              elWorkArea.style.transition = 'background-image 0.8s ease-in-out, opacity 0.5s ease-in';
+              elWorkArea.style.backgroundImage = `url('${newCareer.bgImage}')`;
+            } else {
+              elWorkArea.style.transition = 'background-image 0.8s ease-in-out, opacity 0.5s ease-in';
+              elWorkArea.style.backgroundImage = 'radial-gradient(1200px 400px at 50% -50%, rgba(94,234,212,.1), transparent 60%)';
+            }
+            
+            // 페이드 인 효과
+            elWorkArea.style.opacity = '1';
+          }, 300);
+        }
+        
+        // 직급 카드 애니메이션 효과
+        const careerCard = document.querySelector('.career-card');
+        if (careerCard) {
+          careerCard.style.animation = 'none';
+          setTimeout(() => {
+            careerCard.style.animation = 'careerPromotion 0.6s ease-out';
+          }, 10);
+        }
+        
+        // 스크린 리더 알림
+        const currentCareerEl = document.getElementById('currentCareer');
+        if (currentCareerEl) {
+          currentCareerEl.setAttribute('aria-label', `${newCareer.name}으로 승진했습니다. 클릭당 ${formatKoreanNumber(clickIncome)}원`);
         }
         
         // 승진 후 즉시 UI 업데이트
@@ -2393,12 +2901,27 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (nextCareer) {
           safeText(elNextCareerDesc, `다음: ${nextCareer.name} (${nextCareer.multiplier}배 수익)`);
-          safeText(elCareerCost, `${nextCareer.requiredClicks}클릭 필요`);
           
-          // 승진 진행률 계산 및 표시
+          // 승진 진행률 계산 및 표시 (개선된 형식)
           const progress = Math.min((totalClicks / nextCareer.requiredClicks) * 100, 100);
-          if (elCareerProgress) elCareerProgress.style.width = progress + '%';
-          safeText(elCareerProgressText, `승진 진행률: ${progress.toFixed(1)}% (${totalClicks}/${nextCareer.requiredClicks}클릭)`);
+          const remaining = Math.max(0, nextCareer.requiredClicks - totalClicks);
+          
+          if (elCareerProgress) {
+            elCareerProgress.style.width = progress + '%';
+            elCareerProgress.setAttribute('aria-valuenow', Math.round(progress));
+          }
+          
+          // 간소화된 진행률 표시
+          safeText(elCareerProgressText, `${Math.round(progress)}% (${totalClicks}/${nextCareer.requiredClicks})`);
+          
+          // 남은 클릭 수 표시
+          if (elCareerRemaining) {
+            if (remaining > 0) {
+              safeText(elCareerRemaining, `다음 승진까지 ${remaining}클릭 남음`);
+            } else {
+              safeText(elCareerRemaining, '승진 가능!');
+            }
+          }
           
           // 디버깅: 승진 진행률 확인 (강화된 로깅)
           console.log('=== CAREER PROGRESS DEBUG ===');
@@ -2410,9 +2933,14 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('=============================');
         } else {
           safeText(elNextCareerDesc, "최고 직급 달성!");
-          safeText(elCareerCost, "완료");
-          if (elCareerProgress) elCareerProgress.style.width = '100%';
-          safeText(elCareerProgressText, "승진 진행률: 100%");
+          if (elCareerProgress) {
+            elCareerProgress.style.width = '100%';
+            elCareerProgress.setAttribute('aria-valuenow', 100);
+          }
+          safeText(elCareerProgressText, "100% (완료)");
+          if (elCareerRemaining) {
+            safeText(elCareerRemaining, '최고 직급 달성');
+          }
         }
       } catch (e) {
         console.error('Career UI update failed:', e);
@@ -2858,9 +3386,9 @@ document.addEventListener('DOMContentLoaded', () => {
       let income = getClickIncome();
       
       // 업그레이드 효과 적용 (새 UPGRADES 시스템)
-      if (UPGRADES['golden_click'] && UPGRADES['golden_click'].purchased && Math.random() < 0.1) {
-        income *= 6; // 10% 확률로 6배 수익
-        addLog('💰 성과급 지급! 6배 수익!');
+      if (UPGRADES['performance_bonus'] && UPGRADES['performance_bonus'].purchased && Math.random() < 0.1) {
+        income *= 2; // 10% 확률로 2배 수익 (밸런싱: 6배 → 2배)
+        addLog('💰 성과급 지급! 2배 수익!');
       }
       
       // 떨어지는 쿠키 애니메이션 생성 (설정에서 활성화된 경우만)
@@ -2874,6 +3402,35 @@ document.addEventListener('DOMContentLoaded', () => {
       cash += income;
       totalClicks += 1; // 클릭 수 증가
       totalLaborIncome += income; // 총 노동 수익 증가
+      
+      // 미니 목표 알림: 다음 업그레이드까지 남은 클릭 수 체크
+      const lockedUpgrades = Object.entries(UPGRADES)
+        .filter(([id, u]) => u.category === 'labor' && !u.unlocked && !u.purchased)
+        .map(([id, u]) => {
+          const conditionStr = u.unlockCondition.toString();
+          const match = conditionStr.match(/totalClicks\s*>=\s*(\d+)/);
+          if (match) {
+            return { id, requiredClicks: parseInt(match[1]), upgrade: u };
+          }
+          // careerLevel 체크인 경우
+          const careerMatch = conditionStr.match(/careerLevel\s*>=\s*(\d+)/);
+          if (careerMatch) {
+            return { id, requiredClicks: CAREER_LEVELS[parseInt(careerMatch[1])]?.requiredClicks || Infinity, upgrade: u };
+          }
+          return null;
+        })
+        .filter(x => x !== null)
+        .sort((a, b) => a.requiredClicks - b.requiredClicks);
+      
+      if (lockedUpgrades.length > 0) {
+        const nextUpgrade = lockedUpgrades[0];
+        const remaining = nextUpgrade.requiredClicks - totalClicks;
+        
+        // 50클릭, 25클릭, 10클릭, 5클릭 남았을 때 알림
+        if (remaining === 50 || remaining === 25 || remaining === 10 || remaining === 5) {
+          addLog(`🎯 다음 업그레이드 "${nextUpgrade.upgrade.name}"까지 ${remaining}클릭 남음!`);
+        }
+      }
       
       // 디버깅: 클릭 수 확인 (강화된 로깅)
       console.log('=== CLICK EVENT DEBUG ===');
@@ -2891,6 +3448,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (wasPromoted) {
         updateUI();
       }
+      
+      // 업그레이드 진행률 업데이트 (UI에 표시된 경우)
+      updateUpgradeProgress();
       
       // 클릭 애니메이션 효과
       elWork.classList.add('click-effect');
@@ -3275,8 +3835,8 @@ document.addEventListener('DOMContentLoaded', () => {
         checkCareerPromotion();
         
         // 성과급은 오토클릭에도 적용
-        if (UPGRADES['golden_click'] && UPGRADES['golden_click'].purchased && Math.random() < 0.1) {
-          const bonusIncome = income * 5; // 이미 1배는 추가되었으므로 5배 추가 (총 6배)
+        if (UPGRADES['performance_bonus'] && UPGRADES['performance_bonus'].purchased && Math.random() < 0.1) {
+          const bonusIncome = income * 1; // 이미 1배는 추가되었으므로 1배 추가 (총 2배, 밸런싱: 6배 → 2배)
           cash += bonusIncome;
           totalLaborIncome += bonusIncome;
         }

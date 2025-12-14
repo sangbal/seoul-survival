@@ -18,7 +18,7 @@ export const PROPERTY_COSTS = {
   building: 3_000_000_000,
 };
 
-const DEFAULT_GROWTH = 1.15;
+const DEFAULT_GROWTH = 1.10; // 밸런싱: 1.15 → 1.10으로 완화
 const SELL_RATE = 0.8;
 
 function sumGeometricCost(baseCost, startIndex, quantity, growth = DEFAULT_GROWTH) {
