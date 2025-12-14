@@ -40,3 +40,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Local backup/archive (keep out of GitHub)
+_backup/
+

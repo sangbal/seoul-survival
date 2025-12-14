@@ -131,7 +131,7 @@ git push
 
 ## 📝 개발 정보
 
-- **현재 버전**: v3.1.0
+- **현재 버전**: v3.5.0
 - **개발자**: sangbal
 - **저장소**: https://github.com/sangbal/budongsan-tycoon
 - **플레이**: https://sangbal.github.io/budongsan-tycoon/
