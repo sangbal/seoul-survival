@@ -21,20 +21,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /*
     ============================================
-    CHANGELOG v3.1.0 - 리스크 시스템 & 이벤트 대폭 강화
+    CHANGELOG v3.1.0 - 이벤트/밸런스 대폭 강화
     ============================================
     [새 기능]
-    • 🎲 리스크 시스템: 각 상품별 리스크 레벨과 변동 수익률 구현
-      - 예금(5%) → 코인(50%)까지 단계적 리스크 증가
-      - 시각적 리스크 표시기 (색상 코딩)
+    • ⚡ 시장 이벤트: 상품별 세분화된 이벤트 (32개 → 64개로 확장)
+      - 강남 아파트 대박, 코인 시장 폭락 등 현실적 이벤트
     • ⚡ 시장 이벤트: 상품별 세분화된 이벤트 (32개 → 64개로 확장)
       - 강남 아파트 대박, 코인 시장 폭락 등 현실적 이벤트
       - 각 상품별 개별 수익/손실 효과
     • 📈 업그레이드 재밸런싱: 48개 업그레이드 비용/효과 최적화
       - 게임 밸런싱 전문가 관점에서 전체적 조정
-      - 리스크 감소 업그레이드 추가
     • 🏆 업적 확장: 16개 → 32개 업적으로 확장
-      - 리스크 관련 업적, 시장 이벤트 업적 추가
+      - 시장 이벤트 등 게임 진행 업적 추가
     • 🎨 시각 효과: 떨어지는 지폐/상품 애니메이션 추가
       - 노동 클릭 시 지폐 떨어짐
       - 상품 구매 시 해당 상품 이모지 떨어짐
@@ -724,67 +722,62 @@ document.addEventListener('DOMContentLoaded', () => {
       // === 노동 관련 (재밸런싱) ===
       part_time_job: {
         name: "🍕 아르바이트 경험",
-        desc: "클릭 수익 1.2배 (안전)",
+        desc: "클릭 수익 1.2배",
         cost: 50000,
         icon: "🍕",
         unlockCondition: () => totalClicks >= 20,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
       internship: {
         name: "📝 인턴십",
-        desc: "클릭 수익 1.3배 (안전)",
+        desc: "클릭 수익 1.3배",
         cost: 200000,
         icon: "📝",
         unlockCondition: () => totalClicks >= 50,
         effect: () => { clickMultiplier *= 1.3; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
       efficient_work: {
         name: "⚡ 효율적인 업무 처리",
-        desc: "클릭 수익 1.5배 (안전)",
+        desc: "클릭 수익 1.5배",
         cost: 500000,
         icon: "⚡",
         unlockCondition: () => totalClicks >= 100,
         effect: () => { clickMultiplier *= 1.5; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
       focus_training: {
         name: "🎯 집중력 강화",
-        desc: "클릭 수익 1.4배 (안전)",
+        desc: "클릭 수익 1.4배",
         cost: 2000000,
         icon: "🎯",
         unlockCondition: () => totalClicks >= 250,
         effect: () => { clickMultiplier *= 1.4; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
       performance_bonus: {
         name: "💰 성과급",
-        desc: "15% 확률로 5배, 85% 확률로 50% 감소 (중간 위험)",
+        desc: "15% 확률로 5배, 85% 확률로 50% 감소",
         cost: 10000000,
         icon: "💰",
         unlockCondition: () => totalClicks >= 600,
         effect: () => { /* 확률형 효과는 클릭 이벤트에서 처리 */ },
         category: "labor",
-        risk: 3,
         unlocked: false,
         purchased: false
       },
       overtime_work: {
         name: "🔥 초과근무",
-        desc: "클릭 수익 +30%, 다른 수익 -10% (낮은 위험)",
+        desc: "클릭 수익 +30%, 다른 수익 -10%",
         cost: 50000000,
         icon: "🔥",
         unlockCondition: () => totalClicks >= 1200,
@@ -793,79 +786,72 @@ document.addEventListener('DOMContentLoaded', () => {
           // 다른 수익 감소는 별도 처리 필요
         },
         category: "labor",
-        risk: 2,
         unlocked: false,
         purchased: false
       },
       expertise_development: {
         name: "💎 전문성 개발",
-        desc: "클릭 수익 1.4배 (안전)",
+        desc: "클릭 수익 1.4배",
         cost: 200000000,
         icon: "💎",
         unlockCondition: () => totalClicks >= 2000,
         effect: () => { clickMultiplier *= 1.4; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
       teamwork: {
         name: "🤝 팀워크 향상",
-        desc: "클릭 수익 1.3배 (안전)",
+        desc: "클릭 수익 1.3배",
         cost: 500000000,
         icon: "🤝",
         unlockCondition: () => totalClicks >= 3000,
         effect: () => { clickMultiplier *= 1.3; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
       leadership: {
         name: "👑 리더십",
-        desc: "클릭 수익 1.5배 (안전)",
+        desc: "클릭 수익 1.5배",
         cost: 2000000000,
         icon: "👑",
         unlockCondition: () => totalClicks >= 5000,
         effect: () => { clickMultiplier *= 1.5; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
       ceo_privilege: {
         name: "👔 CEO 특권",
-        desc: "클릭 수익 1.8배 (안전)",
+        desc: "클릭 수익 1.8배",
         cost: 10000000000,
         icon: "👔",
         unlockCondition: () => careerLevel >= 9,
         effect: () => { clickMultiplier *= 1.8; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
       global_experience: {
         name: "🌍 글로벌 경험",
-        desc: "클릭 수익 2배 (안전)",
+        desc: "클릭 수익 2배",
         cost: 50000000000,
         icon: "🌍",
         unlockCondition: () => totalClicks >= 20000,
         effect: () => { clickMultiplier *= 2; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
       entrepreneurship: {
         name: "🚀 창업",
-        desc: "클릭 수익 2.5배 (안전)",
+        desc: "클릭 수익 2.5배",
         cost: 100000000000,
         icon: "🚀",
         unlockCondition: () => totalClicks >= 50000,
         effect: () => { clickMultiplier *= 2.5; },
         category: "labor",
-        risk: 0,
         unlocked: false,
         purchased: false
       },
@@ -1139,24 +1125,6 @@ document.addEventListener('DOMContentLoaded', () => {
       bond: 1125,     // 국내주식: 1,125원/초 (1.5배 증가)
       usStock: 6000,  // 미국주식: 6,000원/초 (5.3배 증가)
       crypto: 25000   // 코인: 25,000원/초 (4.2배 증가)
-    };
-    
-    // 금융상품별 리스크 시스템
-    const FINANCIAL_RISK = {
-      deposit: { level: 0, variance: 0, name: "매우 안전", color: "#4CAF50" },      // 0% 리스크
-      savings: { level: 1, variance: 0.05, name: "안전", color: "#4CAF50" },        // 5% 리스크
-      bond: { level: 3, variance: 0.2, name: "중간 위험", color: "#FF9800" },       // 20% 리스크
-      usStock: { level: 4, variance: 0.3, name: "높은 위험", color: "#F44336" },    // 30% 리스크
-      crypto: { level: 5, variance: 0.5, name: "매우 높은 위험", color: "#9C27B0" } // 50% 리스크
-    };
-    
-    // 부동산별 리스크 시스템
-    const PROPERTY_RISK = {
-      villa: { level: 2, variance: 0.1, name: "낮은 위험", color: "#4CAF50" },      // 10% 리스크
-      officetel: { level: 2, variance: 0.1, name: "낮은 위험", color: "#4CAF50" },  // 10% 리스크
-      apartment: { level: 3, variance: 0.15, name: "중간 위험", color: "#FF9800" }, // 15% 리스크
-      shop: { level: 4, variance: 0.25, name: "높은 위험", color: "#F44336" },      // 25% 리스크
-      building: { level: 4, variance: 0.25, name: "높은 위험", color: "#F44336" }   // 25% 리스크
     };
     
     // 부동산별 기본 수익률 (초당) - 자본주의 메시지: 큰 자본일수록 높은 수익률
@@ -1533,7 +1501,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // (단순화) 리스크(랜덤 변동) 제거: 초당 수익은 예측 가능하게 유지하고,
+    // (단순화) 랜덤 변동 제거: 초당 수익은 예측 가능하게 유지하고,
     // 변동성은 '시장 이벤트'만으로 표현합니다.
     function getFinancialIncome(type, count) {
       const baseIncome = FINANCIAL_INCOME[type];
@@ -1552,7 +1520,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getRps() {
-      // 금융상품 수익 (리스크 제거)
+      // 금융상품 수익(고정) + 시장 이벤트 배수
       const financialIncome = 
         getFinancialIncome('deposit', deposits) +
         getFinancialIncome('savings', savings) +
@@ -1560,7 +1528,7 @@ document.addEventListener('DOMContentLoaded', () => {
         getFinancialIncome('usStock', usStocks) +
         getFinancialIncome('crypto', cryptos);
       
-      // 부동산 수익 (리스크 제거)
+      // 부동산 수익(고정) + 시장 이벤트 배수
       const propertyRent = 
         getPropertyIncome('villa', villas) +
         getPropertyIncome('officetel', officetels) +
@@ -1666,40 +1634,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return effects[type];
     }
     
-    // 리스크 레벨에 따른 클래스명 반환
-    function getRiskClass(level) {
-      if (level <= 1) return 'risk-low';
-      if (level <= 2) return 'risk-medium';
-      if (level <= 3) return 'risk-high';
-      return 'risk-extreme';
-    }
-    
-    // 리스크 레벨에 따른 바 클래스명 반환
-    function getRiskBarClass(level) {
-      if (level <= 1) return 'low';
-      if (level <= 2) return 'medium';
-      if (level <= 3) return 'high';
-      return 'extreme';
-    }
-    
-    // 리스크 정보 HTML 생성
-    function createRiskIndicator(level, name) {
-      const riskClass = getRiskClass(level);
-      const barClass = getRiskBarClass(level);
-      
-      return `
-        <div class="risk-indicator">
-          <span class="risk-level ${riskClass}">${name}</span>
-          <div class="risk-bar">
-            <div class="risk-fill ${barClass}"></div>
-          </div>
-        </div>
-      `;
-    }
-    
-    // 리스크 UI는 비활성화(복잡도 감소). 필요 시 추후 옵션으로 재도입 가능.
-    function updateFinancialRiskInfo() {}
-    function updatePropertyRiskInfo() {}
+    // (단순화) 리스크 UI 제거
     
     // 업적 체크
     function checkAchievements() {
@@ -3192,10 +3127,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       addLog('환영합니다! 노동으로 종잣돈을 모아 첫 부동산을 구입해보세요.');
     }
-    
-    // 리스크 정보 초기화
-    updateFinancialRiskInfo();
-    updatePropertyRiskInfo();
     
     // 판매 시스템 테스트 로그
     console.log('=== 판매 시스템 초기화 완료 ===');
