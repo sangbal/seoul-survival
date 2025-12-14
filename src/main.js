@@ -2906,7 +2906,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function shareGame() {
       const gameUrl = window.location.href;
       const gameTitle = 'Capital Clicker: Seoul Survival';
-      const gameDescription = `💰 부동산과 금융 투자로 부자가 되는 게임!\n현재 자산: ${formatNumber(cash)}원\n초당 수익: ${formatNumber(getRps())}원/s`;
+      const gameDescription = `💰 부동산과 금융 투자로 부자가 되는 게임!\n현재 자산: ${formatCashDisplay(cash)}\n초당 수익: ${formatCashDisplay(getRps())}`;
       const shareText = `${gameTitle}\n\n${gameDescription}\n\n${gameUrl}`;
 
       // Web Share API 사용 (모바일)
@@ -2934,13 +2934,17 @@ document.addEventListener('DOMContentLoaded', () => {
         addLog('✅ 게임 링크가 클립보드에 복사되었습니다!');
         
         // 버튼에 피드백 표시
-        const originalText = elShareBtn.innerHTML;
-        elShareBtn.innerHTML = '<span>✓</span><span>복사됨!</span>';
-        elShareBtn.style.background = 'var(--good)';
-        setTimeout(() => {
-          elShareBtn.innerHTML = originalText;
-          elShareBtn.style.background = '';
-        }, 2000);
+        if (elShareBtn) {
+          const originalText = elShareBtn.innerHTML;
+          elShareBtn.innerHTML = '<span>✓</span><span>복사됨!</span>';
+          elShareBtn.style.background = 'var(--good)';
+          setTimeout(() => {
+            if (elShareBtn) {
+              elShareBtn.innerHTML = originalText;
+              elShareBtn.style.background = '';
+            }
+          }, 2000);
+        }
       } catch (err) {
         console.error('클립보드 복사 실패:', err);
         addLog('❌ 공유에 실패했습니다. URL을 수동으로 복사해주세요.');
@@ -2962,7 +2966,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    elShareBtn.addEventListener('click', shareGame);
+    if (elShareBtn) {
+      elShareBtn.addEventListener('click', shareGame);
+    } else {
+      console.error('공유 버튼을 찾을 수 없습니다.');
+    }
 
     // 새로 시작 버튼 이벤트 리스너 (footer와 설정 탭 모두)
     if (elResetBtn) {
