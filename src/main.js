@@ -3,9 +3,15 @@ import { getFinancialCost, getFinancialSellPrice, getPropertyCost, getPropertySe
 import { createMarketSystem } from './systems/market.js';
 import { createAchievementsSystem } from './systems/achievements.js';
 import { createUpgradeUnlockSystem } from './systems/upgrades.js';
+import { getDomRefs } from './ui/domRefs.js';
+import { safeClass, safeHTML, safeText } from './ui/domUtils.js';
+import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
 
-// 개발 모드에서는 콘솔을 유지하고, 프로덕션 빌드에서는 로그를 무력화합니다.
-if (!import.meta.env.DEV) {
+// 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
+// - Vite 빌드/개발서버: import.meta.env.DEV 사용
+// - GitHub Pages처럼 번들 없이 ESM으로 직접 로드하는 경우: import.meta.env가 없을 수 있음
+const __IS_DEV__ = (import.meta.env?.DEV) || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+if (!__IS_DEV__) {
   console.log = () => {};
   console.warn = () => {};
   console.error = () => {};
@@ -460,28 +466,6 @@ document.addEventListener('DOMContentLoaded', () => {
     */
     
     // ======= 유틸리티 함수 =======
-    function safeText(element, text) {
-      if (element && element.textContent !== undefined) {
-        element.textContent = text;
-      }
-    }
-    
-    function safeHTML(element, html) {
-      if (element && element.innerHTML !== undefined) {
-        element.innerHTML = html;
-      }
-    }
-    
-    function safeClass(element, className, add = true) {
-      if (element && element.classList) {
-        if (add) {
-          element.classList.add(className);
-        } else {
-          element.classList.remove(className);
-        }
-      }
-    }
-    
     // 구매/판매 통합 함수
     function handleTransaction(category, type, currentCount) {
       const qty = purchaseQuantity;
@@ -1333,93 +1317,72 @@ document.addEventListener('DOMContentLoaded', () => {
     const { checkUpgradeUnlocks } = upgradeUnlockSystem;
 
     // ======= DOM =======
-    const elCash = document.getElementById('cash');
-    const elFinancial = document.getElementById('financial');
-    const elProperties = document.getElementById('properties');
-    const elRps  = document.getElementById('rps');
-    const elWork = document.getElementById('workBtn');
-    const elLog  = document.getElementById('log');
-    const elShareBtn = document.getElementById('shareBtn');
-    const elClickIncomeButton = document.getElementById('clickIncomeButton');
-    const elClickIncomeLabel = document.getElementById('clickIncomeLabel');
-    const elClickMultiplier = document.getElementById('clickMultiplier');
-    const elRentMultiplier = document.getElementById('rentMultiplier');
-
-    // 금융상품 관련
-    const elDepositCount = document.getElementById('depositCount');
-    const elIncomePerDeposit = document.getElementById('incomePerDeposit');
-    const elBuyDeposit = document.getElementById('buyDeposit');
-
-    const elSavingsCount = document.getElementById('savingsCount');
-    const elIncomePerSavings = document.getElementById('incomePerSavings');
-    const elBuySavings = document.getElementById('buySavings');
-
-    const elBondCount = document.getElementById('bondCount');
-    const elIncomePerBond = document.getElementById('incomePerBond');
-    const elBuyBond = document.getElementById('buyBond');
-    
-    // 미국주식과 코인 관련
-    const elUsStockCount = document.getElementById('usStockCount');
-    const elIncomePerUsStock = document.getElementById('incomePerUsStock');
-    const elBuyUsStock = document.getElementById('buyUsStock');
-    
-    const elCryptoCount = document.getElementById('cryptoCount');
-    const elIncomePerCrypto = document.getElementById('incomePerCrypto');
-    const elBuyCrypto = document.getElementById('buyCrypto');
-    
-    // 구매 수량 선택 시스템
-    const elBuyMode = document.getElementById('buyMode');
-    const elSellMode = document.getElementById('sellMode');
-    const elQty1 = document.getElementById('qty1');
-    const elQty5 = document.getElementById('qty5');
-    const elQty10 = document.getElementById('qty10');
-    
-    // 토글 버튼들
-    const elToggleUpgrades = document.getElementById('toggleUpgrades');
-    const elToggleFinancial = document.getElementById('toggleFinancial');
-    const elToggleProperties = document.getElementById('toggleProperties');
-    
-    // 저장 상태 표시
-    const elSaveStatus = document.getElementById('saveStatus');
-    const elResetBtn = document.getElementById('resetBtn');
-    
-    // 현재가 표시 요소들
-    const elDepositCurrentPrice = document.getElementById('depositCurrentPrice');
-    const elSavingsCurrentPrice = document.getElementById('savingsCurrentPrice');
-    const elBondCurrentPrice = document.getElementById('bondCurrentPrice');
-    const elVillaCurrentPrice = document.getElementById('villaCurrentPrice');
-    const elOfficetelCurrentPrice = document.getElementById('officetelCurrentPrice');
-    const elAptCurrentPrice = document.getElementById('aptCurrentPrice');
-    const elShopCurrentPrice = document.getElementById('shopCurrentPrice');
-    const elBuildingCurrentPrice = document.getElementById('buildingCurrentPrice');
-
-    // 부동산 구입 관련
-    const elVillaCount = document.getElementById('villaCount');
-    const elRentPerVilla = document.getElementById('rentPerVilla');
-    const elBuyVilla = document.getElementById('buyVilla');
-
-    const elOfficetelCount = document.getElementById('officetelCount');
-    const elRentPerOfficetel = document.getElementById('rentPerOfficetel');
-    const elBuyOfficetel = document.getElementById('buyOfficetel');
-
-    const elAptCount = document.getElementById('aptCount');
-    const elRentPerApt = document.getElementById('rentPerApt');
-    const elBuyApt = document.getElementById('buyApt');
-
-    const elShopCount = document.getElementById('shopCount');
-    const elRentPerShop = document.getElementById('rentPerShop');
-    const elBuyShop = document.getElementById('buyShop');
-
-    const elBuildingCount = document.getElementById('buildingCount');
-    const elRentPerBuilding = document.getElementById('rentPerBuilding');
-    const elBuyBuilding = document.getElementById('buyBuilding');
-
-    // 커리어 관련
-    const elCurrentCareer = document.getElementById('currentCareer');
-    const elNextCareerDesc = document.getElementById('nextCareerDesc');
-    const elCareerCost = document.getElementById('careerCost');
-    const elCareerProgress = document.getElementById('careerProgress');
-    const elCareerProgressText = document.getElementById('careerProgressText');
+    const {
+      elCash,
+      elFinancial,
+      elProperties,
+      elRps,
+      elWork,
+      elLog,
+      elShareBtn,
+      elClickIncomeButton,
+      elClickIncomeLabel,
+      elClickMultiplier,
+      elRentMultiplier,
+      elDepositCount,
+      elIncomePerDeposit,
+      elBuyDeposit,
+      elSavingsCount,
+      elIncomePerSavings,
+      elBuySavings,
+      elBondCount,
+      elIncomePerBond,
+      elBuyBond,
+      elUsStockCount,
+      elIncomePerUsStock,
+      elBuyUsStock,
+      elCryptoCount,
+      elIncomePerCrypto,
+      elBuyCrypto,
+      elBuyMode,
+      elSellMode,
+      elQty1,
+      elQty5,
+      elQty10,
+      elToggleUpgrades,
+      elToggleFinancial,
+      elToggleProperties,
+      elSaveStatus,
+      elResetBtn,
+      elDepositCurrentPrice,
+      elSavingsCurrentPrice,
+      elBondCurrentPrice,
+      elVillaCurrentPrice,
+      elOfficetelCurrentPrice,
+      elAptCurrentPrice,
+      elShopCurrentPrice,
+      elBuildingCurrentPrice,
+      elVillaCount,
+      elRentPerVilla,
+      elBuyVilla,
+      elOfficetelCount,
+      elRentPerOfficetel,
+      elBuyOfficetel,
+      elAptCount,
+      elRentPerApt,
+      elBuyApt,
+      elShopCount,
+      elRentPerShop,
+      elBuyShop,
+      elBuildingCount,
+      elRentPerBuilding,
+      elBuyBuilding,
+      elCurrentCareer,
+      elNextCareerDesc,
+      elCareerCost,
+      elCareerProgress,
+      elCareerProgressText,
+    } = getDomRefs();
     
     // 업그레이드 관련 (구형 DOM 제거됨 - 새로운 Cookie Clicker 스타일 사용)
 
@@ -3184,129 +3147,46 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('💡 사용법: 상단 "구매/판매" 버튼으로 모드 전환 후 거래하세요!');
     
     // ======= 통계 탭 업데이트 함수 =======
-    
+    function getStatsTabState() {
+      return {
+        cash,
+        totalClicks,
+        totalLaborIncome,
+        totalPlayTime,
+        sessionStartTime,
+        depositsLifetime,
+        savingsLifetime,
+        bondsLifetime,
+        usStocksLifetime,
+        cryptosLifetime,
+        villasLifetime,
+        officetelsLifetime,
+        apartmentsLifetime,
+        shopsLifetime,
+        buildingsLifetime,
+        deposits,
+        savings,
+        bonds,
+        villas,
+        officetels,
+        apartments,
+        shops,
+        buildings,
+      };
+    }
+
     function updateStatsTab() {
-      try {
-        // 1. 핵심 지표
-        const totalAssets = cash + calculateTotalAssetValue();
-        const totalEarnings = depositsLifetime + savingsLifetime + bondsLifetime + 
-                              usStocksLifetime + cryptosLifetime +
-                              villasLifetime + officetelsLifetime + apartmentsLifetime +
-                              shopsLifetime + buildingsLifetime + totalLaborIncome;
-        
-        safeText(document.getElementById('totalAssets'), formatCashDisplay(totalAssets));
-        safeText(document.getElementById('totalEarnings'), formatCashDisplay(totalEarnings));
-        safeText(document.getElementById('rpsStats'), formatKoreanNumber(getRps()) + '원/초');
-        safeText(document.getElementById('clickIncomeStats'), formatCashDisplay(getClickIncome()));
-        
-        // 2. 플레이 정보
-        safeText(document.getElementById('totalClicksStats'), totalClicks.toLocaleString('ko-KR') + '회');
-        safeText(document.getElementById('laborIncomeStats'), formatCashDisplay(totalLaborIncome));
-        
-        // 플레이 시간 계산 (누적 플레이시간 시스템)
-        const currentSessionTime = Date.now() - sessionStartTime;
-        const totalPlayTimeMs = totalPlayTime + currentSessionTime;
-        const playTimeMinutes = Math.floor(totalPlayTimeMs / 60000);
-        const playTimeHours = Math.floor(playTimeMinutes / 60);
-        const remainingMinutes = playTimeMinutes % 60;
-        const playTimeText = playTimeHours > 0 
-          ? `${playTimeHours}시간 ${remainingMinutes}분` 
-          : `${playTimeMinutes}분`;
-        
-        // 디버깅 로그
-        console.log('🕐 플레이시간 계산:', {
-          totalPlayTime: totalPlayTime,
-          currentSessionTime: currentSessionTime,
-          totalPlayTimeMs: totalPlayTimeMs,
-          playTimeMinutes: playTimeMinutes,
-          playTimeText: playTimeText
-        });
-        
-        safeText(document.getElementById('playTimeStats'), playTimeText);
-        
-        // 시간당 수익
-        const hourlyRateValue = playTimeMinutes > 0 
-          ? (totalEarnings / playTimeMinutes) * 60 
-          : 0;
-        safeText(document.getElementById('hourlyRate'), formatCashDisplay(hourlyRateValue) + '/시간');
-        
-        // 3. 수익 구조
-        const laborPercent = totalEarnings > 0 ? (totalLaborIncome / totalEarnings * 100) : 0;
-        const financialTotal = depositsLifetime + savingsLifetime + bondsLifetime + 
-                              usStocksLifetime + cryptosLifetime;
-        const financialPercent = totalEarnings > 0 ? (financialTotal / totalEarnings * 100) : 0;
-        const propertyTotal = villasLifetime + officetelsLifetime + apartmentsLifetime + shopsLifetime + buildingsLifetime;
-        const propertyPercent = totalEarnings > 0 ? (propertyTotal / totalEarnings * 100) : 0;
-        
-        // 수익 구조 바
-        const laborSegment = document.getElementById('laborSegment');
-        const financialSegment = document.getElementById('financialSegment');
-        const propertySegment = document.getElementById('propertySegment');
-        
-        if (laborSegment) {
-          laborSegment.style.width = laborPercent.toFixed(1) + '%';
-          laborSegment.querySelector('span').textContent = laborPercent >= 5 
-            ? `🛠️ ${laborPercent.toFixed(1)}%` 
-            : '';
-        }
-        
-        if (financialSegment) {
-          financialSegment.style.width = financialPercent.toFixed(1) + '%';
-          financialSegment.querySelector('span').textContent = financialPercent >= 5 
-            ? `💰 ${financialPercent.toFixed(1)}%` 
-            : '';
-        }
-        
-        if (propertySegment) {
-          propertySegment.style.width = propertyPercent.toFixed(1) + '%';
-          propertySegment.querySelector('span').textContent = propertyPercent >= 5 
-            ? `🏢 ${propertyPercent.toFixed(1)}%` 
-            : '';
-        }
-        
-        // 범례 업데이트
-        safeText(document.getElementById('laborLegend'), `노동: ${laborPercent.toFixed(1)}%`);
-        safeText(document.getElementById('financialLegend'), `금융: ${financialPercent.toFixed(1)}%`);
-        safeText(document.getElementById('propertyLegend'), `부동산: ${propertyPercent.toFixed(1)}%`);
-        
-        // 4. 금융상품 상세
-        safeText(document.getElementById('depositsOwnedStats'), deposits + '개');
-        safeText(document.getElementById('depositsLifetimeStats'), formatCashDisplay(depositsLifetime));
-        
-        safeText(document.getElementById('savingsOwnedStats'), savings + '개');
-        safeText(document.getElementById('savingsLifetimeStats'), formatCashDisplay(savingsLifetime));
-        
-        safeText(document.getElementById('bondsOwnedStats'), bonds + '개');
-        safeText(document.getElementById('bondsLifetimeStats'), formatCashDisplay(bondsLifetime));
-        
-        // 5. 부동산 상세
-        safeText(document.getElementById('villasOwnedStats'), villas + '채');
-        safeText(document.getElementById('villasLifetimeStats'), formatCashDisplay(villasLifetime));
-        
-        safeText(document.getElementById('officetelsOwnedStats'), officetels + '채');
-        safeText(document.getElementById('officetelsLifetimeStats'), formatCashDisplay(officetelsLifetime));
-        
-        safeText(document.getElementById('apartmentsOwnedStats'), apartments + '채');
-        safeText(document.getElementById('apartmentsLifetimeStats'), formatCashDisplay(apartmentsLifetime));
-        
-        safeText(document.getElementById('shopsOwnedStats'), shops + '채');
-        safeText(document.getElementById('shopsLifetimeStats'), formatCashDisplay(shopsLifetime));
-        
-        safeText(document.getElementById('buildingsOwnedStats'), buildings + '채');
-        safeText(document.getElementById('buildingsLifetimeStats'), formatCashDisplay(buildingsLifetime));
-        
-        // 6. 효율 분석
-        const efficiencies = calculateEfficiencies();
-        safeText(document.getElementById('bestEfficiency'), efficiencies[0] || '-');
-        safeText(document.getElementById('secondEfficiency'), efficiencies[1] || '-');
-        safeText(document.getElementById('thirdEfficiency'), efficiencies[2] || '-');
-        
-        // 7. 업적 그리드
-        updateAchievementGrid();
-        
-      } catch (e) {
-        console.error('Stats tab update failed:', e);
-      }
+      return updateStatsTabImpl({
+        safeText,
+        formatCashDisplay,
+        formatKoreanNumber,
+        getRps,
+        getClickIncome,
+        calculateTotalAssetValue,
+        calculateEfficiencies,
+        updateAchievementGrid,
+        state: getStatsTabState(),
+      });
     }
     
     // 총 자산 가치 계산 (현재 보유 자산을 현재가로 환산)
