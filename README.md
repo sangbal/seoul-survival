@@ -9,8 +9,8 @@
 
 ## ▶️ 플레이
 
-- **Online**: `https://sangbal.github.io/budongsan-tycoon/`
-- **Repo**: `https://github.com/sangbal/budongsan-tycoon`
+- **Online**: `https://sangbal.github.io/seoul-survival/`
+- **Repo**: `https://github.com/sangbal/seoul-survival`
 
 ## ✨ 주요 특징(v1.0)
 
