@@ -630,6 +630,29 @@
     .career-card {
       transition: all 0.3s ease;
     }
+
+    /* 노동 탭: 직급을 승진 프로그레스바 카드에 자연스럽게 녹이기 */
+    .career-meta-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .career-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(94,234,212,.25);
+      background: rgba(18, 26, 43, 0.55);
+      color: var(--accent);
+      font-weight:700;
+      font-size:13px;
+      line-height:1;
+      white-space:nowrap;
+    }
     
     .upgrade-item.purchased {
       opacity: 0.5;
@@ -1925,19 +1948,22 @@
       <section class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <h2 style="margin: 0;">🛠️ 노동</h2>
-          <span style="font-weight: 600; font-size: 16px; color: var(--accent);">💼 <span id="currentCareer" aria-live="polite">알바</span></span>
         </div>
         <div class="work">
           <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼, 클릭당 수익" aria-describedby="clickIncomeButton">🛠️ 노동 +<span id="clickIncomeButton" aria-label="클릭당 수익 금액">1만</span>원</button>
         </div>
         <!-- 승진 진행 카드 -->
         <div class="career-progress-card" style="margin-top: 12px; padding: 12px; background: var(--bg2); border-radius: 8px;">
+          <div class="career-meta-row">
+            <div class="career-badge">💼 <span id="currentCareer" aria-live="polite">알바</span></div>
+            <span class="desc" id="careerRemaining" style="font-size: 12px; color: var(--accent);" aria-live="polite">다음 승진까지 40클릭 남음</span>
+          </div>
           <div class="progress-container" style="margin-bottom: 6px;">
             <div class="progress-bar" id="careerProgress" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="승진 진행률"></div>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="desc" id="careerProgressText" style="font-size: 12px;" aria-live="polite">0% (0/40)</span>
-            <span class="desc" id="careerRemaining" style="font-size: 12px; color: var(--accent);" aria-live="polite">다음 승진까지 40클릭 남음</span>
+            <span class="desc" style="font-size: 12px; color: transparent;">.</span>
           </div>
         </div>
         <div class="card diary-card" style="margin-top:12px">
