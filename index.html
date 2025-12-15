@@ -52,6 +52,8 @@
     html,body{height:100%}
     /* iOS 더블탭 확대/제스처 확대 방지(UX 상의 의도적 제한) */
     html, body { touch-action: manipulation; }
+    /* iOS 연타 시 더블탭-줌이 버튼에서 발생하는 케이스가 있어 버튼에도 명시 */
+    #workBtn { touch-action: manipulation; }
     body{margin:0; background:linear-gradient(180deg,#0b1220,#0b1324 40%,#0c1428); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial, Apple Color Emoji, Segoe UI Emoji}
     .app{max-width:1400px; margin:0 auto; padding:16px; padding-top:100px;}
     .grid{display:grid; grid-template-columns: 1.1fr 0.9fr; gap:16px}

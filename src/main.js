@@ -4325,10 +4325,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======= 액션 =======
-    // iOS 연타에서 클릭이 누락되는 이슈를 피하기 위해:
-    // - touchstart에서 즉시 처리
-    // - 뒤이어 발생하는 click(고스트 클릭)은 무시
-    let __lastWorkTouchTs = 0;
     function handleWorkAction(clientX, clientY) {
       let income = getClickIncome();
 
@@ -4393,21 +4389,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateUI();
     }
 
-    elWork.addEventListener(
-      'touchstart',
-      (e) => {
-        __lastWorkTouchTs = Date.now();
-        // 확대/스크롤 제스처로 해석되지 않도록 버튼에서만 차단
-        if (e.cancelable) e.preventDefault();
-        const t = e.changedTouches?.[0];
-        handleWorkAction(t?.clientX, t?.clientY);
-      },
-      { passive: false }
-    );
-
     elWork.addEventListener('click', (e) => {
-      // touchstart로 이미 처리했으면(고스트 클릭) 무시
-      if (Date.now() - __lastWorkTouchTs < 700) return;
       handleWorkAction(e.clientX, e.clientY);
     });
 
