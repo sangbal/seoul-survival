@@ -69,7 +69,7 @@
     /* iOS 연타 시 더블탭-줌이 버튼에서 발생하는 케이스가 있어 버튼에도 명시 */
     #workBtn { touch-action: manipulation; }
     body{margin:0; background:linear-gradient(180deg,#0b1220,#0b1324 40%,#0c1428); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial, Apple Color Emoji, Segoe UI Emoji}
-    .app{max-width:1400px; margin:0 auto; padding:16px; padding-top:100px;}
+    .app{max-width:1400px; margin:0 auto; padding:16px; padding-top:calc(var(--header-h, 100px) + 16px);}
     .grid{display:grid; grid-template-columns: 1.1fr 0.9fr; gap:16px}
     header{position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:100; background:linear-gradient(180deg,#0b1220,#0b1324); box-shadow:0 4px 20px rgba(0,0,0,.5); padding:8px 16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; max-width:1400px; width:100%;}
     .header-brand{
@@ -592,15 +592,12 @@
       cursor: pointer;
       transition: all 0.2s;
       border: 2px solid transparent;
-      position: relative;
-      z-index: 1;
     }
     
     .upgrade-item:hover {
       background: var(--btn2);
       border-color: var(--accent);
       transform: translateY(-2px);
-      z-index: 10;
     }
     
     .upgrade-item.affordable {
@@ -1004,13 +1001,6 @@
         max-height: 150px;
       }
       
-      /* 일기장 로그 영역 모바일 반응형 조정 */
-      .diary-log {
-        max-height: calc(100vh - 400px);
-        min-height: 120px;
-        width: 100%;
-      }
-      
       /* 리셋 버튼 크기 조정 */
       .reset-btn {
         font-size: 12px;
@@ -1048,12 +1038,6 @@
       
       .work {
         height: 180px;
-      }
-      
-      /* 일기장 로그 영역 소형 모바일 반응형 조정 */
-      .diary-log {
-        max-height: calc(100vh - 350px);
-        min-height: 100px;
       }
       
       .btn-lg {
@@ -1917,7 +1901,7 @@
 <body>
   <div class="app">
     <header>
-      <div class="header-brand" aria-label="Capital Clicker: Seoul Survival">
+      <div class="header-brand" aria-label="게임 제목">
         <img class="brand-icon" src="assets/images/logo.png" alt="" aria-hidden="true" />
         <span class="brand-text"><b>Capital Clicker:</b> Seoul Survival</span>
       </div>
@@ -1931,7 +1915,7 @@
         <div class="chip"><span>💵 현금</span><b id="cash">0</b></div>
         <div class="chip stat-tooltip" id="financialChip" title=""><span>💰 금융</span><b id="financial">0</b><span class="muted">개</span></div>
         <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
-        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당</span><b id="rps">0</b></div>
+        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당 수익</span><b id="rps">0</b><span class="muted">원</span></div>
       </div>
     </header>
 
@@ -1971,7 +1955,6 @@
       <section>
         <div class="card">
           <h2>💰 투자</h2>
-          <div id="marketEventBar" class="market-event-bar" aria-live="polite"></div>
           
           <!-- 업그레이드 리스트 - Cookie Clicker 스타일 -->
           <h3>업그레이드 <span class="upgrade-count" id="upgradeCount">(0)</span> <span class="toggle-btn" id="toggleUpgrades" aria-label="업그레이드 섹션 토글">▼</span></h3>

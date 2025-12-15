@@ -19,6 +19,30 @@ if (!__IS_DEV__) {
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // ======= fixed header 높이만큼 본문 상단 여백 자동 보정 =======
+    // 모바일에서 헤더가 2줄로 늘어나면(.statbar 래핑) 본문 상단 요소(직급 등)가 헤더에 가려질 수 있어,
+    // 헤더 실제 높이를 CSS 변수(--header-h)로 주입해 .app padding-top이 자동으로 따라가도록 한다.
+    function __syncHeaderHeightVar() {
+      const header = document.querySelector('header');
+      if (!header) return;
+      const h = Math.ceil(header.getBoundingClientRect().height || 0);
+      if (h > 0) document.documentElement.style.setProperty('--header-h', `${h}px`);
+    }
+
+    __syncHeaderHeightVar();
+    window.addEventListener('resize', __syncHeaderHeightVar);
+    // 모바일 주소창/뷰포트 변화 대응
+    try {
+      window.visualViewport?.addEventListener('resize', __syncHeaderHeightVar);
+    } catch {}
+    // 헤더 래핑/폰트 로딩 등으로 높이가 바뀌는 경우 대응
+    try {
+      const header = document.querySelector('header');
+      if (header && 'ResizeObserver' in window) {
+        new ResizeObserver(__syncHeaderHeightVar).observe(header);
+      }
+    } catch {}
+
     // ======= (iOS) 더블탭/핀치로 인한 화면 확대 방지 =======
     // 요구사항: 노동하기 반복 터치 시 발생하는 화면 확대를 차단
     // - meta viewport(user-scalable=no) + gesture 이벤트 preventDefault로 이중 안전장치
