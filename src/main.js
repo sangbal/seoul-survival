@@ -19,6 +19,32 @@ if (!__IS_DEV__) {
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // ======= (iOS) 더블탭/핀치로 인한 화면 확대 방지 =======
+    // 요구사항: 노동하기 반복 터치 시 발생하는 화면 확대를 차단
+    // - meta viewport(user-scalable=no) + gesture 이벤트 preventDefault로 이중 안전장치
+    try {
+      const prevent = (e) => e.preventDefault();
+      document.addEventListener('gesturestart', prevent, { passive: false });
+      document.addEventListener('gesturechange', prevent, { passive: false });
+      document.addEventListener('gestureend', prevent, { passive: false });
+
+      let __lastTouchEnd = 0;
+      document.addEventListener(
+        'touchend',
+        (e) => {
+          const now = Date.now();
+          if (now - __lastTouchEnd < 300) {
+            // 더블탭 확대 방지 (특히 버튼 연타 시)
+            e.preventDefault();
+          }
+          __lastTouchEnd = now;
+        },
+        { passive: false }
+      );
+    } catch {
+      // 브라우저가 해당 이벤트를 지원하지 않아도 무시
+    }
+
     /*
     ============================================
     CHANGELOG v3.1.0 - 이벤트/밸런스 대폭 강화
@@ -4398,62 +4424,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const gameUrl = window.location.href;
       const gameTitle = 'Capital Clicker: Seoul Survival';
       const gameDescription = `💰 부동산과 금융 투자로 부자가 되는 게임!\n현재 자산: ${formatCashDisplay(cash)}\n초당 수익: ${formatCashDisplay(getRps())}`;
-      const shareText = `${gameTitle}\n\n${gameDescription}\n\n${gameUrl}`;
-
-      // Web Share API 사용 (모바일)
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: gameTitle,
-            text: gameDescription,
-            url: gameUrl
-          });
-          addLog('✅ 게임이 공유되었습니다!');
-          return;
-        } catch (err) {
-          // 사용자가 공유를 취소한 경우
-          if (err.name !== 'AbortError') {
-            console.error('공유 실패:', err);
-          }
-          // 취소된 경우 클립보드 복사로 대체
-        }
+      // 요구사항: 공유 버튼은 Web Share API만 사용 (링크 복사 fallback 제거)
+      if (!navigator.share) {
+        addLog('❌ 이 기기/브라우저에서는 공유하기를 지원하지 않습니다.');
+        return;
       }
 
-      // 클립보드 복사 (데스크톱 또는 Web Share API 실패 시)
       try {
-        await navigator.clipboard.writeText(shareText);
-        addLog('✅ 게임 링크가 클립보드에 복사되었습니다!');
-        
-        // 버튼에 피드백 표시
-        if (elShareBtn) {
-          const originalText = elShareBtn.innerHTML;
-          elShareBtn.innerHTML = '<span>✓</span><span>복사됨!</span>';
-          elShareBtn.style.background = 'var(--good)';
-          setTimeout(() => {
-            if (elShareBtn) {
-              elShareBtn.innerHTML = originalText;
-              elShareBtn.style.background = '';
-            }
-          }, 2000);
-        }
+        await navigator.share({
+          title: gameTitle,
+          text: gameDescription,
+          url: gameUrl,
+        });
+        addLog('✅ 게임이 공유되었습니다!');
       } catch (err) {
-        console.error('클립보드 복사 실패:', err);
-        addLog('❌ 공유에 실패했습니다. URL을 수동으로 복사해주세요.');
-        
-        // 대체 방법: 텍스트 영역 사용
-        const textArea = document.createElement('textarea');
-        textArea.value = shareText;
-        textArea.style.position = 'fixed';
-        textArea.style.opacity = '0';
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-          document.execCommand('copy');
-          addLog('✅ 게임 링크가 복사되었습니다!');
-        } catch (err2) {
-          addLog('❌ 공유 기능을 사용할 수 없습니다.');
+        // 사용자가 공유 UI를 닫은 경우는 조용히 무시
+        if (err?.name !== 'AbortError') {
+          console.error('공유 실패:', err);
+          addLog('❌ 공유에 실패했습니다.');
         }
-        document.body.removeChild(textArea);
       }
     }
 
