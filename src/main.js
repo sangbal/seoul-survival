@@ -27,20 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.addEventListener('gesturestart', prevent, { passive: false });
       document.addEventListener('gesturechange', prevent, { passive: false });
       document.addEventListener('gestureend', prevent, { passive: false });
-
-      let __lastTouchEnd = 0;
-      document.addEventListener(
-        'touchend',
-        (e) => {
-          const now = Date.now();
-          if (now - __lastTouchEnd < 300) {
-            // 더블탭 확대 방지 (특히 버튼 연타 시)
-            e.preventDefault();
-          }
-          __lastTouchEnd = now;
-        },
-        { passive: false }
-      );
     } catch {
       // 브라우저가 해당 이벤트를 지원하지 않아도 무시
     }
@@ -4339,27 +4325,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======= 액션 =======
-    elWork.addEventListener('click', (e)=>{
+    // iOS 연타에서 클릭이 누락되는 이슈를 피하기 위해:
+    // - touchstart에서 즉시 처리
+    // - 뒤이어 발생하는 click(고스트 클릭)은 무시
+    let __lastWorkTouchTs = 0;
+    function handleWorkAction(clientX, clientY) {
       let income = getClickIncome();
-      
+
       // 업그레이드 효과 적용 (새 UPGRADES 시스템)
       if (UPGRADES['performance_bonus'] && UPGRADES['performance_bonus'].purchased && Math.random() < 0.02) {
-        income *= 10; // 2% 확률로 10배 수익 (요청: 일기장 과다 노출 방지)
+        income *= 10; // 2% 확률로 10배 수익
         addLog('💰 성과급 지급! 10배 수익!');
       }
-      
+
       // 떨어지는 쿠키 애니메이션 생성 (설정에서 활성화된 경우만)
       if (settings.particles) {
-        const rect = elWork.getBoundingClientRect();
-        const clickX = e.clientX;
-        const clickY = e.clientY;
-        createFallingCookie(clickX, clickY);
+        createFallingCookie(clientX ?? 0, clientY ?? 0);
       }
-      
+
       cash += income;
       totalClicks += 1; // 클릭 수 증가
       totalLaborIncome += income; // 총 노동 수익 증가
-      
+
       // 미니 목표 알림: 다음 업그레이드까지 남은 클릭 수 체크
       const lockedUpgrades = Object.entries(UPGRADES)
         .filter(([id, u]) => u.category === 'labor' && !u.unlocked && !u.purchased)
@@ -4376,47 +4363,52 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           return null;
         })
-        .filter(x => x !== null)
+        .filter((x) => x !== null)
         .sort((a, b) => a.requiredClicks - b.requiredClicks);
-      
+
       if (lockedUpgrades.length > 0) {
         const nextUpgrade = lockedUpgrades[0];
         const remaining = nextUpgrade.requiredClicks - totalClicks;
-        
+
         // 50클릭, 25클릭, 10클릭, 5클릭 남았을 때 알림
         if (remaining === 50 || remaining === 25 || remaining === 10 || remaining === 5) {
           addLog(`🎯 다음 업그레이드 "${nextUpgrade.upgrade.name}"까지 ${remaining}클릭 남음!`);
         }
       }
-      
-      // 디버깅: 클릭 수 확인 (강화된 로깅)
-      console.log('=== CLICK EVENT DEBUG ===');
-      console.log('Click count updated:', totalClicks);
-      console.log('Current career level:', careerLevel);
-      console.log('Next career required clicks:', getNextCareer()?.requiredClicks);
-      console.log('Cash updated:', cash);
-      console.log('Total labor income:', totalLaborIncome);
-      console.log('========================');
-      
+
       // 자동 승진 체크
       const wasPromoted = checkCareerPromotion();
-      
-      // 승진이 발생했다면 즉시 UI 업데이트
-      if (wasPromoted) {
-        updateUI();
-      }
-      
+      if (wasPromoted) updateUI();
+
       // 업그레이드 진행률 업데이트 (UI에 표시된 경우)
       updateUpgradeProgress();
-      
+
       // 클릭 애니메이션 효과
       elWork.classList.add('click-effect');
       setTimeout(() => elWork.classList.remove('click-effect'), 300);
-      
+
       // 수익 증가 텍스트 애니메이션
       showIncomeAnimation(income);
-      
+
       updateUI();
+    }
+
+    elWork.addEventListener(
+      'touchstart',
+      (e) => {
+        __lastWorkTouchTs = Date.now();
+        // 확대/스크롤 제스처로 해석되지 않도록 버튼에서만 차단
+        if (e.cancelable) e.preventDefault();
+        const t = e.changedTouches?.[0];
+        handleWorkAction(t?.clientX, t?.clientY);
+      },
+      { passive: false }
+    );
+
+    elWork.addEventListener('click', (e) => {
+      // touchstart로 이미 처리했으면(고스트 클릭) 무시
+      if (Date.now() - __lastWorkTouchTs < 700) return;
+      handleWorkAction(e.clientX, e.clientY);
     });
 
     // ======= 공유하기 기능 =======
