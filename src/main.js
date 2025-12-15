@@ -1922,10 +1922,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const elWorkArea = document.querySelector('.work'); // 노동 배경 영역
     const elLog  = document.getElementById('log');
     const elShareBtn = document.getElementById('shareBtn');
+    const elBookmarkBtn = document.getElementById('bookmarkBtn');
     const elClickIncomeButton = document.getElementById('clickIncomeButton');
     const elClickIncomeLabel = document.getElementById('clickIncomeLabel');
     const elClickMultiplier = document.getElementById('clickMultiplier');
     const elRentMultiplier = document.getElementById('rentMultiplier');
+
+    // 모달
+    const elInfoModal = document.getElementById('infoModal');
+    const elInfoModalTitle = document.getElementById('infoModalTitle');
+    const elInfoModalMessage = document.getElementById('infoModalMessage');
+    const elInfoModalClose = document.getElementById('infoModalClose');
 
     // 금융상품 관련
     const elDepositCount = document.getElementById('depositCount');
@@ -4459,7 +4466,58 @@ document.addEventListener('DOMContentLoaded', () => {
       handleWorkAction(e.clientX, e.clientY);
     });
 
-    // ======= 공유하기 기능 =======
+    // ======= 공유하기 / 즐겨찾기 기능 =======
+    function lockScroll(lock) {
+      document.body.style.overflow = lock ? 'hidden' : '';
+    }
+
+    function showInfoModal(title, message) {
+      if (!elInfoModal) {
+        alert(message);
+        return;
+      }
+      if (elInfoModalTitle) elInfoModalTitle.textContent = title;
+      if (elInfoModalMessage) elInfoModalMessage.innerHTML = String(message || '').replace(/\n/g, '<br>');
+      elInfoModal.hidden = false;
+      lockScroll(true);
+      // 버튼 포커스 이동
+      setTimeout(() => {
+        elInfoModalClose?.focus();
+      }, 0);
+    }
+
+    function hideInfoModal() {
+      if (!elInfoModal) return;
+      elInfoModal.hidden = true;
+      lockScroll(false);
+    }
+
+    if (elInfoModalClose) {
+      elInfoModalClose.addEventListener('click', hideInfoModal);
+    }
+    if (elInfoModal) {
+      elInfoModal.addEventListener('click', (e) => {
+        if (e.target === elInfoModal) hideInfoModal();
+      });
+    }
+    document.addEventListener('keydown', (e) => {
+      if (!elInfoModal || elInfoModal.hidden) return;
+      if (e.key === 'Escape') {
+        hideInfoModal();
+      }
+      if (e.key === 'Enter') {
+        hideInfoModal();
+      }
+    });
+
+    function isStandaloneDisplay() {
+      return window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator?.standalone;
+    }
+
+    function isMobileUA() {
+      return /android|iphone|ipad|ipod/i.test(window.navigator.userAgent || '');
+    }
+
     async function shareGame() {
       const gameUrl = window.location.href;
       const gameTitle = 'Capital Clicker: Seoul Survival';
@@ -4486,10 +4544,46 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    function handleBookmarkAction() {
+      const gameUrl = window.location.href;
+      const gameTitle = document.title || 'Capital Clicker: Seoul Survival';
+
+      // 이미 앱 모드라면 안내만 표시
+      if (isStandaloneDisplay()) {
+        showInfoModal('설치됨', '✅ 이미 홈 화면/앱 모드에서 실행 중입니다.');
+        return;
+      }
+
+      // 데스크톱: 단축키/즐겨찾기 안내 (+ 구형 IE 호환)
+      if (!isMobileUA()) {
+        try {
+          if (window.external && typeof window.external.AddFavorite === 'function') {
+            window.external.AddFavorite(gameUrl, gameTitle);
+            showInfoModal('즐겨찾기', '✅ 즐겨찾기 추가를 요청했습니다.\n브라우저 안내를 확인해주세요.');
+            return;
+          }
+        } catch {}
+        showInfoModal('즐겨찾기 안내', 'PC에서는 아래 단축키로 즐겨찾기를 추가하세요.\n- Windows: Ctrl + D\n- macOS: ⌘ + D');
+        return;
+      }
+
+      // 모바일: 홈 화면 추가 가이드
+      showInfoModal(
+        '홈 화면에 추가',
+        '모바일 브라우저 메뉴에서 "홈 화면에 추가"를 선택하세요.\n- iOS Safari: 공유 아이콘 → 홈 화면에 추가\n- Android Chrome: 메뉴(⋮) → 홈 화면에 추가 또는 설치'
+      );
+      // iOS는 자동 프롬프트가 없어 가이드만 제공
+      // 안드로이드 크롬은 주소창 메뉴 또는 PWA 설치 배너를 통해 추가 가능
+    }
+
     if (elShareBtn) {
       elShareBtn.addEventListener('click', shareGame);
     } else {
       console.error('공유 버튼을 찾을 수 없습니다.');
+    }
+
+    if (elBookmarkBtn) {
+      elBookmarkBtn.addEventListener('click', handleBookmarkAction);
     }
 
     // 새로 시작 버튼 이벤트 리스너 (footer와 설정 탭 모두)
