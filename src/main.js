@@ -1922,10 +1922,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const elWorkArea = document.querySelector('.work'); // 노동 배경 영역
     const elLog  = document.getElementById('log');
     const elShareBtn = document.getElementById('shareBtn');
+    const elFavoriteBtn = document.getElementById('favoriteBtn'); // 즐겨찾기 / 홈 화면 안내 버튼
     const elClickIncomeButton = document.getElementById('clickIncomeButton');
     const elClickIncomeLabel = document.getElementById('clickIncomeLabel');
     const elClickMultiplier = document.getElementById('clickMultiplier');
     const elRentMultiplier = document.getElementById('rentMultiplier');
+
+    // 공통 모달 요소
+    const elModalRoot = document.getElementById('gameModalRoot');
+    const elModalTitle = document.getElementById('gameModalTitle');
+    const elModalMessage = document.getElementById('gameModalMessage');
+    const elModalPrimary = document.getElementById('gameModalPrimary');
+    const elModalSecondary = document.getElementById('gameModalSecondary');
 
     // 금융상품 관련
     const elDepositCount = document.getElementById('depositCount');
@@ -3540,14 +3548,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 게임 초기화 함수
     function resetGame() {
       console.log('🔄 resetGame function called'); // 디버깅용
-      console.log('🔄 About to show confirm dialog'); // 디버깅용
-      
-      // 간단하고 명확한 확인 메시지
-      const userConfirmed = confirm('🔄 게임을 새로 시작하시겠습니까?\n\n⚠️ 모든 진행 상황이 삭제되며 복구할 수 없습니다.');
-      
-      console.log('🔄 User response:', userConfirmed); // 디버깅용
-      
-      if (userConfirmed === true) {
+
+      const message =
+        '게임을 새로 시작하시겠습니까?\n\n' +
+        '⚠️ 모든 진행 상황이 삭제되며 복구할 수 없습니다.';
+
+      openConfirmModal('게임 새로 시작', message, () => {
         try {
           // 초기화 진행 메시지
           addLog('🔄 게임을 초기화합니다...');
@@ -3562,12 +3568,13 @@ document.addEventListener('DOMContentLoaded', () => {
           location.reload();
         } catch (error) {
           console.error('❌ Error in resetGame:', error);
-          alert('게임 초기화 중 오류가 발생했습니다. 페이지를 새로고침해주세요.');
+          openInfoModal('오류', '게임 초기화 중 오류가 발생했습니다.\n페이지를 새로고침해주세요.', '⚠️');
         }
-      } else {
-        console.log('❌ User cancelled reset'); // 디버깅용
-        addLog('❌ 게임 초기화가 취소되었습니다.');
-      }
+      }, {
+        icon: '🔄',
+        primaryLabel: '새로 시작',
+        secondaryLabel: '취소',
+      });
     }
     
     // 구매 완료 시 반짝 효과 함수
@@ -4459,6 +4466,68 @@ document.addEventListener('DOMContentLoaded', () => {
       handleWorkAction(e.clientX, e.clientY);
     });
 
+    // ======= 공통 모달 유틸 =======
+    let modalOnConfirm = null;
+
+    function closeModal() {
+      if (!elModalRoot) return;
+      elModalRoot.classList.add('game-modal-hidden');
+      modalOnConfirm = null;
+    }
+
+    function openInfoModal(title, message, icon = 'ℹ️') {
+      if (!elModalRoot || !elModalTitle || !elModalMessage || !elModalPrimary || !elModalSecondary) {
+        alert(message);
+        return;
+      }
+      elModalRoot.classList.remove('game-modal-hidden');
+      const titleIcon = elModalTitle.querySelector('.icon');
+      const titleText = elModalTitle.querySelector('.text');
+      if (titleIcon) titleIcon.textContent = icon;
+      if (titleText) titleText.textContent = title;
+      elModalMessage.textContent = message;
+
+      elModalSecondary.style.display = 'none';
+      elModalPrimary.textContent = '확인';
+
+      elModalPrimary.onclick = () => {
+        closeModal();
+      };
+      elModalSecondary.onclick = () => {
+        closeModal();
+      };
+    }
+
+    function openConfirmModal(title, message, onConfirm, options = {}) {
+      if (!elModalRoot || !elModalTitle || !elModalMessage || !elModalPrimary || !elModalSecondary) {
+        const userConfirmed = confirm(message);
+        if (userConfirmed && typeof onConfirm === 'function') onConfirm();
+        return;
+      }
+
+      elModalRoot.classList.remove('game-modal-hidden');
+      const titleIcon = elModalTitle.querySelector('.icon');
+      const titleText = elModalTitle.querySelector('.text');
+      if (titleIcon) titleIcon.textContent = options.icon || '⚠️';
+      if (titleText) titleText.textContent = title;
+      elModalMessage.textContent = message;
+
+      elModalSecondary.style.display = 'inline-flex';
+      elModalPrimary.textContent = options.primaryLabel || '예';
+      elModalSecondary.textContent = options.secondaryLabel || '아니오';
+
+      modalOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
+
+      elModalPrimary.onclick = () => {
+        const cb = modalOnConfirm;
+        closeModal();
+        if (cb) cb();
+      };
+      elModalSecondary.onclick = () => {
+        closeModal();
+      };
+    }
+
     // ======= 공유하기 기능 =======
     async function shareGame() {
       const gameUrl = window.location.href;
@@ -4490,6 +4559,55 @@ document.addEventListener('DOMContentLoaded', () => {
       elShareBtn.addEventListener('click', shareGame);
     } else {
       console.error('공유 버튼을 찾을 수 없습니다.');
+    }
+
+    // ======= 즐겨찾기 / 홈 화면 안내 =======
+    function handleFavoriteClick() {
+      const url = window.location.href;
+      const title = document.title || 'Capital Clicker: Seoul Survival';
+      const ua = navigator.userAgent.toLowerCase();
+      const isMobile = /iphone|ipad|ipod|android/.test(ua);
+      const isIOS = /iphone|ipad|ipod/.test(ua);
+      const isAndroid = /android/.test(ua);
+      const isMac = navigator.platform.toUpperCase().includes('MAC');
+
+      // (아주 옛날 IE 전용) 가능한 경우 직접 즐겨찾기 추가 시도
+      if (window.external && typeof window.external.AddFavorite === 'function') {
+        try {
+          window.external.AddFavorite(url, title);
+          addLog('⭐ 즐겨찾기에 추가되었습니다.');
+          return;
+        } catch {
+          // 실패하면 아래 안내로 fallback
+        }
+      }
+
+      let message = '';
+      let modalTitle = '즐겨찾기 / 홈 화면에 추가';
+      let icon = '⭐';
+
+      if (isMobile) {
+        if (isIOS) {
+          message =
+            'iPhone/iPad에서는 Safari 하단의 공유 버튼(□↑)을 누른 뒤\n' +
+            '"홈 화면에 추가"를 선택하면 바탕화면에 게임 아이콘이 만들어집니다.';
+        } else if (isAndroid) {
+          message =
+            'Android에서는 브라우저 오른쪽 위 메뉴(⋮)에서\n' +
+            '"홈 화면에 추가" 또는 "앱 설치"를 선택하면 바탕화면에 게임 아이콘이 만들어집니다.';
+        } else {
+          message = '이 기기에서는 브라우저의 메뉴에서 "홈 화면에 추가" 기능을 사용해 주세요.';
+        }
+      } else {
+        const shortcut = isMac ? '⌘ + D' : 'Ctrl + D';
+        message = `${shortcut} 를 눌러 이 페이지를 브라우저 즐겨찾기에 추가할 수 있습니다.`;
+      }
+
+      openInfoModal(modalTitle, message, icon);
+    }
+
+    if (elFavoriteBtn) {
+      elFavoriteBtn.addEventListener('click', handleFavoriteClick);
     }
 
     // 새로 시작 버튼 이벤트 리스너 (footer와 설정 탭 모두)

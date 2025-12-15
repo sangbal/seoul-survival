@@ -901,8 +901,9 @@
       transform: translateY(-2px);
     }
     
-    /* 공유하기 버튼(칩 스타일로 헤더 표기와 융화) */
-    button.share-btn.chip{
+    /* 공유/즐겨찾기 버튼(칩 스타일로 헤더 표기와 융화) */
+    button.share-btn.chip,
+    button.favorite-btn.chip{
       border: none;
       color: var(--text);
       cursor: pointer;
@@ -911,12 +912,14 @@
       user-select: none;
     }
 
-    button.share-btn.chip:hover{
+    button.share-btn.chip:hover,
+    button.favorite-btn.chip:hover{
       background: var(--bg2);
       transform: translateY(-2px);
     }
 
-    button.share-btn.chip:active{
+    button.share-btn.chip:active,
+    button.favorite-btn.chip:active{
       transform: translateY(0);
     }
 
@@ -932,9 +935,75 @@
       background: var(--good);
     }
 
-    button.share-btn.chip:disabled {
+    button.share-btn.chip:disabled,
+    button.favorite-btn.chip:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+    }
+    
+    /* ======= 공통 모달(UI 안내/확인) ======= */
+    .game-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    
+    .game-modal {
+      width: min(420px, 90vw);
+      background: linear-gradient(180deg, var(--bg2), var(--bg3));
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+      padding: 18px 20px 16px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    
+    .game-modal-title {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .game-modal-title span.icon {
+      font-size: 18px;
+    }
+    
+    .game-modal-message {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+    
+    .game-modal-message b {
+      color: var(--accent);
+    }
+    
+    .game-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    
+    .game-modal-actions .btn-secondary {
+      background: var(--btn);
+      color: var(--text);
+    }
+    
+    .game-modal-actions .btn-secondary:hover {
+      background: var(--btn2);
+    }
+    
+    .game-modal-hidden {
+      display: none;
     }
     
     /* ======= 모바일 최적화 ======= */
@@ -955,12 +1024,14 @@
         width: 100%;
       }
       
-      .share-btn {
+      .share-btn,
+      .favorite-btn {
         /* 모바일에서도 플로팅 없이 상단 표기(칩)와 같이 배치 */
         font-size: 12px;
       }
       
-      .share-btn .share-label {
+      .share-btn .share-label,
+      .favorite-btn .favorite-label {
         display: none;
       }
       
@@ -1940,6 +2011,19 @@
         <img class="brand-icon" src="assets/images/logo.png" alt="" aria-hidden="true" />
         <span class="brand-text"><b>Capital Clicker:</b> Seoul Survival</span>
       </div>
+
+      <!-- 즐겨찾기 / 홈 화면 안내 버튼 (공유 버튼 왼쪽) -->
+      <button
+        class="chip favorite-btn"
+        id="favoriteBtn"
+        type="button"
+        title="즐겨찾기 / 홈 화면에 추가 안내"
+        aria-label="즐겨찾기 / 홈 화면에 추가 안내"
+      >
+        <span class="favorite-icon">⭐</span>
+        <span class="favorite-label">즐겨찾기</span>
+      </button>
+
       <button class="chip share-btn" id="shareBtn" type="button" title="게임 공유하기" aria-label="게임 공유하기">
         <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.6 2.6 0 0 0 0-1.39l7.02-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .06.59L7.03 9.7A3 3 0 1 0 7 14.3l7.02 4.11A3 3 0 1 0 18 16.08z"></path>
@@ -2565,6 +2649,21 @@
         <span>설정</span>
       </button>
     </nav>
+  </div>
+
+  <!-- 공통 모달: 안내 / 확인 -->
+  <div id="gameModalRoot" class="game-modal-overlay game-modal-hidden" role="dialog" aria-modal="true" aria-labelledby="gameModalTitle" aria-describedby="gameModalMessage">
+    <div class="game-modal">
+      <h2 id="gameModalTitle" class="game-modal-title">
+        <span class="icon">ℹ️</span>
+        <span class="text">알림</span>
+      </h2>
+      <p id="gameModalMessage" class="game-modal-message"></p>
+      <div class="game-modal-actions">
+        <button id="gameModalSecondary" type="button" class="btn btn-secondary">취소</button>
+        <button id="gameModalPrimary" type="button" class="btn">확인</button>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="./src/main.js"></script>
