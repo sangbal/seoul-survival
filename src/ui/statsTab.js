@@ -77,7 +77,8 @@ export function updateStatsTab(deps) {
 
     safeText(document.getElementById('totalAssets'), formatCashDisplay(totalAssets));
     safeText(document.getElementById('totalEarnings'), formatCashDisplay(totalEarnings));
-    safeText(document.getElementById('rpsStats'), formatKoreanNumber(getRps()) + '원/초');
+    // 통계 탭: 축약 표기(짧은 숫자)에서 소수점 자릿수 고정된 formatCashDisplay 사용
+    safeText(document.getElementById('rpsStats'), formatCashDisplay(getRps()) + '/초');
     safeText(document.getElementById('clickIncomeStats'), formatCashDisplay(getClickIncome()));
 
     // 2. 플레이 정보
@@ -187,6 +188,8 @@ export function updateStatsTab(deps) {
     console.error('Stats tab update failed:', e);
   }
 }
+
+
 
 
 

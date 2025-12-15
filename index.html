@@ -1094,7 +1094,7 @@
       
       /* 로그 영역 높이 조정 */
       .log {
-        max-height: 150px;
+        max-height: 120px;
       }
       
       /* 리셋 버튼 크기 조정 */
@@ -1174,6 +1174,17 @@
     #statsTab .stat-value,
     #settingsTab .stat-value {
       font-size: 16px;
+    }
+
+    /* 통계 탭: 길이가 긴 값(성장 속도/다음 마일스톤/시간당 수익) 1줄 유지 */
+    #statsTab #growthRate,
+    #statsTab #nextMilestone,
+    #statsTab #hourlyRate {
+      white-space: nowrap;
+      font-size: 14px;
+      line-height: 1.15;
+      letter-spacing: -0.2px;
+      font-variant-numeric: tabular-nums;
     }
     
     #workTab h2,
@@ -2498,7 +2509,7 @@
           </div>
           <div class="settings-link-group" style="margin-top: 16px;">
             <a href="https://clicksurvivor.com/seoulsurvival/" target="_blank" rel="noopener noreferrer" class="settings-link">
-              🌐 온라인 플레이
+              🌐 홈페이지 이동
             </a>
           </div>
         </div>

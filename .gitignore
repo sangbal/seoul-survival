@@ -44,3 +44,6 @@ pnpm-debug.log*
 # Local backup/archive (keep out of GitHub)
 _backup/
 
+# Generated reports
+upgrade_report.md
+

@@ -616,18 +616,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // 통계 섹션 전용 포맷 함수 (#,##0만원, 억 단위 넘어가면 0.00억)
+    // 통계/축약 표기용 포맷 함수
+    // - 짧은 숫자 OFF: 항상 전체 원 단위(천단위 콤마)
+    // - 짧은 숫자 ON : 단위별 소수점 자릿수 고정(눈에 거슬리는 "생겼다/없어졌다" 현상 방지)
+    //   * 만원: 0.0만원 (소수 1자리 고정)
+    //   * 억/조: 0.00억 / 0.00조 (소수 2자리 고정)
     function formatStatsNumber(num) {
-      if (num >= 100000000) {
-        // 억 단위: 0.00억 형식
-        const value = (num / 100000000).toFixed(2);
-        return parseFloat(value).toLocaleString('ko-KR') + '억';
+      if (!settings.shortNumbers) {
+        return Math.floor(num).toLocaleString('ko-KR') + '원';
+      }
+
+      if (num >= 1000000000000) {
+        const value = num / 1000000000000;
+        return value.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '조';
+      } else if (num >= 100000000) {
+        const value = num / 100000000;
+        return value.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '억';
       } else if (num >= 10000) {
-        // 만원 단위: #,##0만원 형식
-        const man = Math.floor(num / 10000);
-        return man.toLocaleString('ko-KR') + '만원';
+        const value = num / 10000;
+        return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '만원';
       } else if (num >= 1000) {
-        // 천원 단위
         const cheon = Math.floor(num / 1000);
         return cheon.toLocaleString('ko-KR') + '천원';
       } else {
@@ -635,26 +643,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // 상단 헤더 현금 표시용 포맷 (짧은 숫자 설정 반영, 형식은 formatStatsNumber와 동일)
+    // 상단 헤더 현금 표시용 포맷 (통계 포맷과 동일 규칙 사용)
     function formatHeaderCash(num) {
-      // 짧은 숫자 설정이 꺼져있으면 전체 숫자 표시
-      if (!settings.shortNumbers) {
-        return Math.floor(num).toLocaleString('ko-KR') + '원';
-      }
-      
-      // 짧은 숫자 형식 사용 (#,##0만원, 억 단위 넘어가면 0.00억)
-      if (num >= 100000000) {
-        const value = (num / 100000000).toFixed(2);
-        return parseFloat(value).toLocaleString('ko-KR') + '억';
-      } else if (num >= 10000) {
-        const man = Math.floor(num / 10000);
-        return man.toLocaleString('ko-KR') + '만원';
-      } else if (num >= 1000) {
-        const cheon = Math.floor(num / 1000);
-        return cheon.toLocaleString('ko-KR') + '천원';
-      } else {
-        return Math.floor(num).toLocaleString('ko-KR') + '원';
-      }
+      return formatStatsNumber(num);
     }
     
     // 금융상품용 포맷 (만원 단위까지 반올림, 천단위 콤마)
@@ -692,12 +683,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // 현금 표시용 함수 (짧은 숫자 설정 반영)
+    // - 짧은 숫자 ON: 통계 포맷 규칙(고정 소수점) 그대로 사용
     function formatCashDisplay(num) {
-      if (!settings.shortNumbers) {
-        return Math.floor(num).toLocaleString('ko-KR') + '원';
-      }
-      // 짧은 숫자 형식 사용
-      return formatKoreanNumber(num) + '원';
+      return formatStatsNumber(num);
     }
 
     // (요청) 소수점 1자리 표기를 고정(0.0도 유지)하는 짧은 숫자 포맷
@@ -846,7 +834,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 50000,
         icon: "🍕",
-        unlockCondition: () => totalClicks >= 20,
+        // 직급 연동: 계약직부터 해금
+        unlockCondition: () => careerLevel >= 1,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -857,7 +846,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 200000,
         icon: "📝",
-        unlockCondition: () => totalClicks >= 50,
+        // 직급 연동: 사원부터 해금
+        unlockCondition: () => careerLevel >= 2,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -868,7 +858,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 500000,
         icon: "⚡",
-        unlockCondition: () => totalClicks >= 100,
+        // 직급 연동: 대리부터 해금
+        unlockCondition: () => careerLevel >= 3,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -879,7 +870,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 2000000,
         icon: "🎯",
-        unlockCondition: () => totalClicks >= 250,
+        // 직급 연동: 과장부터 해금
+        unlockCondition: () => careerLevel >= 4,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -890,7 +882,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 10000000,
         icon: "📚",
-        unlockCondition: () => totalClicks >= 400,
+        // 직급 연동: 차장부터 해금
+        unlockCondition: () => careerLevel >= 5,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -901,7 +894,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "2% 확률로 10배 수익",
         cost: 10000000,
         icon: "💰",
-        unlockCondition: () => totalClicks >= 600,
+        // 직급 연동: 부장부터 해금
+        unlockCondition: () => careerLevel >= 6,
         effect: () => { /* 확률형 효과는 클릭 이벤트에서 처리 */ },
         category: "labor",
         unlocked: false,
@@ -912,7 +906,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 30000000,
         icon: "💼",
-        unlockCondition: () => totalClicks >= 900,
+        // 직급 연동: 부장부터 해금
+        unlockCondition: () => careerLevel >= 6,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -923,7 +918,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 50000000,
         icon: "🔥",
-        unlockCondition: () => totalClicks >= 1200,
+        // 직급 연동: 상무부터 해금
+        unlockCondition: () => careerLevel >= 7,
         effect: () => { 
           clickMultiplier *= 1.2;
         },
@@ -936,7 +932,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 100000000,
         icon: "🎖️",
-        unlockCondition: () => totalClicks >= 1800,
+        // 직급 연동: 상무부터 해금
+        unlockCondition: () => careerLevel >= 7,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -947,7 +944,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 200000000,
         icon: "💎",
-        unlockCondition: () => totalClicks >= 2000,
+        // 직급 연동: 전무부터 해금
+        unlockCondition: () => careerLevel >= 8,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -958,7 +956,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 500000000,
         icon: "🤝",
-        unlockCondition: () => totalClicks >= 3000,
+        // 직급 연동: 전무부터 해금
+        unlockCondition: () => careerLevel >= 8,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -969,7 +968,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "클릭 수익 1.2배",
         cost: 2000000000,
         icon: "👑",
-        unlockCondition: () => totalClicks >= 5000,
+        // 직급 연동: 전무부터 해금
+        unlockCondition: () => careerLevel >= 8,
         effect: () => { clickMultiplier *= 1.2; },
         category: "labor",
         unlocked: false,
@@ -977,33 +977,35 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       ceo_privilege: {
         name: "👔 CEO 특권",
-        desc: "클릭 수익 1.2배",
+        desc: "클릭 수익 2.0배",
         cost: 10000000000,
         icon: "👔",
         unlockCondition: () => careerLevel >= 9,
-        effect: () => { clickMultiplier *= 1.2; },
+        effect: () => { clickMultiplier *= 2.0; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       global_experience: {
         name: "🌍 글로벌 경험",
-        desc: "클릭 수익 1.2배",
+        desc: "클릭 수익 2.0배",
         cost: 50000000000,
         icon: "🌍",
-        unlockCondition: () => totalClicks >= 15000,
-        effect: () => { clickMultiplier *= 1.2; },
+        // 직급 연동: CEO 이후(추가 성장용)로 해금
+        unlockCondition: () => careerLevel >= 9 && totalClicks >= 15000,
+        effect: () => { clickMultiplier *= 2.0; },
         category: "labor",
         unlocked: false,
         purchased: false
       },
       entrepreneurship: {
         name: "🚀 창업",
-        desc: "클릭 수익 1.2배",
+        desc: "클릭 수익 2.0배",
         cost: 100000000000,
         icon: "🚀",
-        unlockCondition: () => totalClicks >= 30000,
-        effect: () => { clickMultiplier *= 1.2; },
+        // 직급 연동: CEO 이후(최종 성장용)로 해금
+        unlockCondition: () => careerLevel >= 9 && totalClicks >= 30000,
+        effect: () => { clickMultiplier *= 2.0; },
         category: "labor",
         unlocked: false,
         purchased: false
@@ -1724,15 +1726,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalLaborIncome = 0;   // 총 노동 수익
     const CAREER_LEVELS = [
       { name: "알바", multiplier: 1, requiredIncome: 0, requiredClicks: 0, bgImage: "assets/images/work_bg_01_alba_night.png" },                    // 1만원/클릭 (연봉 2000만)
-      { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 50, bgImage: "assets/images/work_bg_02_gyeyakjik_night.png" },        // 1.5만원/클릭 (연봉 3000만)
-      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 150, bgImage: "assets/images/work_bg_03_sawon_night.png" },          // 2만원/클릭 (연봉 4000만) - 간격 2배: 50→100
-      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 350, bgImage: "assets/images/work_bg_04_daeri_night.png" },        // 2.5만원/클릭 (연봉 5000만) - 간격 2배: 100→200
-      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 650, bgImage: "assets/images/work_bg_05_gwajang_night.png" },          // 3만원/클릭 (연봉 6000만) - 간격 2배: 150→300
-      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 1050, bgImage: "assets/images/work_bg_06_chajang_night.png" },        // 3.5만원/클릭 (연봉 7000만) - 간격 2배: 200→400
-      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 1550, bgImage: "assets/images/work_bg_07_bujang_night.png" },          // 4만원/클릭 (연봉 8000만) - 간격 2배: 250→500
-      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 2150, bgImage: "assets/images/work_bg_08_sangmu_night.png" },         // 5만원/클릭 (연봉 1억) - 간격 2배: 300→600
-      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 2950, bgImage: "assets/images/work_bg_09_jeonmu_night.png" },       // 10만원/클릭 (연봉 2억) - 간격 2배: 400→800
-      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 3950, bgImage: "assets/images/work_bg_10_ceo_night.png" }         // 12만원/클릭 (밸런싱: 20 → 12) - 간격 2배: 500→1000
+      // 누적 클릭 기준 승진 간격 조정: 최종(CEO) 10,000 클릭에 도달하도록 전체적으로 간격을 벌림
+      { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 150, bgImage: "assets/images/work_bg_02_gyeyakjik_night.png" },        // 1.5만원/클릭 (연봉 3000만)
+      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 400, bgImage: "assets/images/work_bg_03_sawon_night.png" },          // 2만원/클릭 (연봉 4000만)
+      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 900, bgImage: "assets/images/work_bg_04_daeri_night.png" },        // 2.5만원/클릭 (연봉 5000만)
+      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 1650, bgImage: "assets/images/work_bg_05_gwajang_night.png" },          // 3만원/클릭 (연봉 6000만)
+      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 2650, bgImage: "assets/images/work_bg_06_chajang_night.png" },        // 3.5만원/클릭 (연봉 7000만)
+      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 3900, bgImage: "assets/images/work_bg_07_bujang_night.png" },          // 4만원/클릭 (연봉 8000만)
+      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 5450, bgImage: "assets/images/work_bg_08_sangmu_night.png" },         // 5만원/클릭 (연봉 1억)
+      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 7450, bgImage: "assets/images/work_bg_09_jeonmu_night.png" },       // 10만원/클릭 (연봉 2억)
+      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 10000, bgImage: "assets/images/work_bg_10_ceo_night.png" }         // 12만원/클릭 (밸런싱: 20 → 12)
     ];
     
     // 가격은 이제 동적으로 계산됨 (getPropertyCost 함수 사용)
@@ -3729,7 +3732,8 @@ document.addEventListener('DOMContentLoaded', () => {
           // 남은 클릭 수 표시
           if (elCareerRemaining) {
             if (remaining > 0) {
-              safeText(elCareerRemaining, `다음 승진까지 ${remaining}클릭 남음`);
+              // 천 단위 콤마 표기
+              safeText(elCareerRemaining, `다음 승진까지 ${remaining.toLocaleString('ko-KR')}클릭 남음`);
             } else {
               safeText(elCareerRemaining, '승진 가능!');
             }
@@ -5100,7 +5104,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // UI 업데이트
       safeText(document.getElementById('hourlyEarnings'), formatCashDisplay(Math.max(0, hourlyEarnings)));
       safeText(document.getElementById('dailyEarnings'), formatCashDisplay(Math.max(0, dailyEarnings)));
-      safeText(document.getElementById('growthRate'), `${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(1)}%/시간`);
+      // "+0.0%/시간" 처럼 소수점 1자리 고정 + -0.0 방지
+      const growthRateStable = Math.abs(growthRate) < 0.05 ? 0 : growthRate;
+      safeText(document.getElementById('growthRate'), `${growthRateStable >= 0 ? '+' : ''}${growthRateStable.toFixed(1)}%/시간`);
       safeText(document.getElementById('nextMilestone'), nextMilestone);
       
       lastEarningsSnapshot = currentEarnings;
@@ -5274,7 +5280,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         safeText(document.getElementById('totalAssets'), formatStatsNumber(totalAssets));
         safeText(document.getElementById('totalEarnings'), formatStatsNumber(totalEarnings));
-        safeText(document.getElementById('rpsStats'), formatKoreanNumber(getRps()) + '원/초');
+        // 통계 탭에서는 축약 표기/고정 소수점 규칙을 그대로 사용
+        safeText(document.getElementById('rpsStats'), formatCashDisplay(getRps()) + '/초');
         safeText(document.getElementById('clickIncomeStats'), formatCashDisplay(getClickIncome()));
         
         // 2. 플레이 정보
