@@ -1642,6 +1642,44 @@ document.addEventListener('DOMContentLoaded', () => {
       shop: 1370000,    // 상가: 1,370,000원/초 (10배 상향)
       building: 5140000 // 빌딩: 5,140,000원/초 (10배 상향)
     };
+
+    // NOTE:
+    // 일부 업그레이드는 구매 시 FINANCIAL_INCOME / BASE_RENT를 직접 변경한다.
+    // (예: "상가 수익 2배" -> BASE_RENT.shop *= 2)
+    // 그런데 저장/로드는 업그레이드 구매 상태만 복원하고, 중복 적용 버그를 피하려고
+    // 로드 시 effect 재실행을 막아둔 적이 있어, 재접속 후 수익이 줄어드는 현상이 발생할 수 있다.
+    // 해결: 기본 수익 테이블을 "초기값으로 리셋" 후, 수익 테이블에 영향을 주는 업그레이드만 1회 재적용(멱등).
+    const DEFAULT_FINANCIAL_INCOME = { ...FINANCIAL_INCOME };
+    const DEFAULT_BASE_RENT = { ...BASE_RENT };
+
+    function resetIncomeTablesToDefault() {
+      for (const k of Object.keys(DEFAULT_FINANCIAL_INCOME)) {
+        FINANCIAL_INCOME[k] = DEFAULT_FINANCIAL_INCOME[k];
+      }
+      for (const k of Object.keys(DEFAULT_BASE_RENT)) {
+        BASE_RENT[k] = DEFAULT_BASE_RENT[k];
+      }
+    }
+
+    function reapplyIncomeTableAffectingUpgradeEffects() {
+      resetIncomeTablesToDefault();
+
+      for (const upgrade of Object.values(UPGRADES)) {
+        if (!upgrade?.purchased || typeof upgrade.effect !== 'function') continue;
+
+        // clickMultiplier/rentMultiplier 등 "저장되는 상태"에 대한 effect는 중복 적용 위험이 있어 제외한다.
+        // 반면 FINANCIAL_INCOME / BASE_RENT는 저장되지 않으므로, 여기에만 영향을 주는 업그레이드는 재적용이 필요하다.
+        const src = Function.prototype.toString.call(upgrade.effect);
+        const affectsIncomeTables = src.includes('FINANCIAL_INCOME') || src.includes('BASE_RENT');
+        if (!affectsIncomeTables) continue;
+
+        try {
+          upgrade.effect();
+        } catch {
+          // 업그레이드 effect 실패는 무시(로드/진행 유지)
+        }
+      }
+    }
     
     // 업그레이드 배수
     let clickMultiplier = 1;    // 노동 효율 배수
@@ -3428,6 +3466,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
         }
+
+        // (버그픽스) 수익 테이블(FINANCIAL_INCOME/BASE_RENT)에만 영향을 주는 업그레이드 효과는
+        // 저장값으로 복원되지 않으므로, 기본값으로 리셋 후 1회 재적용하여 재접속 시 수익이 줄어드는 문제를 방지한다.
+        reapplyIncomeTableAffectingUpgradeEffects();
         
         // 시장 이벤트 복원
         marketMultiplier = data.marketMultiplier || 1;
