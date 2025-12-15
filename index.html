@@ -50,13 +50,47 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0; background:linear-gradient(180deg,#0b1220,#0b1324 40%,#0c1428); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial, Apple Color Emoji, Segoe UI Emoji}
-    .app{max-width:1400px; margin:0 auto; padding:16px; padding-top:80px;}
+    .app{max-width:1400px; margin:0 auto; padding:16px; padding-top:100px;}
     .grid{display:grid; grid-template-columns: 1.1fr 0.9fr; gap:16px}
-    header{position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:100; background:linear-gradient(180deg,#0b1220,#0b1324); box-shadow:0 4px 20px rgba(0,0,0,.5); padding:12px 16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; max-width:1400px; width:100%;}
-    .statbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; flex:1; min-width:0;}
-    .share-btn{flex-shrink:0}
-    .chip{background:var(--panel); padding:10px 12px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px}
-    .chip b{font-size:16px}
+    header{position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:100; background:linear-gradient(180deg,#0b1220,#0b1324); box-shadow:0 4px 20px rgba(0,0,0,.5); padding:8px 16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; max-width:1400px; width:100%;}
+    .header-brand{
+      flex: 1 1 auto;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(18, 26, 43, 0.55);
+      border: 1px solid rgba(255,255,255,.06);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      user-select: none;
+    }
+    .header-brand .brand-icon{
+      width:16px;
+      height:16px;
+      border-radius:4px;
+      flex:0 0 auto;
+      filter: drop-shadow(0 3px 8px rgba(0,0,0,0.35));
+    }
+    .header-brand .brand-text{
+      font-size:12px;
+      letter-spacing:.2px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .header-brand .brand-text b{
+      color: var(--text);
+      font-weight: 700;
+    }
+    .statbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; flex:1 1 100%; min-width:0;}
+    .share-btn{flex-shrink:0;}
+    .chip{background:var(--panel); padding:6px 10px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; font-size:12px;}
+    .chip b{font-size:12px; font-weight:700;}
     .muted{color:var(--muted)}
 
     .card{background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,.3)}
@@ -140,6 +174,61 @@
       border-color:var(--accent);
       transform:translateY(-2px);
     }
+
+    /* ======= 시장 이벤트 영향 표시(투자 섹션) ======= */
+    .event-mult-badge{
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.2px;
+      line-height:1;
+      white-space:nowrap;
+      user-select:none;
+    }
+    .event-mult-badge.is-visible{display:inline-flex}
+    .event-mult-badge.is-bull{
+      color: var(--good);
+      background: rgba(52, 211, 153, 0.10);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+    .event-mult-badge.is-bear{
+      color: var(--bad);
+      background: rgba(251, 113, 133, 0.10);
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+
+    /* 투자 섹션 상단 이벤트 상태 바 */
+    .market-event-bar{
+      display:none;
+      margin: 6px 0 10px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: rgba(18, 26, 43, 0.55);
+      border: 1px solid rgba(255,255,255,.06);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .market-event-bar.is-visible{display:block}
+    .market-event-bar b{color: var(--text)}
+    .market-event-bar .good{color: var(--good); font-weight:700}
+    .market-event-bar .bad{color: var(--bad); font-weight:700}
+
+    /* outline은 기존 affordable/hover border와 충돌이 적음 */
+    .row.event-bull{
+      outline: 2px solid rgba(52, 211, 153, 0.45);
+      outline-offset: 0px;
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.08);
+    }
+    .row.event-bear{
+      /* 요청: 악재(핑크) 바깥 테두리는 제거 (배지는 유지) */
+      outline: none;
+      box-shadow: none;
+    }
     .row .meta{display:flex; flex-direction:column; flex:1; pointer-events:none;}
     .row .meta .title{font-weight:700; font-size:14px;}
     .row .meta .desc{color:var(--muted); font-size:12px; margin-top:4px;}
@@ -151,10 +240,24 @@
     .diary-card h2{
       display:flex;
       align-items:center;
-      justify-content:flex-start;
-      gap:10px;
-      margin:0 0 8px;
+      justify-content:space-between;
+      gap:12px;
+      margin:0 0 10px;
       font-size:16px;
+    }
+    .diary-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
+    }
+    .diary-header-meta{
+      font-size:12px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      flex: 0 0 auto;
+      text-align: right;
     }
     .diary-meta{
       display:flex;
@@ -166,7 +269,7 @@
     }
     .diary-meta b{color:var(--text); font-weight:600}
     .diary-log{
-      max-height:180px;
+      max-height:240px;
       padding:10px 10px;
       border-radius:12px;
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
@@ -174,8 +277,26 @@
     }
     .diary-log p{
       margin:0 0 10px;
-      line-height:1.6;
+      font-size: 13px;
+      line-height:1.5;
       white-space:pre-line;
+    }
+    /* 일기장: 독백 vs 정보(시스템) 가독성 분리 */
+    .diary-voice{
+      display:block;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+    .diary-info{
+      display:block;
+      margin-top: 0px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      letter-spacing: .1px;
+      line-height: 1.25;
     }
     .diary-log p:last-child{margin-bottom:0}
     .diary-time{
@@ -429,6 +550,8 @@
       margin-bottom: 16px;
       max-height: 400px;
       overflow-y: auto;
+      padding-top: 4px;
+      padding-bottom: 4px;
     }
     
     .upgrade-list:empty::after {
@@ -450,12 +573,15 @@
       cursor: pointer;
       transition: all 0.2s;
       border: 2px solid transparent;
+      position: relative;
+      z-index: 1;
     }
     
     .upgrade-item:hover {
       background: var(--btn2);
       border-color: var(--accent);
       transform: translateY(-2px);
+      z-index: 10;
     }
     
     .upgrade-item.affordable {
@@ -744,8 +870,8 @@
     }
 
     .share-btn .share-icon {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       display: block;
       fill: currentColor;
       flex: 0 0 auto;
@@ -793,13 +919,13 @@
       }
       
       .chip b {
-        font-size: 14px;
+        font-size: 12px;
       }
       
       /* 앱 패딩 조정 */
       .app {
         padding: 8px;
-        padding-top: 70px;
+        padding-top: 78px;
       }
       
       /* 버튼 크기 확대 (터치 최적화) */
@@ -859,6 +985,13 @@
         max-height: 150px;
       }
       
+      /* 일기장 로그 영역 모바일 반응형 조정 */
+      .diary-log {
+        max-height: calc(100vh - 400px);
+        min-height: 120px;
+        width: 100%;
+      }
+      
       /* 리셋 버튼 크기 조정 */
       .reset-btn {
         font-size: 12px;
@@ -874,7 +1007,7 @@
       
       .app {
         padding: 4px;
-        padding-top: 65px;
+        padding-top: 74px;
       }
       
       header {
@@ -896,6 +1029,12 @@
       
       .work {
         height: 180px;
+      }
+      
+      /* 일기장 로그 영역 소형 모바일 반응형 조정 */
+      .diary-log {
+        max-height: calc(100vh - 350px);
+        min-height: 100px;
       }
       
       .btn-lg {
@@ -958,6 +1097,32 @@
       background: var(--bg2);
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,.06);
+    }
+    
+    /* 게임 정보 섹션 배경 이미지 */
+    .game-info-section {
+      background-image: url('assets/images/settings_gameinfo_bg.webp');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .game-info-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(11, 18, 32, 0.7);
+      z-index: 0;
+    }
+    
+    .game-info-section > * {
+      position: relative;
+      z-index: 1;
     }
     
     /* 토글 스위치 스타일 */
@@ -1171,13 +1336,14 @@
     }
     
     .stats-section.stats-pinned {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: var(--bg);
-      padding: 12px;
-      margin: -12px -12px 12px -12px;
-      border-bottom: 1px solid rgba(255,255,255,.05);
+      /* 요청: 통계 전체가 스크롤되도록 고정 해제 */
+      position: relative;
+      top: auto;
+      z-index: auto;
+      background: var(--bg2);
+      padding: 16px;
+      margin: 0 0 24px 0;
+      border-bottom: none;
     }
     
     .stats-section h3 {
@@ -1362,6 +1528,11 @@
     
     .legend-color.property {
       background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .legend-color.cash {
+      /* 현금 컬러 = 노동 컬러 */
+      background: linear-gradient(135deg, #f59e0b, #d97706);
     }
     
     /* 자산 상세 */
@@ -1591,18 +1762,10 @@
     
     /* 모바일에서 툴팁 위치 조정 */
     @media (max-width: 768px) {
-      .achievement-tooltip {
-        bottom: auto;
-        top: calc(100% + 8px);
+      /* 모바일에서 화살표/방향을 강제하지 않음 (PC와 동일하게 유지) */
+      .achievement-tooltip { 
         min-width: 250px;
         max-width: 90vw;
-      }
-      
-      .achievement-tooltip::after {
-        top: auto;
-        bottom: 100%;
-        border-top-color: transparent;
-        border-bottom-color: var(--accent);
       }
     }
     
@@ -1735,11 +1898,9 @@
 <body>
   <div class="app">
     <header>
-      <div class="statbar">
-        <div class="chip"><span>💵 현금</span><b id="cash">0</b></div>
-        <div class="chip stat-tooltip" id="financialChip" title=""><span>💰 금융</span><b id="financial">0</b><span class="muted">개</span></div>
-        <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
-        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당 수익</span><b id="rps">0</b><span class="muted">원</span></div>
+      <div class="header-brand" aria-label="게임 제목">
+        <img class="brand-icon" src="assets/images/logo.png" alt="" aria-hidden="true" />
+        <span class="brand-text"><b>Capital Clicker:</b> Seoul Survival</span>
       </div>
       <button class="chip share-btn" id="shareBtn" type="button" title="게임 공유하기" aria-label="게임 공유하기">
         <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -1747,6 +1908,12 @@
         </svg>
         <span class="share-label">공유</span>
       </button>
+      <div class="statbar">
+        <div class="chip"><span>💵 현금</span><b id="cash">0</b></div>
+        <div class="chip stat-tooltip" id="financialChip" title=""><span>💰 금융</span><b id="financial">0</b><span class="muted">개</span></div>
+        <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
+        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당</span><b id="rps">0</b></div>
+      </div>
     </header>
 
     <div class="tab-wrapper">
@@ -1771,12 +1938,10 @@
           </div>
         </div>
         <div class="card diary-card" style="margin-top:12px">
-          <h2><span>📓 일기장</span></h2>
-          <div class="diary-meta">
-            <span id="diaryMetaDate">오늘: --.--.--</span>
-            <span>·</span>
-            <span id="diaryMetaDay">일차: 1일차</span>
-          </div>
+          <h2>
+            <span class="diary-title">📓 일기장</span>
+            <span class="diary-header-meta" id="diaryHeaderMeta">----.--.--(--일차)</span>
+          </h2>
           <div id="log" class="log diary-log" aria-label="일기장"></div>
         </div>
       </section>
@@ -1787,6 +1952,7 @@
       <section>
         <div class="card">
           <h2>💰 투자</h2>
+          <div id="marketEventBar" class="market-event-bar" aria-live="polite"></div>
           
           <!-- 업그레이드 리스트 - Cookie Clicker 스타일 -->
           <h3>업그레이드 <span class="upgrade-count" id="upgradeCount">(0)</span> <span class="toggle-btn" id="toggleUpgrades" aria-label="업그레이드 섹션 토글">▼</span></h3>
@@ -2042,6 +2208,20 @@
                 <span class="donut-label">자산 비율</span>
               </div>
             </div>
+            <div class="income-legend" style="justify-content:center;">
+              <div class="legend-item">
+                <span class="legend-color cash"></span>
+                <span>현금</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color financial"></span>
+                <span>금융</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color property"></span>
+                <span>부동산</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2183,7 +2363,7 @@
         <h2>⚙️ 설정</h2>
         
         <!-- 게임 정보 -->
-        <div class="stats-section">
+        <div class="stats-section game-info-section">
           <h3>📋 게임 정보</h3>
           <div style="text-align: center; margin-bottom: 16px;">
             <img src="assets/images/logo.png" alt="Capital Clicker: Seoul Survival" style="max-width: 120px; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));" />
@@ -2345,17 +2525,6 @@
         <span>설정</span>
       </button>
     </nav>
-
-    <footer>
-      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-        <div>
-          <span style="color:var(--muted); font-size:12px;">© 2024 Capital Clicker: Seoul Survival v1.0</span>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <span class="save-status" id="saveStatus">저장됨 · --:--</span>
-        </div>
-      </div>
-    </footer>
   </div>
 
   <script type="module" src="./src/main.js"></script>

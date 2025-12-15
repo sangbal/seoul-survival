@@ -663,6 +663,33 @@ document.addEventListener('DOMContentLoaded', () => {
       // 짧은 숫자 형식 사용
       return formatKoreanNumber(num) + '원';
     }
+
+    // (요청) 소수점 1자리 표기를 고정(0.0도 유지)하는 짧은 숫자 포맷
+    // - 예: 332.0만, 2.0억, 1.0조 처럼 항상 1자리 노출
+    function formatKoreanNumberFixed1(num) {
+      if (num >= 1000000000000) {
+        const value = num / 1000000000000;
+        return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '조';
+      } else if (num >= 100000000) {
+        const value = num / 100000000;
+        return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '억';
+      } else if (num >= 10000) {
+        const value = num / 10000;
+        return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '만';
+      } else if (num >= 1000) {
+        const value = num / 1000;
+        return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '천';
+      } else {
+        return Math.floor(num).toString();
+      }
+    }
+
+    function formatCashDisplayFixed1(num) {
+      if (!settings.shortNumbers) {
+        return Math.floor(num).toLocaleString('ko-KR') + '원';
+      }
+      return formatKoreanNumberFixed1(num) + '원';
+    }
     
     // 단계별 가격 증가율 시스템 (Cookie Clicker 스타일)
     function getPriceMultiplier(count) {
@@ -835,7 +862,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       performance_bonus: {
         name: "💰 성과급",
-        desc: "10% 확률로 2배 수익",
+        desc: "2% 확률로 10배 수익",
         cost: 10000000,
         icon: "💰",
         unlockCondition: () => totalClicks >= 600,
@@ -1544,7 +1571,7 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: "모든 금융 수익 +20%",
         cost: 10000000000,
         icon: "💼",
-        unlockCondition: () => getTotalFinancialProducts() >= 30,
+        unlockCondition: () => careerLevel >= 8, // 전무 달성 시 해금
         effect: () => { 
           FINANCIAL_INCOME.deposit *= 1.2;
           FINANCIAL_INCOME.savings *= 1.2;
@@ -1649,132 +1676,122 @@ document.addEventListener('DOMContentLoaded', () => {
     // 시장 이벤트 시스템 (상품별 세분화)
     let currentMarketEvent = null;
     
+    // 시장 이벤트(TO-BE): 이벤트당 영향 상품 ≤ 5개, 나머지는 1.0(변화 없음)
+    // 지속시간(ms)도 재조정
     const MARKET_EVENTS = [
-      // 부동산 시장 이벤트
-      { 
-        name: "강남 아파트 대박", 
-        duration: 45000, 
+      {
+        name: "강남 아파트 대박",
+        duration: 50_000,
         color: "#4CAF50",
         effects: {
-          financial: { deposit: 1.0, savings: 1.0, bond: 1.2, usStock: 1.1, crypto: 1.0 },
-          property: { villa: 1.5, officetel: 1.3, apartment: 3.0, shop: 1.3, building: 1.2 }
+          property: { apartment: 2.5, villa: 1.4, officetel: 1.2 },
         },
-        description: "강남 아파트 가격이 급등하여 부동산 투자 수익이 크게 증가합니다."
+        description: "강남 아파트발 상승 랠리로 주거형 부동산 수익이 상승합니다.",
       },
-      { 
-        name: "전세 대란", 
-        duration: 60000, 
+      {
+        name: "전세 대란",
+        duration: 60_000,
         color: "#2196F3",
         effects: {
-          financial: { deposit: 1.0, savings: 1.0, bond: 1.1, usStock: 1.0, crypto: 1.0 },
-          property: { villa: 2.5, officetel: 2.5, apartment: 2.0, shop: 1.2, building: 1.1 }
+          property: { villa: 2.5, officetel: 2.5, apartment: 1.8 },
         },
-        description: "전세 수요가 급증하여 빌라와 오피스텔 수익이 크게 증가합니다."
+        description: "전세 수요 급증으로 빌라/오피스텔 중심의 임대 수익이 급등합니다.",
       },
-      { 
-        name: "상권 활성화", 
-        duration: 40000, 
+      {
+        name: "상권 활성화",
+        duration: 50_000,
         color: "#FF9800",
         effects: {
-          financial: { deposit: 1.0, savings: 1.0, bond: 1.1, usStock: 1.0, crypto: 1.0 },
-          property: { villa: 1.2, officetel: 1.2, apartment: 1.3, shop: 2.8, building: 1.5 }
+          property: { shop: 2.5, building: 1.6 },
         },
-        description: "상권이 활성화되어 상가 수익이 크게 증가합니다."
+        description: "상권 회복으로 상가 수익이 크게 증가합니다.",
       },
-      { 
-        name: "오피스 수요 급증", 
-        duration: 50000, 
+      {
+        name: "오피스 수요 급증",
+        duration: 55_000,
         color: "#9C27B0",
         effects: {
-          financial: { deposit: 1.0, savings: 1.0, bond: 1.1, usStock: 1.0, crypto: 1.0 },
-          property: { villa: 1.2, officetel: 1.3, apartment: 1.2, shop: 1.4, building: 3.2 }
+          property: { building: 2.5, shop: 1.4, officetel: 1.2 },
         },
-        description: "IT 기업들의 오피스 확장으로 빌딩 수익이 크게 증가합니다."
+        description: "오피스 확장으로 빌딩 중심 수익이 급등합니다.",
       },
-      
-      // 금융 시장 이벤트
-      { 
-        name: "한국은행 금리 인하", 
-        duration: 80000, 
+
+      // 금융/리스크 자산 이벤트
+      {
+        name: "한국은행 금리 인하",
+        duration: 70_000,
         color: "#2196F3",
         effects: {
-          financial: { deposit: 0.7, savings: 0.8, bond: 2.0, usStock: 1.5, crypto: 1.2 },
-          property: { villa: 1.2, officetel: 1.2, apartment: 1.3, shop: 1.2, building: 1.2 }
+          financial: { deposit: 0.7, savings: 0.8, bond: 2.0, usStock: 1.5 },
         },
-        description: "기준금리 인하로 주식은 호황이지만 예금/적금 수익은 감소합니다."
+        description: "금리 인하로 예금/적금은 약세, 주식은 강세를 보입니다.",
       },
-      { 
-        name: "주식시장 대호황", 
-        duration: 60000, 
+      {
+        name: "주식시장 대호황",
+        duration: 60_000,
         color: "#4CAF50",
         effects: {
-          financial: { deposit: 1.1, savings: 1.2, bond: 3.5, usStock: 2.0, crypto: 1.5 },
-          property: { villa: 1.1, officetel: 1.1, apartment: 1.2, shop: 1.1, building: 1.1 }
+          financial: { bond: 2.5, usStock: 2.0, crypto: 1.5 },
         },
-        description: "KOSPI 3000 돌파로 주식 투자 수익이 크게 증가합니다."
+        description: "리스크 자산 선호로 주식 중심 수익이 크게 증가합니다.",
       },
-      { 
-        name: "미국 연준 양적완화", 
-        duration: 100000, 
+      {
+        name: "미국 연준 양적완화",
+        duration: 70_000,
         color: "#2196F3",
         effects: {
-          financial: { deposit: 1.0, savings: 1.0, bond: 1.3, usStock: 2.8, crypto: 1.8 },
-          property: { villa: 1.0, officetel: 1.0, apartment: 1.1, shop: 1.0, building: 1.0 }
+          financial: { usStock: 2.5, crypto: 1.8, bond: 1.3 },
         },
-        description: "달러 유동성 확대로 미국주식과 코인 수익이 크게 증가합니다."
+        description: "달러 유동성 확대로 미국주식/코인 수익이 상승합니다.",
       },
-      { 
-        name: "비트코인 급등", 
-        duration: 40000, 
+      {
+        name: "비트코인 급등",
+        duration: 45_000,
         color: "#FF9800",
         effects: {
-          financial: { deposit: 1.05, savings: 1.1, bond: 1.3, usStock: 1.5, crypto: 5.0 },
-          property: { villa: 1.0, officetel: 1.0, apartment: 1.0, shop: 1.0, building: 1.0 }
+          financial: { crypto: 2.5, usStock: 1.2 },
         },
-        description: "암호화폐 투자 열풍으로 코인 수익이 폭발적으로 증가합니다."
+        description: "암호화폐 랠리로 코인 수익이 크게 증가합니다.",
       },
-      
-      // 부정적 이벤트
-      { 
-        name: "금융위기", 
-        duration: 150000, 
+
+      // 부정 이벤트(강도 캡: 0.7)
+      {
+        name: "금융위기",
+        duration: 90_000,
         color: "#F44336",
         effects: {
-          financial: { deposit: 0.5, savings: 0.6, bond: 0.2, usStock: 0.3, crypto: 0.1 },
-          property: { villa: 0.8, officetel: 0.8, apartment: 0.7, shop: 0.6, building: 0.5 }
+          financial: { bond: 0.7, usStock: 0.7, crypto: 0.7 },
+          property: { shop: 0.7, building: 0.7 },
         },
-        description: "글로벌 금융위기로 모든 투자 상품이 큰 타격을 받습니다."
+        description: "리스크 회피로 주식/코인/상업용 부동산이 타격을 받습니다.",
       },
-      { 
-        name: "은행 파산 위기", 
-        duration: 120000, 
+      {
+        name: "은행 파산 위기",
+        duration: 75_000,
         color: "#9C27B0",
         effects: {
-          financial: { deposit: 0.1, savings: 0.2, bond: 0.5, usStock: 0.7, crypto: 0.3 },
-          property: { villa: 1.0, officetel: 1.0, apartment: 1.0, shop: 1.0, building: 1.0 }
+          financial: { deposit: 0.7, savings: 0.7, bond: 0.8 },
         },
-        description: "은행 부실 우려로 예금/적금 수익이 급격히 감소합니다."
+        description: "은행 신뢰 하락으로 예금/적금 수익이 둔화합니다.",
       },
-      { 
-        name: "주식시장 폭락", 
-        duration: 90000, 
+      {
+        name: "주식시장 폭락",
+        duration: 75_000,
         color: "#F44336",
         effects: {
-          financial: { deposit: 1.0, savings: 1.0, bond: 0.3, usStock: 0.4, crypto: 0.2 },
-          property: { villa: 1.0, officetel: 1.0, apartment: 1.0, shop: 1.0, building: 1.0 }
+          financial: { bond: 0.7, usStock: 0.7, crypto: 0.7 },
         },
-        description: "주식시장 폭락으로 주식과 코인 투자에 큰 손실이 발생합니다."
+        description: "주식/리스크 자산 급락으로 수익이 크게 감소합니다.",
       },
-      { 
-        name: "암호화폐 규제", 
-        duration: 180000, 
+      {
+        name: "암호화폐 규제",
+        duration: 75_000,
         color: "#9C27B0",
         effects: {
-          financial: { deposit: 1.0, savings: 1.0, bond: 1.0, usStock: 1.0, crypto: 0.1 },
-          property: { villa: 1.0, officetel: 1.0, apartment: 1.0, shop: 1.0, building: 1.0 }
+          financial: { crypto: 0.7 },
         },
-        description: "정부의 암호화폐 규제 강화로 코인 투자 수익이 급격히 감소합니다."
-      }
+        description: "규제 강화로 코인 수익이 감소합니다.",
+      },
     ];
     
     // 업적 시스템
@@ -1938,20 +1955,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const timeStamp = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
 
       function updateDiaryMeta() {
+        const y = now.getFullYear();
+        const m = pad2(now.getMonth() + 1);
+        const d = pad2(now.getDate());
+        // gameStartTime이 있으면 그걸 쓰고, 없으면 sessionStartTime 기준
+        const base = (typeof gameStartTime !== 'undefined' && gameStartTime) ? gameStartTime : sessionStartTime;
+        const days = Math.max(1, Math.floor((Date.now() - base) / 86400000) + 1);
+
+        // (신) 헤더에 붙는 컴팩트 표기: yyyy.mm.dd(N일차)
+        const elCompact = document.getElementById('diaryHeaderMeta');
+        if (elCompact) {
+          elCompact.textContent = `${y}.${m}.${d}(${days}일차)`;
+        }
+
+        // (구) DOM이 남아있을 때만 업데이트 (호환)
         const elDate = document.getElementById('diaryMetaDate');
         const elDay = document.getElementById('diaryMetaDay');
-        if (elDate) {
-          const y = now.getFullYear();
-          const m = pad2(now.getMonth() + 1);
-          const d = pad2(now.getDate());
-          elDate.textContent = `오늘: ${y}.${m}.${d}`;
-        }
-        if (elDay) {
-          // gameStartTime이 있으면 그걸 쓰고, 없으면 sessionStartTime 기준
-          const base = (typeof gameStartTime !== 'undefined' && gameStartTime) ? gameStartTime : sessionStartTime;
-          const days = Math.max(1, Math.floor((Date.now() - base) / 86400000) + 1);
-          elDay.textContent = `일차: ${days}일차`;
-        }
+        if (elDate) elDate.textContent = `오늘: ${y}.${m}.${d}`;
+        if (elDay) elDay.textContent = `일차: ${days}일차`;
       }
 
       function diaryize(raw) {
@@ -2565,7 +2586,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!diaryText) return;
 
       const p = document.createElement('p');
-      p.innerHTML = `<span class="diary-time">${timeStamp}</span>${diaryText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}`;
+      const escaped = diaryText.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      // (요청) 독백(1줄)과 정보(이후 줄)의 가시성 분리
+      const lines = escaped.split('\n');
+      const voiceLine = (lines[0] ?? '').trim();
+      const infoLines = lines.slice(1).map((l) => String(l).trim()).filter(Boolean);
+      const bodyHtml =
+        `<span class="diary-voice">${voiceLine}</span>` +
+        (infoLines.length ? `\n<span class="diary-info">${infoLines.join('\n')}</span>` : '');
+      p.innerHTML = `<span class="diary-time">${timeStamp}</span>${bodyHtml}`;
       elLog.prepend(p);
     }
     
@@ -2698,7 +2727,7 @@ document.addEventListener('DOMContentLoaded', () => {
       currentMarketEvent = event;
       marketEventEndTime = Date.now() + event.duration;
       
-      addLog(`📈 ${event.name} 발생! ${event.duration/1000}초간 지속`);
+      addLog(`📈 ${event.name} 발생! ${Math.floor(event.duration/1000)}초간 지속`);
       addLog(`💡 ${event.description}`);
       showMarketEventNotification(event);
     }
@@ -2728,7 +2757,8 @@ document.addEventListener('DOMContentLoaded', () => {
           .filter(([_, multiplier]) => multiplier !== 1.0)
           .map(([product, multiplier]) => {
             const productNames = { deposit: '예금', savings: '적금', bond: '국내주식', usStock: '미국주식', crypto: '코인' };
-            return `${productNames[product]} ${multiplier > 1 ? '+' : ''}${Math.round((multiplier - 1) * 100)}%`;
+            const m = Math.round(multiplier * 10) / 10;
+            return `${productNames[product]} x${String(m).replace(/\.0$/, '')}`;
           });
         if (financialEffects.length > 0) {
           effectsText += `💰 ${financialEffects.join(', ')}\n`;
@@ -2740,15 +2770,18 @@ document.addEventListener('DOMContentLoaded', () => {
           .filter(([_, multiplier]) => multiplier !== 1.0)
           .map(([product, multiplier]) => {
             const productNames = { villa: '빌라', officetel: '오피스텔', apartment: '아파트', shop: '상가', building: '빌딩' };
-            return `${productNames[product]} ${multiplier > 1 ? '+' : ''}${Math.round((multiplier - 1) * 100)}%`;
+            const m = Math.round(multiplier * 10) / 10;
+            return `${productNames[product]} x${String(m).replace(/\.0$/, '')}`;
           });
         if (propertyEffects.length > 0) {
           effectsText += `🏠 ${propertyEffects.join(', ')}`;
         }
       }
       
+      const durationSec = Math.floor((event.duration ?? 0) / 1000);
       notification.innerHTML = `
-        <div style="font-size: 16px; margin-bottom: 8px;">📈 ${event.name}</div>
+        <div style="font-size: 16px; margin-bottom: 6px;">📈 ${event.name}</div>
+        <div style="font-size: 11px; opacity: 0.95; margin-bottom: 8px;">지속: ${durationSec}초</div>
         <div style="font-size: 12px; opacity: 0.9;">${event.description}</div>
         ${effectsText ? `<div style="font-size: 11px; margin-top: 8px; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px;">${effectsText}</div>` : ''}
       `;
@@ -2961,9 +2994,8 @@ document.addEventListener('DOMContentLoaded', () => {
         desc.className = 'upgrade-desc';
         desc.textContent = upgrade.desc;
         
-        const cost = document.createElement('div');
-        cost.className = 'upgrade-cost';
-        cost.textContent = formatFinancialPrice(upgrade.cost);
+        // 가격은 우측 배지로 이동 (NEW! 대신) → 카드 높이 축소
+        const priceText = formatFinancialPrice(upgrade.cost);
         
         // 진행률 정보 추가 (해금 조건이 클릭 수인 경우)
         if (upgrade.category === 'labor' && upgrade.unlockCondition) {
@@ -3001,12 +3033,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
         info.appendChild(name);
         info.appendChild(desc);
-        info.appendChild(cost);
+        // (삭제) info에 가격 줄을 두지 않음
         
-        // 상태 배지 생성
+        // 우측 가격 배지 생성 (NEW! 대체)
         const status = document.createElement('div');
         status.className = 'upgrade-status';
-        status.textContent = 'NEW!';
+        status.textContent = priceText;
+        status.style.animation = 'none';
+        status.style.background = 'rgba(94, 234, 212, 0.12)';
+        status.style.color = 'var(--accent)';
+        status.style.border = '1px solid rgba(94, 234, 212, 0.25)';
+        status.style.borderRadius = '999px';
         
         // 요소 조립
         item.appendChild(icon);
@@ -3642,6 +3679,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       // --- (B) 나머지 UI 갱신 (금융/부동산/업그레이드 등) ---
+      // 일기장 헤더 메타(yyyy.mm.dd(N일차))는 로그가 없어도 항상 갱신
+      {
+        const elCompact = document.getElementById('diaryHeaderMeta');
+        if (elCompact) {
+          const pad2 = (n) => String(n).padStart(2, '0');
+          const now = new Date();
+          const y = now.getFullYear();
+          const m = pad2(now.getMonth() + 1);
+          const d = pad2(now.getDate());
+          const base = (typeof gameStartTime !== 'undefined' && gameStartTime) ? gameStartTime : sessionStartTime;
+          const days = Math.max(1, Math.floor((Date.now() - base) / 86400000) + 1);
+          elCompact.textContent = `${y}.${m}.${d}(${days}일차)`;
+        }
+      }
       safeText(elCash, formatHeaderCash(cash));
       // 금융상품 집계 및 툴팁
       const totalFinancial = getTotalFinancialProducts();
@@ -3663,7 +3714,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // 초당 수익 및 툴팁
       const rpsValue = getRps();
-      safeText(elRps, formatKoreanNumber(rpsValue));
+      safeText(elRps, formatHeaderCash(rpsValue));
       const rpsChip = document.getElementById('rpsChip');
       if (rpsChip) {
         const financialIncome = deposits * FINANCIAL_INCOME.deposit + 
@@ -3678,6 +3729,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const tooltip = `금융 수익: ${formatKoreanNumber(financialIncome)}₩/s\n부동산 수익: ${formatKoreanNumber(propertyIncome)}₩/s\n시장배수: x${marketMultiplier}`;
         rpsChip.setAttribute('title', tooltip);
       }
+
+      // ======= [투자] 시장 이벤트 영향 배지/하이라이트 =======
+      updateInvestmentMarketImpactUI();
       
       safeText(elClickMultiplier, clickMultiplier.toFixed(1));
       safeText(elRentMultiplier, rentMultiplier.toFixed(1));
@@ -3720,7 +3774,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elIncomePerDeposit.textContent = Math.floor(FINANCIAL_INCOME.deposit).toLocaleString('ko-KR') + '원';
         document.getElementById('depositTotalIncome').textContent = Math.floor(depositTotalIncome).toLocaleString('ko-KR') + '원';
         document.getElementById('depositPercent').textContent = depositPercent + '%';
-        document.getElementById('depositLifetime').textContent = formatCashDisplay(depositsLifetime);
+        document.getElementById('depositLifetime').textContent = formatCashDisplayFixed1(depositsLifetime);
         elDepositCurrentPrice.textContent = formatFinancialPrice(depositCost);
         
         // 적금 업데이트
@@ -3734,7 +3788,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elIncomePerSavings.textContent = Math.floor(FINANCIAL_INCOME.savings).toLocaleString('ko-KR') + '원';
         document.getElementById('savingsTotalIncome').textContent = Math.floor(savingsTotalIncome).toLocaleString('ko-KR') + '원';
         document.getElementById('savingsPercent').textContent = savingsPercent + '%';
-        document.getElementById('savingsLifetimeDisplay').textContent = formatCashDisplay(savingsLifetime);
+        document.getElementById('savingsLifetimeDisplay').textContent = formatCashDisplayFixed1(savingsLifetime);
         elSavingsCurrentPrice.textContent = formatFinancialPrice(savingsCost);
         
         // 주식 업데이트
@@ -3748,7 +3802,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elIncomePerBond.textContent = Math.floor(FINANCIAL_INCOME.bond).toLocaleString('ko-KR') + '원';
         document.getElementById('bondTotalIncome').textContent = Math.floor(bondTotalIncome).toLocaleString('ko-KR') + '원';
         document.getElementById('bondPercent').textContent = bondPercent + '%';
-        document.getElementById('bondLifetimeDisplay').textContent = formatCashDisplay(bondsLifetime);
+        document.getElementById('bondLifetimeDisplay').textContent = formatCashDisplayFixed1(bondsLifetime);
         elBondCurrentPrice.textContent = formatFinancialPrice(bondCost);
         
         // 미국주식 업데이트
@@ -3762,7 +3816,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('incomePerUsStock').textContent = Math.floor(FINANCIAL_INCOME.usStock).toLocaleString('ko-KR') + '원';
         document.getElementById('usStockTotalIncome').textContent = Math.floor(usStockTotalIncome).toLocaleString('ko-KR') + '원';
         document.getElementById('usStockPercent').textContent = usStockPercent + '%';
-        document.getElementById('usStockLifetimeDisplay').textContent = formatCashDisplay(usStocksLifetime);
+        document.getElementById('usStockLifetimeDisplay').textContent = formatCashDisplayFixed1(usStocksLifetime);
         document.getElementById('usStockCurrentPrice').textContent = formatFinancialPrice(usStockCost);
         
         // 코인 업데이트
@@ -3776,7 +3830,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('incomePerCrypto').textContent = Math.floor(FINANCIAL_INCOME.crypto).toLocaleString('ko-KR') + '원';
         document.getElementById('cryptoTotalIncome').textContent = Math.floor(cryptoTotalIncome).toLocaleString('ko-KR') + '원';
         document.getElementById('cryptoPercent').textContent = cryptoPercent + '%';
-        document.getElementById('cryptoLifetimeDisplay').textContent = formatCashDisplay(cryptosLifetime);
+        document.getElementById('cryptoLifetimeDisplay').textContent = formatCashDisplayFixed1(cryptosLifetime);
         document.getElementById('cryptoCurrentPrice').textContent = formatFinancialPrice(cryptoCost);
         
         // 디버깅: 금융상품 카운트 확인 (강화된 로깅)
@@ -3808,7 +3862,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elRentPerVilla.textContent = Math.floor(BASE_RENT.villa).toLocaleString('ko-KR') + '원';
       document.getElementById('villaTotalIncome').textContent = Math.floor(villaTotalIncome).toLocaleString('ko-KR') + '원';
       document.getElementById('villaPercent').textContent = villaPercent + '%';
-      document.getElementById('villaLifetimeDisplay').textContent = formatCashDisplay(villasLifetime);
+      document.getElementById('villaLifetimeDisplay').textContent = formatCashDisplayFixed1(villasLifetime);
       elVillaCurrentPrice.textContent = formatPropertyPrice(villaCost);
       
       // 오피스텔
@@ -3822,7 +3876,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elRentPerOfficetel.textContent = Math.floor(BASE_RENT.officetel).toLocaleString('ko-KR') + '원';
       document.getElementById('officetelTotalIncome').textContent = Math.floor(officetelTotalIncome).toLocaleString('ko-KR') + '원';
       document.getElementById('officetelPercent').textContent = officetelPercent + '%';
-      document.getElementById('officetelLifetimeDisplay').textContent = formatCashDisplay(officetelsLifetime);
+      document.getElementById('officetelLifetimeDisplay').textContent = formatCashDisplayFixed1(officetelsLifetime);
       elOfficetelCurrentPrice.textContent = formatPropertyPrice(officetelCost);
       
       // 아파트
@@ -3836,7 +3890,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elRentPerApt.textContent = Math.floor(BASE_RENT.apartment).toLocaleString('ko-KR') + '원';
       document.getElementById('aptTotalIncome').textContent = Math.floor(aptTotalIncome).toLocaleString('ko-KR') + '원';
       document.getElementById('aptPercent').textContent = aptPercent + '%';
-      document.getElementById('aptLifetimeDisplay').textContent = formatCashDisplay(apartmentsLifetime);
+      document.getElementById('aptLifetimeDisplay').textContent = formatCashDisplayFixed1(apartmentsLifetime);
       elAptCurrentPrice.textContent = formatPropertyPrice(aptCost);
       
       // 상가
@@ -3850,7 +3904,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elRentPerShop.textContent = Math.floor(BASE_RENT.shop).toLocaleString('ko-KR') + '원';
       document.getElementById('shopTotalIncome').textContent = Math.floor(shopTotalIncome).toLocaleString('ko-KR') + '원';
       document.getElementById('shopPercent').textContent = shopPercent + '%';
-      document.getElementById('shopLifetimeDisplay').textContent = formatCashDisplay(shopsLifetime);
+      document.getElementById('shopLifetimeDisplay').textContent = formatCashDisplayFixed1(shopsLifetime);
       elShopCurrentPrice.textContent = formatPropertyPrice(shopCost);
       
       // 빌딩
@@ -3864,7 +3918,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elRentPerBuilding.textContent = Math.floor(BASE_RENT.building).toLocaleString('ko-KR') + '원';
       document.getElementById('buildingTotalIncome').textContent = Math.floor(buildingTotalIncome).toLocaleString('ko-KR') + '원';
       document.getElementById('buildingPercent').textContent = buildingPercent + '%';
-      document.getElementById('buildingLifetimeDisplay').textContent = formatCashDisplay(buildingsLifetime);
+      document.getElementById('buildingLifetimeDisplay').textContent = formatCashDisplayFixed1(buildingsLifetime);
       elBuildingCurrentPrice.textContent = formatPropertyPrice(buildingCost);
       
       // 디버깅: 부동산 카운트 확인
@@ -3891,6 +3945,120 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // 통계 탭 업데이트
       updateStatsTab();
+    }
+
+    // [투자] 섹션 각 상품에 현재 시장 이벤트 배수(xN.N) 배지 + 행 하이라이트를 표시합니다.
+    // - 배수 === 1.0이면 배지 숨김/하이라이트 해제
+    // - 배수 > 1.0: bull(연두), 배수 < 1.0: bear(핑크)
+    let __marketImpactCache = null;
+    function updateInvestmentMarketImpactUI() {
+      try {
+        const now = Date.now();
+        const isEventActive = !!(currentMarketEvent && marketEventEndTime > now);
+        const remainingSec = isEventActive ? Math.max(0, Math.ceil((marketEventEndTime - now) / 1000)) : 0;
+
+        // 투자 섹션 상단에 이벤트명/잔여시간 표시
+        const marketEventBar = document.getElementById('marketEventBar');
+        if (marketEventBar) {
+          if (!isEventActive) {
+            marketEventBar.classList.remove('is-visible');
+            marketEventBar.textContent = '';
+          } else {
+            marketEventBar.classList.add('is-visible');
+            const evName = currentMarketEvent?.name ? String(currentMarketEvent.name) : '시장 이벤트';
+            const seconds = Math.floor((marketEventEndTime - now) / 1000);
+            const secText = seconds >= 0 ? `${seconds}초` : '0초';
+            // 영향 요약(배수≠1 항목 5개 이내)
+            const summarize = (effects, names) => {
+              if (!effects) return [];
+              return Object.entries(effects)
+                .filter(([, m]) => m !== 1.0)
+                .slice(0, 5)
+                .map(([k, m]) => `${names[k] ?? k} x${(Math.round(m * 10) / 10).toString().replace(/\.0$/, '')}`);
+            };
+            const finNames = { deposit: '예금', savings: '적금', bond: '국내주식', usStock: '미국주식', crypto: '코인' };
+            const propNames = { villa: '빌라', officetel: '오피스텔', apartment: '아파트', shop: '상가', building: '빌딩' };
+            const fin = summarize(currentMarketEvent?.effects?.financial, finNames);
+            const prop = summarize(currentMarketEvent?.effects?.property, propNames);
+            const parts = [...fin, ...prop].slice(0, 5);
+            const hint = parts.length ? ` · ${parts.join(', ')}` : '';
+            marketEventBar.innerHTML = `📈 <b>${evName}</b> · 남은 <span class="good">${secText}</span>${hint}`;
+          }
+        }
+
+        if (!__marketImpactCache) {
+          const targets = [
+            // 금융
+            { rowId: 'depositItem', category: 'financial', type: 'deposit' },
+            { rowId: 'savingsItem', category: 'financial', type: 'savings' },
+            { rowId: 'bondItem', category: 'financial', type: 'bond' },
+            { rowId: 'usStockItem', category: 'financial', type: 'usStock' },
+            { rowId: 'cryptoItem', category: 'financial', type: 'crypto' },
+            // 부동산
+            { rowId: 'villaItem', category: 'property', type: 'villa' },
+            { rowId: 'officetelItem', category: 'property', type: 'officetel' },
+            { rowId: 'aptItem', category: 'property', type: 'apartment' },
+            { rowId: 'shopItem', category: 'property', type: 'shop' },
+            { rowId: 'buildingItem', category: 'property', type: 'building' },
+          ];
+
+          __marketImpactCache = targets
+            .map((t) => {
+              const row = document.getElementById(t.rowId);
+              if (!row) return null;
+
+              // 버튼 왼쪽에 배지 삽입(시야성 최고)
+              const btn = row.querySelector('button.btn');
+              if (!btn) return null;
+
+              let badge = row.querySelector('.event-mult-badge');
+              if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'event-mult-badge';
+                badge.setAttribute('aria-hidden', 'true');
+                row.insertBefore(badge, btn);
+              }
+
+              return { ...t, row, badge };
+            })
+            .filter(Boolean);
+        }
+
+        for (const t of __marketImpactCache) {
+          const mult = isEventActive ? getMarketEventMultiplier(t.type, t.category) : 1.0;
+          const isNeutral = Math.abs(mult - 1.0) < 1e-9;
+
+          // reset
+          t.row.classList.remove('event-bull', 'event-bear');
+          t.badge.classList.remove('is-visible', 'is-bull', 'is-bear');
+          t.badge.removeAttribute('title');
+
+          if (!isEventActive || isNeutral) {
+            t.badge.textContent = '';
+            continue;
+          }
+
+          const multNum = Math.round(mult * 10) / 10;
+          const multText = `x${multNum.toFixed(1).replace(/\.0$/, '')}`;
+
+          t.badge.textContent = multText;
+          t.badge.classList.add('is-visible');
+
+          if (mult > 1.0) {
+            t.row.classList.add('event-bull');
+            t.badge.classList.add('is-bull');
+          } else {
+            t.row.classList.add('event-bear');
+            t.badge.classList.add('is-bear');
+          }
+
+          // 툴팁: 이벤트명 + 남은 시간 + 배수
+          const evName = currentMarketEvent?.name ? String(currentMarketEvent.name) : '시장 이벤트';
+          t.badge.title = `${evName} · 남은 ${remainingSec}초 · ${multText}`;
+        }
+      } catch (e) {
+        // UI 보조 기능이므로 실패해도 게임 진행은 유지
+      }
     }
     
     // 통계 섹션 초기화 (DOMContentLoaded 이후에 실행)
@@ -4107,6 +4275,8 @@ document.addEventListener('DOMContentLoaded', () => {
       updateButton(elBuyDeposit, 'financial', 'deposit', deposits, isBuy, qty);
       updateButton(elBuySavings, 'financial', 'savings', savings, isBuy, qty);
       updateButton(elBuyBond, 'financial', 'bond', bonds, isBuy, qty);
+      updateButton(elBuyUsStock, 'financial', 'usStock', usStocks, isBuy, qty);
+      updateButton(elBuyCrypto, 'financial', 'crypto', cryptos, isBuy, qty);
       
       // 부동산 버튼 업데이트
       updateButton(elBuyVilla, 'property', 'villa', villas, isBuy, qty);
@@ -4147,9 +4317,9 @@ document.addEventListener('DOMContentLoaded', () => {
       let income = getClickIncome();
       
       // 업그레이드 효과 적용 (새 UPGRADES 시스템)
-      if (UPGRADES['performance_bonus'] && UPGRADES['performance_bonus'].purchased && Math.random() < 0.1) {
-        income *= 2; // 10% 확률로 2배 수익 (밸런싱: 6배 → 2배)
-        addLog('💰 성과급 지급! 2배 수익!');
+      if (UPGRADES['performance_bonus'] && UPGRADES['performance_bonus'].purchased && Math.random() < 0.02) {
+        income *= 10; // 2% 확률로 10배 수익 (요청: 일기장 과다 노출 방지)
+        addLog('💰 성과급 지급! 10배 수익!');
       }
       
       // 떨어지는 쿠키 애니메이션 생성 (설정에서 활성화된 경우만)
@@ -4596,8 +4766,9 @@ document.addEventListener('DOMContentLoaded', () => {
         checkCareerPromotion();
         
         // 성과급은 오토클릭에도 적용
-        if (UPGRADES['performance_bonus'] && UPGRADES['performance_bonus'].purchased && Math.random() < 0.1) {
-          const bonusIncome = income * 1; // 이미 1배는 추가되었으므로 1배 추가 (총 2배, 밸런싱: 6배 → 2배)
+        if (UPGRADES['performance_bonus'] && UPGRADES['performance_bonus'].purchased && Math.random() < 0.02) {
+          // 기본 income(1배)은 이미 지급됨 → 총 10배가 되도록 추가 9배 지급
+          const bonusIncome = income * 9;
           cash += bonusIncome;
           totalLaborIncome += bonusIncome;
         }
@@ -4794,8 +4965,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
+      if (!ctx) return;
+
+      // DPR(레티나) 대응: 흐릿하게 보이는 문제 해결
+      const baseSize = 200; // index.html의 canvas attribute와 동일한 논리 크기
+      const dpr = Math.max(1, Math.floor((window.devicePixelRatio || 1) * 100) / 100);
+      const target = Math.round(baseSize * dpr);
+      if (canvas.width !== target || canvas.height !== target) {
+        canvas.width = target;
+        canvas.height = target;
+        canvas.style.width = `${baseSize}px`;
+        canvas.style.height = `${baseSize}px`;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const centerX = baseSize / 2;
+      const centerY = baseSize / 2;
       const radius = 80;
       const innerRadius = 50;
       
@@ -4809,7 +4994,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const propertyPercent = totalAssets > 0 ? (propertyValue / totalAssets) * 100 : 0;
       
       // 배경 원
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, baseSize, baseSize);
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
@@ -4825,8 +5010,15 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.moveTo(centerX, centerY);
         ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + angle);
         ctx.closePath();
-        ctx.fillStyle = 'rgba(94, 234, 212, 0.3)';
+        // 현금 컬러 = 노동 컬러(주황) + 더 또렷하게(그라데이션/경계선)
+        const cashGrad = ctx.createLinearGradient(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
+        cashGrad.addColorStop(0, '#f59e0b');
+        cashGrad.addColorStop(1, '#d97706');
+        ctx.fillStyle = cashGrad;
         ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.stroke();
         currentAngle += angle;
       }
       
@@ -4856,7 +5048,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // 내부 원 (도넛 효과)
       ctx.beginPath();
       ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
-      ctx.fillStyle = 'var(--bg)';
+      // canvas는 CSS var(--bg)를 직접 해석하지 못하므로 실제 색상값을 사용
+      const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0b1220';
+      ctx.fillStyle = bgColor;
       ctx.fill();
     }
     
