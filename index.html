@@ -889,9 +889,8 @@
       transform: translateY(-2px);
     }
     
-    /* 공유/즐겨찾기 버튼(칩 스타일로 헤더 표기와 융화) */
-    button.share-btn.chip,
-    button.bookmark-btn.chip{
+    /* 공유하기 버튼(칩 스타일로 헤더 표기와 융화) */
+    button.share-btn.chip{
       border: none;
       color: var(--text);
       cursor: pointer;
@@ -900,19 +899,16 @@
       user-select: none;
     }
 
-    button.share-btn.chip:hover,
-    button.bookmark-btn.chip:hover{
+    button.share-btn.chip:hover{
       background: var(--bg2);
       transform: translateY(-2px);
     }
 
-    button.share-btn.chip:active,
-    button.bookmark-btn.chip:active{
+    button.share-btn.chip:active{
       transform: translateY(0);
     }
 
-    .share-btn .share-icon,
-    .bookmark-btn .bookmark-icon {
+    .share-btn .share-icon {
       width: 16px;
       height: 16px;
       display: block;
@@ -920,73 +916,13 @@
       flex: 0 0 auto;
     }
 
-    button.share-btn.chip.copied,
-    button.bookmark-btn.chip.copied {
+    button.share-btn.chip.copied {
       background: var(--good);
     }
 
-    button.share-btn.chip:disabled,
-    button.bookmark-btn.chip:disabled {
+    button.share-btn.chip:disabled {
       opacity: 0.6;
       cursor: not-allowed;
-    }
-
-    /* 알림 모달 */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1500;
-      padding: 16px;
-    }
-    .modal-backdrop[hidden] { display: none !important; }
-    .modal-card {
-      background: var(--panel);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 16px;
-      box-shadow: 0 12px 40px rgba(0,0,0,.45);
-      max-width: 360px;
-      width: 100%;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .modal-card h3 {
-      margin: 0;
-      font-size: 16px;
-    }
-    .modal-card p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.5;
-      white-space: pre-line;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-    .modal-btn {
-      padding: 8px 14px;
-      font-size: 13px;
-      border-radius: 10px;
-      background: var(--accent);
-      color: var(--bg);
-      border: none;
-      cursor: pointer;
-      font-weight: 700;
-      transition: all 0.2s ease;
-    }
-    .modal-btn:hover {
-      filter: brightness(1.05);
-      transform: translateY(-1px);
-    }
-    .modal-btn:active {
-      transform: translateY(0);
     }
     
     /* ======= 모바일 최적화 ======= */
@@ -1992,12 +1928,6 @@
         <img class="brand-icon" src="assets/images/logo.png" alt="" aria-hidden="true" />
         <span class="brand-text"><b>Capital Clicker:</b> Seoul Survival</span>
       </div>
-      <button class="chip bookmark-btn" id="bookmarkBtn" type="button" title="즐겨찾기/홈화면 추가" aria-label="즐겨찾기/홈화면 추가">
-        <svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M12 2l2.39 4.85 5.36.78-3.88 3.78.92 5.36L12 14.77l-4.79 2.99.92-5.36-3.88-3.78 5.36-.78L12 2z"></path>
-        </svg>
-        <span class="share-label">즐겨찾기</span>
-      </button>
       <button class="chip share-btn" id="shareBtn" type="button" title="게임 공유하기" aria-label="게임 공유하기">
         <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.6 2.6 0 0 0 0-1.39l7.02-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .06.59L7.03 9.7A3 3 0 1 0 7 14.3l7.02 4.11A3 3 0 1 0 18 16.08z"></path>
@@ -2625,18 +2555,6 @@
     </nav>
   </div>
 
-  <!-- 알림 모달 -->
-  <div id="infoModal" class="modal-backdrop" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
-      <div>
-        <h3 id="infoModalTitle">알림</h3>
-        <p id="infoModalMessage">안내 메시지</p>
-      </div>
-      <div class="modal-actions">
-        <button id="infoModalClose" class="modal-btn" type="button" aria-label="닫기">확인</button>
-      </div>
-    </div>
-  </div>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
