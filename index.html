@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <!-- (iOS) 연속 탭/핀치로 인한 화면 확대 방지 -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <!-- 현재는 루트에서 바로 /seoulsurvival 로 이동시키고, 추후 허브 페이지를 만들 때 이 리다이렉트 메타를 제거합니다. -->
+  <meta http-equiv="refresh" content="0; url=/seoulsurvival/">
   <meta name="description" content="Capital Clicker: Seoul Survival — 클릭으로 서울을 지키는 방치형 자본 성장 게임" />
   <!-- SNS 공유 썸네일: settings_gameinfo_bg.webp 강제 사용 -->
   <meta property="og:type" content="website" />
@@ -23,6 +25,16 @@
   <link rel="apple-touch-icon" href="assets/images/logo.png" />
   <link rel="icon" href="assets/images/logo.png" type="image/png" sizes="any" />
   <title>Capital Clicker: Seoul Survival — v1.0</title>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LFDPPHDBJ3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-LFDPPHDBJ3');
+  </script>
   <style>
     :root {
       --bg:#0b1220; --panel:#121a2b; --accent:#5eead4; --muted:#94a3b8; --text:#e5e7eb; --btn:#1f2a44; --btn2:#192238; --good:#34d399; --bad:#fb7185;
