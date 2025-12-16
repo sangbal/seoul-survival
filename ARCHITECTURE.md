@@ -15,19 +15,29 @@
 
 ## 상위 구조 개요
 - **허브/루트**: `index.html`
-  - “게임 1개 집중” 넷플릭스 톤 허브 페이지.
+  - "게임 1개 집중" 넷플릭스 톤 허브 페이지.
   - 히어로(도트 배경) + 앵커 섹션: `#about`, `#screenshots`, `#account`
   - 허브 JS 엔트리: `hub/main.js`
   - 허브 i18n: `hub/i18n.js`, `hub/translations/{ko,en}.js`
   - 허브 언어 규칙: `?lang=ko|en` → LocalStorage(`clicksurvivor_lang`) → `navigator.language` fallback
+  - 로고: `seoulsurvival/assets/images/logo.png` 이미지 사용
+  - 푸터: 브랜딩, 구조화된 그리드 레이아웃(게임/지원/법적 고지), 반응형 디자인
+  - 법적 문서: `terms.html` (이용약관), `privacy.html` (개인정보처리방침)
   - 참고: 허브에서 쓰는 도트/스크린샷 이미지는 현재 `seoulsurvival/assets/images/*`를 재사용(추후 허브 전용 assets로 분리 가능)
 - **공통(SSO/Auth)**: `shared/auth/*`
   - 허브/게임 공통 로그인 상태 공유(LocalStorage 키: `clicksurvivor-auth`)
-  - 초기 스캐폴딩으로 Supabase Auth(OAuth) 연결 지점을 제공
+  - Supabase Auth(OAuth) 기반, Google 로그인 지원 (GitHub 제거)
   - 공통 부트스트랩: `shared/authBoot.js` (허브/게임 페이지에서 모두 로드)
+  - UI 관리: `shared/auth/ui.js`의 `setUI()` 함수에서 로그인 상태에 따라 버튼 표시/숨김 처리
+  - 허브 UI: 계정 섹션, 헤더 버튼 (`authLoginBtn`, `authLogoutBtn`)
+  - 게임 UI: 설정 탭 계정 섹션 (`authProviderButtons`, `logoutButtonContainer`)
 - **공통(Cloud Save)**: `shared/cloudSave.js`
   - 로그인 사용자만 Supabase `game_saves` 테이블에 JSON 세이브 업로드/다운로드
   - 테이블/RLS는 `supabase/game_saves.sql`로 관리(프로젝트별 1회 실행)
+  - 저장 정책:
+    - 게스트: LocalStorage만 (5초마다 자동 저장)
+    - 로그인 사용자: LocalStorage (5초마다) + 클라우드 (탭 숨김/닫기 시 자동 플러시)
+    - 수동 저장: 설정 탭에서 "☁️ 클라우드 저장" 버튼으로 즉시 업로드
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
   - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.
@@ -78,7 +88,11 @@
 - 통계 탭(`statsTab`)
   - 길이가 긴 값: `growthRate`, `nextMilestone`, `hourlyRate`는 CSS로 1줄 유지(폰트/nowrap)
 - 설정 탭(`settingsTab`)
-  - “🌐 홈페이지 이동” 링크 문구
+  - 섹션 순서: 시각 효과 → 숫자 표시 → 계정 → 저장 관리 → 게임 새로 시작 → 게임 정보
+  - 계정 섹션: 로그인 상태에 따라 Google 버튼/로그아웃 버튼 표시/숨김
+  - 저장 관리 섹션: 클라우드 저장/불러오기 + 저장 정보 통합, 비로그인 시 클라우드 UI 숨김
+  - 로컬 저장 내보내기/가져오기: 숨김 처리 (`display: none`)
+  - "🌐 홈페이지 이동" 링크: 허브 홈페이지(`/`)로 연결
 
 ## “레거시/주의” 포인트
 - `seoulsurvival/src/main.js`에 **통계 탭 업데이트 함수가 레거시로 남아 있고**, 동시에 `seoulsurvival/src/ui/statsTab.js` 모듈도 존재.
