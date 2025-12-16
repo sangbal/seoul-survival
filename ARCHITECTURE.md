@@ -38,6 +38,13 @@
     - 게스트: LocalStorage만 (5초마다 자동 저장)
     - 로그인 사용자: LocalStorage (5초마다) + 클라우드 (탭 숨김/닫기 시 자동 플러시)
     - 수동 저장: 설정 탭에서 "☁️ 클라우드 저장" 버튼으로 즉시 업로드
+  - 닉네임 저장: 게임 세이브 데이터의 `nickname` 필드가 `game_saves` 테이블의 JSONB에 포함됨
+- **공통(Leaderboard)**: `shared/leaderboard.js`
+  - 리더보드 업데이트/조회 함수 제공
+  - Supabase `leaderboard` 테이블 사용 (테이블/RLS는 `supabase/leaderboard.sql`로 관리)
+  - 리더보드 데이터: 닉네임, 총 자산, 플레이타임
+  - 업데이트: 게임 저장 시 30초마다 자동 업데이트 (닉네임이 있을 때만)
+  - 조회: 통계 탭 활성화 시에만 업데이트 (로딩 상태 관리, 10초 쿨다운, 타임아웃 처리)
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
   - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.
@@ -87,9 +94,10 @@
   - 승진 진행: `careerProgress`, `careerProgressText`, `careerRemaining`
 - 통계 탭(`statsTab`)
   - 길이가 긴 값: `growthRate`, `nextMilestone`, `hourlyRate`는 CSS로 1줄 유지(폰트/nowrap)
+  - 리더보드 섹션: "리더보드 (TOP 10)" 표시, 통계 탭 활성화 시에만 업데이트
 - 설정 탭(`settingsTab`)
   - 섹션 순서: 시각 효과 → 숫자 표시 → 계정 → 저장 관리 → 게임 새로 시작 → 게임 정보
-  - 계정 섹션: 로그인 상태에 따라 Google 버튼/로그아웃 버튼 표시/숨김
+  - 계정 섹션: 로그인 상태에 따라 Google 버튼/로그아웃 버튼 표시/숨김, 닉네임 표시 (`playerNicknameLabel`)
   - 저장 관리 섹션: 클라우드 저장/불러오기 + 저장 정보 통합, 비로그인 시 클라우드 UI 숨김
   - 로컬 저장 내보내기/가져오기: 숨김 처리 (`display: none`)
   - "🌐 홈페이지 이동" 링크: 허브 홈페이지(`/`)로 연결
