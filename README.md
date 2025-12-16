@@ -10,7 +10,11 @@
 ## ▶️ 플레이
 
 - **Online**: `https://sangbal.github.io/seoul-survival/`
+- **Hub(홈페이지)**: `http://clicksurvivor.com/`
+- **Game(현재 서비스 경로)**: `https://clicksurvivor.com/seoulsurvival/`
 - **Repo**: `https://github.com/sangbal/seoul-survival`
+
+> 참고: 현재는 허브 홈페이지가 별도로 없어서 `http://clicksurvivor.com/` 접속 시 `https://clicksurvivor.com/seoulsurvival/` 로 자동 이동(리다이렉트)합니다.
 
 ## ✨ 주요 특징(v1.0)
 

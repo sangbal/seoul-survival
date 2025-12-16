@@ -7,6 +7,11 @@
 - **정적 배포**: GitHub Pages용 `base: './'` (`vite.config.js`)
 - **엔트리**: `src/main.js` (ESM)
 
+## 서비스 URL(중요)
+- **허브(홈페이지)**: `http://clicksurvivor.com/`
+- **게임(현재 서비스 경로)**: `https://clicksurvivor.com/seoulsurvival/`
+- **현재 상태**: 허브 홈페이지가 아직 없어서, `http://clicksurvivor.com/` 접속 시 게임 경로로 **자동 리다이렉트**됨.
+
 ## 상위 구조 개요
 - **UI/마크업**: `index.html`, `seoulsurvival/index.html`
   - 동일한 화면 구조가 2군데 존재(루트/서브폴더). UI 수정은 보통 **둘 다 동기화**.
