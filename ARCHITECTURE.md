@@ -1,11 +1,12 @@
-# ARCHITECTURE (Capital Clicker: Seoul Survival)
+# ARCHITECTURE (ClickSurvivor Hub + Games)
 
 이 문서는 **새 세션/새 프롬프트에서도 AI가 프로젝트 구조를 빠르게 복원**할 수 있도록, 코드 구조와 데이터 흐름을 압축해 둔 문서입니다.
 
 ## 실행/배포
 - **Dev**: `npm install` → `npm run dev` (Vite)
 - **정적 배포**: GitHub Pages용 `base: './'` (`vite.config.js`)
-- **엔트리(게임)**: `seoulsurvival/src/main.js` (ESM)
+- **엔트리(허브)**: 루트 `index.html` (+ `hub/main.js`)
+- **엔트리(게임: seoulsurvival)**: `seoulsurvival/src/main.js` (ESM)
 
 ## 서비스 URL(중요)
 - **허브(홈페이지)**: `http://clicksurvivor.com/`
@@ -14,7 +15,12 @@
 
 ## 상위 구조 개요
 - **허브/루트**: `index.html`
-  - 게임 목록/안내를 보여주는 **허브 페이지(준비 중)**.
+  - “게임 1개 집중” 넷플릭스 톤 허브 페이지.
+  - 히어로(도트 배경) + 앵커 섹션: `#about`, `#screenshots`, `#account`
+  - 허브 JS 엔트리: `hub/main.js`
+  - 허브 i18n: `hub/i18n.js`, `hub/translations/{ko,en}.js`
+  - 허브 언어 규칙: `?lang=ko|en` → LocalStorage(`clicksurvivor_lang`) → `navigator.language` fallback
+  - 참고: 허브에서 쓰는 도트/스크린샷 이미지는 현재 `seoulsurvival/assets/images/*`를 재사용(추후 허브 전용 assets로 분리 가능)
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
   - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.
@@ -72,5 +78,17 @@
   - UI/포맷 관련 수정 시 “어느 쪽이 실제로 호출되는지” 확인 필요.
 - 과거에는 루트 `index.html`이 게임/리다이렉트 역할을 했으나, 현재는 **허브 페이지**로 변경됨.
   - UI 수정은 기본적으로 `seoulsurvival/index.html`을 기준으로 한다(루트는 허브).
+
+## 문서 분리(DEVLOG/ARCHITECTURE) 운영 가이드
+- 결론: **당장은 분리 불필요**(허브+게임이 같은 레포/같은 배포 파이프라인을 공유).
+- 권장 운영:
+  - `DEVLOG.md`는 하나로 유지하되, 변경 항목에 **[hub] / [seoulsurvival]** 같은 태그를 붙여 구분한다.
+  - `ARCHITECTURE.md`도 하나로 유지하되, “공통(SSO/공유 모듈)” + “허브” + “게임별” 섹션으로 확장한다.
+- 분리가 필요한 시점(예):
+  - 게임이 3~5개 이상으로 늘어 `ARCHITECTURE.md`가 과도하게 길어짐
+  - 게임별로 빌드/배포/데이터 스키마가 크게 달라짐
+- 그때의 분리안(추천):
+  - 루트는 요약만 유지: `ARCHITECTURE.md`(허브 + 공통) + `DEVLOG.md`(전체)
+  - 게임별 상세는 폴더로: `docs/games/<slug>/ARCHITECTURE.md` (필요 시 `BALANCE_NOTES.md`도 게임별로)
 
 
