@@ -22,6 +22,9 @@ build/
 *.swo
 *~
 
+# Cursor (local session/metadata)
+.cursor/
+
 # Logs
 *.log
 
