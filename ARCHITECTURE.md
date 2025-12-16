@@ -25,6 +25,9 @@
   - 허브/게임 공통 로그인 상태 공유(LocalStorage 키: `clicksurvivor-auth`)
   - 초기 스캐폴딩으로 Supabase Auth(OAuth) 연결 지점을 제공
   - 공통 부트스트랩: `shared/authBoot.js` (허브/게임 페이지에서 모두 로드)
+- **공통(Cloud Save)**: `shared/cloudSave.js`
+  - 로그인 사용자만 Supabase `game_saves` 테이블에 JSON 세이브 업로드/다운로드
+  - 테이블/RLS는 `supabase/game_saves.sql`로 관리(프로젝트별 1회 실행)
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
   - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.

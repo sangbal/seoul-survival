@@ -6,6 +6,8 @@ import { createUpgradeUnlockSystem } from './systems/upgrades.js';
 import { getDomRefs } from './ui/domRefs.js';
 import { safeClass, safeHTML, safeText } from './ui/domUtils.js';
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
+import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
+import { getUser } from '../../shared/auth/core.js';
 
 // 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
 // - Vite 빌드/개발서버: import.meta.env.DEV 사용
@@ -4970,6 +4972,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const elExportSaveBtn = document.getElementById('exportSaveBtn');
     const elImportSaveBtn = document.getElementById('importSaveBtn');
     const elImportFileInput = document.getElementById('importFileInput');
+    const elCloudUploadBtn = document.getElementById('cloudUploadBtn');
+    const elCloudDownloadBtn = document.getElementById('cloudDownloadBtn');
     
     if (elExportSaveBtn) {
       elExportSaveBtn.addEventListener('click', exportSave);
@@ -4991,6 +4995,128 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
+
+    // ======= 클라우드 세이브(로그인 사용자 전용) =======
+    async function cloudUpload() {
+      const user = await getUser();
+      if (!user) {
+        openInfoModal('로그인 필요', '클라우드 세이브는 로그인 사용자만 사용할 수 있습니다.', '🔐');
+        return;
+      }
+
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) {
+        openInfoModal('저장 데이터 없음', '로컬 저장 데이터가 없습니다. 먼저 게임을 진행한 뒤 저장해 주세요.', '💾');
+        return;
+      }
+
+      let saveObj;
+      try {
+        saveObj = JSON.parse(raw);
+      } catch {
+        openInfoModal('오류', '로컬 저장 데이터 형식이 올바르지 않습니다.', '⚠️');
+        return;
+      }
+
+      const r = await upsertCloudSave('seoulsurvival', saveObj);
+      if (!r.ok) {
+        if (r.reason === 'missing_table') {
+          openInfoModal(
+            '클라우드 테이블 없음',
+            'Supabase에 game_saves 테이블이 아직 없습니다.\nSupabase SQL Editor에서 supabase/game_saves.sql을 실행해 주세요.',
+            '🛠️'
+          );
+          return;
+        }
+        openInfoModal('업로드 실패', `클라우드 저장에 실패했습니다.\n${r.error?.message || ''}`.trim(), '⚠️');
+        return;
+      }
+
+      addLog('☁️ 클라우드에 저장했습니다.');
+      openInfoModal('완료', '클라우드 저장 완료!', '☁️');
+    }
+
+    async function cloudDownload() {
+      const user = await getUser();
+      if (!user) {
+        openInfoModal('로그인 필요', '클라우드 세이브는 로그인 사용자만 사용할 수 있습니다.', '🔐');
+        return;
+      }
+
+      const r = await fetchCloudSave('seoulsurvival');
+      if (!r.ok) {
+        if (r.reason === 'missing_table') {
+          openInfoModal(
+            '클라우드 테이블 없음',
+            'Supabase에 game_saves 테이블이 아직 없습니다.\nSupabase SQL Editor에서 supabase/game_saves.sql을 실행해 주세요.',
+            '🛠️'
+          );
+          return;
+        }
+        openInfoModal('불러오기 실패', `클라우드 불러오기에 실패했습니다.\n${r.error?.message || ''}`.trim(), '⚠️');
+        return;
+      }
+
+      if (!r.found) {
+        openInfoModal('클라우드 저장 없음', '이 계정에 저장된 클라우드 세이브가 없습니다.', '☁️');
+        return;
+      }
+
+      const cloudTime = r.save?.saveTime ? new Date(r.save.saveTime).toLocaleString() : (r.updated_at ? new Date(r.updated_at).toLocaleString() : '시간 정보 없음');
+      const message =
+        '클라우드 세이브를 발견했습니다.\n\n' +
+        `저장 시간: ${cloudTime}\n\n` +
+        '불러오면 로컬 저장이 클라우드 데이터로 덮어써지고 페이지가 새로고침됩니다.\n계속할까요?';
+
+      openConfirmModal('클라우드 불러오기', message, () => {
+        try {
+          localStorage.setItem(SAVE_KEY, JSON.stringify(r.save));
+          addLog('☁️ 클라우드 세이브를 적용했습니다. 페이지를 새로고침합니다...');
+          setTimeout(() => location.reload(), 600);
+        } catch (e) {
+          openInfoModal('오류', `클라우드 세이브 적용에 실패했습니다.\n${String(e)}`, '⚠️');
+        }
+      }, {
+        icon: '☁️',
+        primaryLabel: '불러오기',
+        secondaryLabel: '취소',
+      });
+    }
+
+    async function maybeOfferCloudRestore() {
+      // 로컬 저장이 없을 때만 자동 제안(안전)
+      const hasLocal = !!localStorage.getItem(SAVE_KEY);
+      if (hasLocal) return;
+
+      const user = await getUser();
+      if (!user) return;
+
+      const r = await fetchCloudSave('seoulsurvival');
+      if (!r.ok || !r.found) return;
+
+      const cloudTime = r.save?.saveTime ? new Date(r.save.saveTime).toLocaleString() : (r.updated_at ? new Date(r.updated_at).toLocaleString() : '시간 정보 없음');
+      const message =
+        '클라우드 세이브가 있습니다.\n\n' +
+        `저장 시간: ${cloudTime}\n\n` +
+        '불러오시겠습니까?';
+
+      openConfirmModal('클라우드 세이브 발견', message, () => {
+        try {
+          localStorage.setItem(SAVE_KEY, JSON.stringify(r.save));
+          addLog('☁️ 클라우드 세이브를 적용했습니다. 페이지를 새로고침합니다...');
+          setTimeout(() => location.reload(), 600);
+        } catch {}
+      }, {
+        icon: '☁️',
+        primaryLabel: '불러오기',
+        secondaryLabel: '나중에',
+      });
+    }
+
+    if (elCloudUploadBtn) elCloudUploadBtn.addEventListener('click', cloudUpload);
+    if (elCloudDownloadBtn) elCloudDownloadBtn.addEventListener('click', cloudDownload);
+    // 로컬 저장이 없으면 클라우드 복구를 1회 제안
+    maybeOfferCloudRestore();
     
     // 토글 스위치 이벤트 리스너
     if (elToggleParticles) {
