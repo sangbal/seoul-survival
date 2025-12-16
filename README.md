@@ -36,6 +36,21 @@ npm run dev
 
 기본 주소는 `http://localhost:5173/` 입니다.
 
+## 🤖 Cursor 바이브 코딩(세션 컨텍스트 유지)
+
+새 프롬프트/새 창에서 AI가 프로젝트 맥락을 잃지 않도록, 아래 문서들을 유지합니다:
+- `ARCHITECTURE.md`: 파일 구조/데이터 흐름 요약
+- `BALANCE_NOTES.md`: 난이도/밸런스 의도 기록
+- `DEVLOG.md`: 작업 로그(최근 변경/주의사항)
+
+### “부팅 프롬프트” (새 세션에서 그대로 붙여넣기)
+
+```text
+이 프로젝트는 Capital Clicker: Seoul Survival (Vite + 바닐라 JS)이다.
+먼저 ARCHITECTURE.md, BALANCE_NOTES.md, DEVLOG.md(최신)을 읽고 맥락을 복원해라.
+그 다음 내가 말하는 요구사항을 Agent 모드로 직접 구현해라(코드는 내가 수정하지 않는다).
+```
+
 ## 🚀 GitHub Pages 배포
 
 프로젝트 루트의 `deploy.bat` 또는 `deploy.ps1`를 사용합니다.
