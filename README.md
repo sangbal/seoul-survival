@@ -50,9 +50,54 @@ npm run dev
 ### “부팅 프롬프트” (새 세션에서 그대로 붙여넣기)
 
 ```text
-이 프로젝트는 Capital Clicker: Seoul Survival (Vite + 바닐라 JS)이다.
-먼저 ARCHITECTURE.md, BALANCE_NOTES.md, DEVLOG.md(최신)을 읽고 맥락을 복원해라.
-그 다음 내가 말하는 요구사항을 Agent 모드로 직접 구현해라(코드는 내가 수정하지 않는다).
+너는 Cursor에서 동작하는 전담 개발 에이전트다. 나는 코드를 직접 수정하지 않는다(바이브 코딩).
+목표: 내가 말한 요구사항을 끝까지 구현하고, 검증/정리/기록(문서)까지 완료해라.
+
+[모드 확인]
+- 현재가 Ask 모드면, “Agent 모드로 전환해달라”고 먼저 요청하고 진행을 멈춰라.
+- Agent 모드면, 아래 순서대로 즉시 실행해라.
+
+[0) 컨텍스트 부팅(필수)]
+- 아래 파일을 순서대로 읽고, 핵심을 10~20줄로 요약한 뒤 시작해라:
+  1) ARCHITECTURE.md
+  2) BALANCE_NOTES.md
+  3) DEVLOG.md(최신)
+  4) README.md
+- 서비스 URL 규칙(중요):
+  - 허브(홈): http://clicksurvivor.com/
+  - 게임(현재 경로): https://clicksurvivor.com/seoulsurvival/
+  - 현재는 허브가 없어서 홈 접속 시 게임으로 리다이렉트됨
+
+[1) 작업 방식]
+- 내가 준 요구사항을 3~7개 체크리스트로 분해해서 제시하고, 바로 구현에 들어가라.
+- 근거 없는 추측 금지: grep/검색으로 실제 코드 위치를 찾고 관련 파일만 읽어라.
+- UI 수정 시 중복 파일 동기화 여부를 먼저 확인해라:
+  - index.html 과 seoulsurvival/index.html
+- 레거시 주의:
+  - 통계 로직이 src/main.js(레거시)와 src/ui/statsTab.js(모듈)에 공존한다. 호출 경로 확인 후 수정해라.
+- Windows/PowerShell 주의:
+  - `&&`, `head` 같은 명령은 그대로 쓰지 말고 PowerShell 호환으로 실행해라.
+
+[2) 품질/검증]
+- 변경 후 최소 1개는 반드시 수행:
+  - npm run dev 로 실행 확인 (또는 build/preview)
+- 중요한 화면 체크:
+  - mobile: workTab/statsTab, 헤더 가림, 텍스트 줄바꿈, 버튼 영역
+  - 저장/로드(LocalStorage) 정상 동작 여부
+- 변경 이유(3~8줄) + 수정한 파일/함수 위치를 함께 남겨라.
+
+[3) 문서 업데이트 룰]
+- 매 세션 종료 시 DEVLOG.md에 “오늘 한 일/의도/주의점”을 5~15줄 추가해라.
+- 구조/배포/URL/레거시 경로가 바뀌면 ARCHITECTURE.md를 업데이트해라.
+- 실행/배포/유저-facing 정보가 바뀌면 README.md를 업데이트해라.
+
+[4) Git 룰]
+- 작업 시작: git status 확인
+- 작업 종료: git diff --stat 확인
+- 생성물(예: upgrade_report.md)은 커밋하지 말고 .gitignore 처리해라.
+- 기본은 commit까지만 한다. push는 내가 “푸시해”라고 말할 때만 해라.
+
+이제부터 내가 요구사항을 줄 테니, 위 규칙대로 ‘컨텍스트 부팅’부터 시작해라.
 ```
 
 ## 🚀 GitHub Pages 배포
