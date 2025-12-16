@@ -52,10 +52,27 @@ npm run dev
   - 상태 저장 키는 `AUTH_STORAGE_KEY = 'clicksurvivor-auth'`로 고정(허브/게임 간 공유)
 
 현재 UI는 허브와 게임 설정 탭에서 아래를 제공합니다:
-- 로그인(기본: Google) + 프로바이더 버튼(Google/GitHub/Kakao)
+- 로그인(기본: Google) + 프로바이더 버튼(Google/GitHub)
 - 로그인 상태/사용자 표시, 로그아웃
 
 > 주의: 키를 설정하기 전에는 “SSO 설정 필요” 상태로 표시되며 로그인은 동작하지 않습니다.
+
+### Supabase 키 준비(필수)
+1) Supabase 대시보드에서 프로젝트 생성
+2) **Settings → API**에서 아래 2개를 복사해 `shared/auth/config.js`에 입력
+   - **Project URL**: `https://xxxx.supabase.co`
+   - **anon public key**: `eyJ...`
+
+### Google 로그인 활성화(권장)
+1) Supabase: **Authentication → Providers → Google** 활성화
+2) Google Cloud Console에서 OAuth Client 생성 후 Client ID/Secret을 Supabase에 입력
+3) Supabase: **Authentication → URL Configuration**
+   - Site URL: `https://clicksurvivor.com`
+   - Additional Redirect URLs에 아래를 추가(최소)
+     - `http://localhost:5173/`
+     - `http://localhost:5173/seoulsurvival/`
+     - `https://clicksurvivor.com/`
+     - `https://clicksurvivor.com/seoulsurvival/`
 
 ## 🤖 Cursor 바이브 코딩(세션 컨텍스트 유지)
 

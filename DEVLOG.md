@@ -18,6 +18,7 @@
   - 소셜 로그인(SSO) 초기 스캐폴딩 추가(허브/게임 공통):
     - `shared/auth/*` + `shared/authBoot.js`로 허브(`/`)와 게임(`/seoulsurvival/`)에서 동일 로그인 상태 공유 기반 마련
     - Supabase Auth(OAuth) 연결을 전제로 하며, `shared/auth/config.js`에 프로젝트 키 설정 필요
+    - MVP: Kakao는 보류, Google(GitHub 옵션)만 우선 연결
 - **밸런스**
   - CEO 달성 기준을 누적 10,000 클릭으로 조정(직급 간격 확대)
   - 노동 업그레이드 해금 조건을 직급(careerLevel) 기반으로 재정렬
