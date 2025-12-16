@@ -5180,8 +5180,16 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
       try {
         __currentUser = await getUser();
+        const updateAuthButtons = (user) => {
+          const authProviderButtons = document.getElementById('authProviderButtons');
+          const logoutButtonContainer = document.getElementById('logoutButtonContainer');
+          if (authProviderButtons) authProviderButtons.hidden = !!user;
+          if (logoutButtonContainer) logoutButtonContainer.hidden = !user;
+        };
+        updateAuthButtons(__currentUser);
         onAuthStateChange((u) => {
           __currentUser = u;
+          updateAuthButtons(u);
         });
       } catch {}
     })();
