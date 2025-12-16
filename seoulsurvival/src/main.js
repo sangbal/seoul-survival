@@ -5177,12 +5177,14 @@ document.addEventListener('DOMContentLoaded', () => {
     maybeOfferCloudRestore();
 
     // 로그인 상태를 캐시해두면 autosave마다 getUser() 호출을 피할 수 있다.
-    try {
-      __currentUser = await getUser();
-      onAuthStateChange((u) => {
-        __currentUser = u;
-      });
-    } catch {}
+    (async () => {
+      try {
+        __currentUser = await getUser();
+        onAuthStateChange((u) => {
+          __currentUser = u;
+        });
+      } catch {}
+    })();
 
     // 탭이 숨겨지거나 닫힐 때 자동으로 클라우드에 플러시 (로그인 사용자만)
     // 주의: 브라우저 크래시/강제 종료 시에는 실행되지 않을 수 있음 (best-effort)
