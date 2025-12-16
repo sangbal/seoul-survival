@@ -65,6 +65,17 @@ export async function initAuthUI(opts) {
     if (logoutButtonContainer) {
       logoutButtonContainer.style.display = name ? 'flex' : 'none';
     }
+    
+    // 클라우드 저장 섹션 표시/숨김 (로그인 시에만 표시)
+    const cloudSaveSection = document.getElementById('cloudSaveSection');
+    if (cloudSaveSection) {
+      cloudSaveSection.style.display = name ? 'block' : 'none';
+    }
+    
+    const guestSaveInfo = document.getElementById('guestSaveInfo');
+    if (guestSaveInfo) {
+      guestSaveInfo.style.display = name ? 'none' : 'block';
+    }
   }
 
   const initial = await getUser();
