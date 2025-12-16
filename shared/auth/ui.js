@@ -66,6 +66,12 @@ export async function initAuthUI(opts) {
       logoutButtonContainer.style.display = name ? 'flex' : 'none';
     }
     
+    // 허브 계정 섹션의 사용자 정보 표시/숨김
+    const authUserInfo = document.getElementById('authUserInfo');
+    if (authUserInfo) {
+      authUserInfo.style.display = name ? 'block' : 'none';
+    }
+    
     // 클라우드 저장 섹션 표시/숨김 (로그인 시에만 표시)
     const cloudSaveSection = document.getElementById('cloudSaveSection');
     if (cloudSaveSection) {

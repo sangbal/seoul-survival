@@ -18,15 +18,7 @@ function initVersion() {
   if (v) v.textContent = '1.0.0';
 }
 
-function initLoginBtn() {
-  const btn = $('#loginBtn');
-  if (!btn) return;
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    const lang = document.documentElement.lang;
-    showToast(lang === 'ko' ? '로그인(SSO) 준비 중' : 'SSO is coming soon');
-  });
-}
+// 로그인 버튼은 shared/authBoot.js에서 처리
 
 function initLangSelect() {
   const select = $('#langSelect');
