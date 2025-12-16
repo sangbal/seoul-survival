@@ -50,8 +50,16 @@ export async function initAuthUI(opts) {
       }
     }
 
+    // 로그인 상태에 따라 버튼 표시/숨김
     if (loginBtn) loginBtn.hidden = !!name;
     if (logoutBtn) logoutBtn.hidden = !name;
+    
+    // providerButtons 컨테이너 표시/숨김 (로그인 시 숨김)
+    const authProviderButtons = document.getElementById('authProviderButtons');
+    if (authProviderButtons) authProviderButtons.hidden = !!name;
+    
+    const logoutButtonContainer = document.getElementById('logoutButtonContainer');
+    if (logoutButtonContainer) logoutButtonContainer.hidden = !name;
   }
 
   const initial = await getUser();

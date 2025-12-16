@@ -5179,19 +5179,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 로그인 상태를 캐시해두면 autosave마다 getUser() 호출을 피할 수 있다.
     (async () => {
       try {
-        const updateAuthButtons = (user) => {
-          const authProviderButtons = document.getElementById('authProviderButtons');
-          const logoutButtonContainer = document.getElementById('logoutButtonContainer');
-          const loginBtn = document.getElementById('loginBtn');
-          if (authProviderButtons) authProviderButtons.hidden = !!user;
-          if (logoutButtonContainer) logoutButtonContainer.hidden = !user;
-          if (loginBtn) loginBtn.hidden = !!user;
-        };
         __currentUser = await getUser();
-        updateAuthButtons(__currentUser);
         onAuthStateChange((u) => {
           __currentUser = u;
-          updateAuthButtons(u);
         });
       } catch {}
     })();
