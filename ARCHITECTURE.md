@@ -43,7 +43,7 @@
    - `getRps()`가 금융 + (부동산 * rentMultiplier) + 이벤트 배수를 합산
 4. **UI 업데이트**:
    - `safeText(...)`로 주요 UI 갱신
-   - 통계 탭은 일부 `src/ui/statsTab.js`(모듈) + 일부 `src/main.js`(레거시)가 섞여 있음
+   - 통계 탭은 일부 `seoulsurvival/src/ui/statsTab.js`(모듈) + 일부 `seoulsurvival/src/main.js`(레거시)가 섞여 있음
 5. **저장/로드**: LocalStorage에 상태 저장(자동/수동/리셋)
 
 ## 핵심 데이터/테이블 위치
@@ -53,10 +53,10 @@
   - 금융: `FINANCIAL_INCOME`
   - 부동산: `BASE_RENT`
 - **가격(기본가/지수 성장)**:
-  - 모듈: `src/economy/pricing.js`
-  - 레거시(중복): `src/main.js` 내부에도 구매/판매 계산 함수가 존재
+  - 모듈: `seoulsurvival/src/economy/pricing.js`
+  - 레거시(중복): `seoulsurvival/src/main.js` 내부에도 구매/판매 계산 함수가 존재
 - **순차 해금**:
-  - `isProductUnlocked(...)`, `checkNewUnlocks(...)` in `src/main.js`
+  - `isProductUnlocked(...)`, `checkNewUnlocks(...)` in `seoulsurvival/src/main.js`
 
 ## UI 구조 메모(자주 수정되는 곳)
 - 노동 탭(`workTab`)
