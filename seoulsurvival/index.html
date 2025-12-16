@@ -2511,6 +2511,56 @@
       <section class="card">
         <h2>⚙️ 설정</h2>
         
+        <!-- 시각 효과 설정 -->
+        <div class="stats-section">
+          <h3>🎨 시각 효과</h3>
+          <div class="settings-toggle-group">
+            <div class="settings-toggle-item">
+              <div class="settings-toggle-info">
+                <span class="settings-toggle-label">파티클 켬</span>
+                <div class="settings-toggle-desc">
+                  떨어지는 지폐/상품 애니메이션
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleParticles" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="settings-toggle-item">
+              <div class="settings-toggle-info">
+                <span class="settings-toggle-label">화려한 그래픽 켬</span>
+                <div class="settings-toggle-desc">
+                  시각 효과 향상 (비활성화 시 성능 향상)
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleFancyGraphics" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 숫자 표시 설정 -->
+        <div class="stats-section">
+          <h3>🔢 숫자 표시</h3>
+          <div class="settings-toggle-group">
+            <div class="settings-toggle-item">
+              <div class="settings-toggle-info">
+                <span class="settings-toggle-label">짧은 숫자 켬</span>
+                <div class="settings-toggle-desc">
+                  큰 숫자를 간단하게 표시 (예: 1,000만 → 1천만)
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleShortNumbers">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
         <!-- 계정(소셜 로그인) -->
         <div class="stats-section">
           <h3>👤 계정 (소셜 로그인)</h3>
@@ -2533,7 +2583,6 @@
             </div>
             <div id="authProviderButtons" style="display:flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
               <button class="btn settings-btn" data-auth-provider="google" style="background: var(--primary); color: white; min-width: 160px;">Google</button>
-              <button class="btn settings-btn" data-auth-provider="github" style="background: var(--btn2); color: var(--text); min-width: 160px;">GitHub</button>
             </div>
             <div id="logoutButtonContainer" style="display:flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;" hidden>
               <button class="btn settings-btn" id="logoutBtn" style="background: var(--bad); color: white; min-width: 160px;">
@@ -2585,17 +2634,17 @@
               </div>
             </div>
 
-            <!-- 저장 내보내기/가져오기 -->
-            <button class="btn settings-btn" id="exportSaveBtn" style="background: var(--primary); color: white; min-width: 160px;">
+            <!-- 저장 내보내기/가져오기 (숨김) -->
+            <button class="btn settings-btn" id="exportSaveBtn" style="background: var(--primary); color: white; min-width: 160px; display: none;">
               📤 저장 내보내기
             </button>
-            <div class="settings-desc">
+            <div class="settings-desc" style="display: none;">
               저장 내용을 백업하거나 다른 컴퓨터로 전송
             </div>
-            <button class="btn settings-btn" id="importSaveBtn" style="background: var(--secondary); color: white; min-width: 160px;">
+            <button class="btn settings-btn" id="importSaveBtn" style="background: var(--secondary); color: white; min-width: 160px; display: none;">
               📥 저장 가져오기
             </button>
-            <div class="settings-desc">
+            <div class="settings-desc" style="display: none;">
               백업한 저장 파일 불러오기
             </div>
             <input type="file" id="importFileInput" accept=".json" style="display: none;">
@@ -2611,56 +2660,6 @@
             </button>
             <div class="settings-warning">
               ⚠️ 게임을 새로 시작하면 모든 진행 상황이 삭제되며 복구할 수 없습니다.
-            </div>
-          </div>
-        </div>
-
-        <!-- 시각 효과 설정 -->
-        <div class="stats-section">
-          <h3>🎨 시각 효과</h3>
-          <div class="settings-toggle-group">
-            <div class="settings-toggle-item">
-              <div class="settings-toggle-info">
-                <span class="settings-toggle-label">파티클 켬</span>
-                <div class="settings-toggle-desc">
-                  떨어지는 지폐/상품 애니메이션
-                </div>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="toggleParticles" checked>
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-            <div class="settings-toggle-item">
-              <div class="settings-toggle-info">
-                <span class="settings-toggle-label">화려한 그래픽 켬</span>
-                <div class="settings-toggle-desc">
-                  시각 효과 향상 (비활성화 시 성능 향상)
-                </div>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="toggleFancyGraphics" checked>
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 숫자 표시 설정 -->
-        <div class="stats-section">
-          <h3>🔢 숫자 표시</h3>
-          <div class="settings-toggle-group">
-            <div class="settings-toggle-item">
-              <div class="settings-toggle-info">
-                <span class="settings-toggle-label">짧은 숫자 켬</span>
-                <div class="settings-toggle-desc">
-                  큰 숫자를 간단하게 표시 (예: 1,000만 → 1천만)
-                </div>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="toggleShortNumbers">
-                <span class="toggle-slider"></span>
-              </label>
             </div>
           </div>
         </div>
