@@ -29,6 +29,9 @@
 
 ## “다음에 재개할 때” 체크리스트
 - 새 세션에서는 `ARCHITECTURE.md` → `BALANCE_NOTES.md` → `DEVLOG.md` 순으로 읽고 시작
-- 레거시 주의: `src/main.js`에 통계 탭 업데이트 로직이 남아 있고 `src/ui/statsTab.js`도 존재(호출 경로 확인 필요)
+- 레거시 주의: `seoulsurvival/src/main.js`에 통계 탭 업데이트 로직이 남아 있고 `seoulsurvival/src/ui/statsTab.js`도 존재(호출 경로 확인 필요)
+
+## 버전 기록 룰(간단)
+- 배포/공개 전에 버전을 올렸다면, `vX.Y.Z`와 변경 요약(3~8줄)을 DEVLOG에 남긴다.
 
 
