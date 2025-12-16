@@ -7,7 +7,7 @@ import { getDomRefs } from './ui/domRefs.js';
 import { safeClass, safeHTML, safeText } from './ui/domUtils.js';
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
 import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
-import { getUser } from '../../shared/auth/core.js';
+import { getUser, onAuthStateChange } from '../../shared/auth/core.js';
 
 // 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
 // - Vite 빌드/개발서버: import.meta.env.DEV 사용
@@ -1720,7 +1720,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let settings = {
       particles: true,        // 파티클 애니메이션
       fancyGraphics: true,    // 화려한 그래픽
-      shortNumbers: false     // 짧은 숫자 표시 (기본값: 끔)
+      shortNumbers: false,    // 짧은 숫자 표시 (기본값: 끔)
+      cloudAutoSync: false    // 클라우드 자동 동기화(로그인 사용자만, 기본값: 끔)
     };
     
     // 노동 커리어 시스템 (현실적 승진)
@@ -3432,6 +3433,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lastSaveTime = new Date();
         console.log('게임 저장 완료:', lastSaveTime.toLocaleTimeString());
         updateSaveStatus(); // 저장 상태 UI 업데이트
+        scheduleCloudAutoUpload(saveData, 'autosave');
       } catch (error) {
         console.error('게임 저장 실패:', error);
       }
@@ -4997,6 +4999,82 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======= 클라우드 세이브(로그인 사용자 전용) =======
+    const CLOUD_AUTO_DEBOUNCE_MS = 120000; // 120초
+    let __cloudAutoTimer = null;
+    let __cloudPendingSave = null;
+    let __lastCloudUploadedSaveTs = 0;
+    let __currentUser = null;
+    let __lastCloudSyncAt = null;
+
+    function __updateCloudLastSyncUI() {
+      const el = document.getElementById('cloudLastSync');
+      if (!el) return;
+      if (!__lastCloudSyncAt) {
+        el.textContent = '--:--';
+        return;
+      }
+      el.textContent = __lastCloudSyncAt.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    }
+
+    function __setCloudHint(text) {
+      const el = document.getElementById('cloudSaveHint');
+      if (!el || !text) return;
+      el.textContent = text;
+    }
+
+    function scheduleCloudAutoUpload(saveObj, reason = 'unknown') {
+      // UX 우선: 로컬 저장은 계속, 클라우드는 로그인 + 토글 ON일 때만.
+      if (!settings?.cloudAutoSync) return;
+      if (!__currentUser) return;
+      if (!saveObj) return;
+
+      const saveTs = Number(saveObj?.ts || 0) || 0;
+      if (saveTs && saveTs <= __lastCloudUploadedSaveTs) return; // 중복 업로드 방지
+
+      __cloudPendingSave = saveObj;
+
+      if (__cloudAutoTimer) window.clearTimeout(__cloudAutoTimer);
+      __cloudAutoTimer = window.setTimeout(() => {
+        flushCloudAutoUpload(`debounced:${reason}`);
+      }, CLOUD_AUTO_DEBOUNCE_MS);
+
+      // 가벼운 힌트(너무 시끄럽지 않게)
+      __setCloudHint('자동 동기화 대기 중… (유휴 시 클라우드로 업로드됩니다)');
+    }
+
+    async function flushCloudAutoUpload(reason = 'flush') {
+      if (!settings?.cloudAutoSync) return;
+      if (!__currentUser) return;
+      if (!__cloudPendingSave) return;
+
+      const saveObj = __cloudPendingSave;
+      __cloudPendingSave = null;
+      if (__cloudAutoTimer) {
+        window.clearTimeout(__cloudAutoTimer);
+        __cloudAutoTimer = null;
+      }
+
+      const saveTs = Number(saveObj?.ts || Date.now()) || Date.now();
+      if (saveTs && saveTs <= __lastCloudUploadedSaveTs) return;
+
+      const r = await upsertCloudSave('seoulsurvival', saveObj);
+      if (!r.ok) {
+        // 자동 동기화는 조용히 실패(UX 보호). 버튼 수동 업로드에서 자세한 안내.
+        __setCloudHint(`자동 동기화 실패(나중에 재시도). 이유: ${r.reason || 'unknown'}`);
+        // 다음 저장에서 다시 시도하게 둔다.
+        return;
+      }
+
+      __lastCloudUploadedSaveTs = saveTs;
+      __lastCloudSyncAt = new Date();
+      __updateCloudLastSyncUI();
+      __setCloudHint('자동 동기화 완료 ✅');
+    }
+
     async function cloudUpload() {
       const user = await getUser();
       if (!user) {
@@ -5034,6 +5112,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
       addLog('☁️ 클라우드에 저장했습니다.');
       openInfoModal('완료', '클라우드 저장 완료!', '☁️');
+
+      // UX: 수동 업로드를 한 번 성공했으면 자동 동기화 ON을 제안(기본값 OFF는 유지)
+      if (!settings.cloudAutoSync) {
+        openConfirmModal(
+          '자동 동기화 추천',
+          '앞으로는 클라우드 저장을 매번 누르지 않아도 자동으로 동기화할까요?\n(설정에서 언제든 끌 수 있습니다)',
+          () => {
+            settings.cloudAutoSync = true;
+            try { saveSettings(); } catch {}
+            const elToggle = document.getElementById('toggleCloudAutoSync');
+            if (elToggle) elToggle.checked = true;
+            __setCloudHint('자동 동기화가 켜졌습니다.');
+            scheduleCloudAutoUpload(saveObj, 'manual-upload');
+          },
+          { icon: '☁️', primaryLabel: '켜기', secondaryLabel: '나중에' }
+        );
+      }
     }
 
     async function cloudDownload() {
@@ -5117,6 +5212,47 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elCloudDownloadBtn) elCloudDownloadBtn.addEventListener('click', cloudDownload);
     // 로컬 저장이 없으면 클라우드 복구를 1회 제안
     maybeOfferCloudRestore();
+
+    // 로그인 상태를 캐시해두면 autosave마다 getUser() 호출을 피할 수 있다.
+    try {
+      __currentUser = await getUser();
+      onAuthStateChange((u) => {
+        __currentUser = u;
+      });
+    } catch {}
+
+    // 자동 동기화 토글 바인딩
+    const elToggleCloudAutoSync = document.getElementById('toggleCloudAutoSync');
+    if (elToggleCloudAutoSync) {
+      elToggleCloudAutoSync.checked = !!settings.cloudAutoSync;
+      elToggleCloudAutoSync.addEventListener('change', (e) => {
+        settings.cloudAutoSync = !!e.target.checked;
+        saveSettings();
+        if (settings.cloudAutoSync) {
+          __setCloudHint('자동 동기화가 켜졌습니다.');
+          // 켜는 순간 로컬 저장이 있으면 1회 업로드를 예약
+          const raw = localStorage.getItem(SAVE_KEY);
+          if (raw) {
+            try {
+              const obj = JSON.parse(raw);
+              scheduleCloudAutoUpload(obj, 'toggle-on');
+            } catch {}
+          }
+        } else {
+          __setCloudHint('자동 동기화가 꺼졌습니다.');
+        }
+      });
+    }
+
+    // 탭이 숨겨지거나 닫힐 때 가능한 한 마지막 업로드를 시도한다(best-effort)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        flushCloudAutoUpload('visibility:hidden');
+      }
+    });
+    window.addEventListener('pagehide', () => {
+      flushCloudAutoUpload('pagehide');
+    });
     
     // 토글 스위치 이벤트 리스너
     if (elToggleParticles) {
