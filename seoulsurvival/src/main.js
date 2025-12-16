@@ -8,6 +8,7 @@ import { safeClass, safeHTML, safeText } from './ui/domUtils.js';
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
 import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
 import { getUser, onAuthStateChange } from '../../shared/auth/core.js';
+import { updateLeaderboard, getLeaderboard } from '../../shared/leaderboard.js';
 
 // 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
 // - Vite 빌드/개발서버: import.meta.env.DEV 사용
@@ -827,6 +828,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 자동 저장 시스템
     const SAVE_KEY = 'seoulTycoonSaveV1';
     let lastSaveTime = new Date();
+    
+    // 닉네임 (리더보드용)
+    let playerNickname = '';
     
     // ======= 업그레이드 시스템 (Cookie Clicker 스타일) =======
     const UPGRADES = {
@@ -3424,8 +3428,16 @@ document.addEventListener('DOMContentLoaded', () => {
         gameStartTime: gameStartTime,
         // 누적 플레이시간 시스템
         totalPlayTime: totalPlayTime,
-        sessionStartTime: sessionStartTime
+        sessionStartTime: sessionStartTime,
+        // 닉네임 (리더보드용)
+        nickname: playerNickname
       };
+      
+      // 디버깅: 닉네임 저장 확인
+      if (__IS_DEV__) {
+        console.log('💾 저장 데이터에 포함된 닉네임:', playerNickname || '(없음)');
+        console.log('💾 saveData.nickname:', saveData.nickname);
+      }
       
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
@@ -3438,7 +3450,17 @@ document.addEventListener('DOMContentLoaded', () => {
           const saveTs = Number(saveData?.ts || 0) || 0;
           if (saveTs && saveTs > __lastCloudUploadedSaveTs) {
             __cloudPendingSave = saveData;
+            // 디버깅: 클라우드 저장 대기 중인 데이터 확인
+            if (__IS_DEV__) {
+              console.log('☁️ 클라우드 저장 대기 중인 데이터에 닉네임 포함:', __cloudPendingSave.nickname || '(없음)');
+            }
           }
+        }
+        
+        // 리더보드 업데이트 (닉네임이 있을 때만, 30초마다)
+        if (playerNickname && (!window.__lastLeaderboardUpdate || Date.now() - window.__lastLeaderboardUpdate > 30000)) {
+          updateLeaderboardEntry();
+          window.__lastLeaderboardUpdate = Date.now();
         }
       } catch (error) {
         console.error('게임 저장 실패:', error);
@@ -3539,6 +3561,8 @@ document.addEventListener('DOMContentLoaded', () => {
           totalPlayTime = data.totalPlayTime;
           console.log('🕐 이전 누적 플레이시간 복원:', totalPlayTime, 'ms');
         }
+        // 닉네임 복원
+        playerNickname = data.nickname || '';
         if (data.sessionStartTime) {
           // 이전 세션의 플레이시간을 누적
           const previousSessionTime = Date.now() - data.sessionStartTime;
@@ -3567,22 +3591,40 @@ document.addEventListener('DOMContentLoaded', () => {
         '⚠️ 모든 진행 상황이 삭제되며 복구할 수 없습니다.';
 
       openConfirmModal('게임 새로 시작', message, () => {
-        try {
-          // 초기화 진행 메시지
-          addLog('🔄 게임을 초기화합니다...');
-          console.log('✅ User confirmed reset'); // 디버깅용
-          
-          // 저장 데이터 삭제
-          localStorage.removeItem(SAVE_KEY);
-          console.log('✅ LocalStorage cleared'); // 디버깅용
-          
-          // 즉시 페이지 새로고침
-          console.log('✅ Reloading page...'); // 디버깅용
-          location.reload();
-        } catch (error) {
-          console.error('❌ Error in resetGame:', error);
-          openInfoModal('오류', '게임 초기화 중 오류가 발생했습니다.\n페이지를 새로고침해주세요.', '⚠️');
-        }
+        // 닉네임 입력 요청
+        openInputModal(
+          '닉네임 설정',
+          '리더보드에 표시될 닉네임을 입력하세요.\n(최대 20자, 공백 가능)',
+          (nickname) => {
+            try {
+              // 초기화 진행 메시지
+              addLog('🔄 게임을 초기화합니다...');
+              console.log('✅ User confirmed reset'); // 디버깅용
+              
+              // 닉네임 저장
+              playerNickname = nickname || '익명';
+              
+              // 저장 데이터 삭제
+              localStorage.removeItem(SAVE_KEY);
+              console.log('✅ LocalStorage cleared'); // 디버깅용
+              
+              // 즉시 페이지 새로고침
+              console.log('✅ Reloading page...'); // 디버깅용
+              location.reload();
+            } catch (error) {
+              console.error('❌ Error in resetGame:', error);
+              openInfoModal('오류', '게임 초기화 중 오류가 발생했습니다.\n페이지를 새로고침해주세요.', '⚠️');
+            }
+          },
+          {
+            icon: '✏️',
+            primaryLabel: '시작',
+            secondaryLabel: '취소',
+            placeholder: '닉네임 입력',
+            maxLength: 20,
+            defaultValue: '익명'
+          }
+        );
       }, {
         icon: '🔄',
         primaryLabel: '새로 시작',
@@ -3701,6 +3743,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateUI(){
       // --- (A) 커리어 진행률 갱신을 최우선으로 ---
       try {
+        // 닉네임 표시 업데이트
+        const nicknameLabel = document.getElementById('playerNicknameLabel');
+        const nicknameInfoItem = document.getElementById('nicknameInfoItem');
+        if (nicknameLabel) {
+          nicknameLabel.textContent = playerNickname || '-';
+        }
+        if (nicknameInfoItem) {
+          nicknameInfoItem.style.display = playerNickname ? 'flex' : 'none';
+        }
         // totalClicks 값 유효성 검사
         if (typeof totalClicks !== 'number' || totalClicks < 0) {
           console.warn('Invalid totalClicks value:', totalClicks, 'resetting to 0');
@@ -4542,6 +4593,80 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
+    // 닉네임 입력 모달
+    function openInputModal(title, message, onConfirm, options = {}) {
+      if (!elModalRoot || !elModalTitle || !elModalMessage || !elModalPrimary || !elModalSecondary) {
+        const input = prompt(message);
+        if (input && typeof onConfirm === 'function') {
+          onConfirm(input.trim());
+        }
+        return;
+      }
+
+      elModalRoot.classList.remove('game-modal-hidden');
+      const titleIcon = elModalTitle.querySelector('.icon');
+      const titleText = elModalTitle.querySelector('.text');
+      if (titleIcon) titleIcon.textContent = options.icon || '✏️';
+      if (titleText) titleText.textContent = title;
+      
+      // 입력 필드 생성
+      let inputEl = elModalMessage.querySelector('.game-modal-input');
+      if (!inputEl) {
+        inputEl = document.createElement('input');
+        inputEl.type = 'text';
+        inputEl.className = 'game-modal-input';
+        inputEl.placeholder = options.placeholder || '닉네임을 입력하세요';
+        inputEl.maxLength = options.maxLength || 20;
+        elModalMessage.innerHTML = '';
+        elModalMessage.appendChild(inputEl);
+      } else {
+        inputEl.value = '';
+      }
+      
+      // 메시지 텍스트 추가 (있는 경우)
+      if (message) {
+        const msgText = document.createElement('div');
+        msgText.textContent = message;
+        msgText.style.marginBottom = '10px';
+        msgText.style.color = 'var(--muted)';
+        elModalMessage.insertBefore(msgText, inputEl);
+      }
+
+      elModalSecondary.style.display = 'inline-flex';
+      elModalPrimary.textContent = options.primaryLabel || '확인';
+      elModalSecondary.textContent = options.secondaryLabel || '취소';
+
+      // Enter 키로 확인
+      const handleEnter = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          elModalPrimary.click();
+        }
+      };
+      inputEl.addEventListener('keydown', handleEnter);
+      inputEl.focus();
+
+      elModalPrimary.onclick = () => {
+        const value = inputEl.value.trim();
+        if (!value && options.required !== false) {
+          inputEl.style.borderColor = 'var(--bad)';
+          setTimeout(() => {
+            inputEl.style.borderColor = '';
+          }, 1000);
+          return;
+        }
+        inputEl.removeEventListener('keydown', handleEnter);
+        closeModal();
+        if (typeof onConfirm === 'function') {
+          onConfirm(value || options.defaultValue || '익명');
+        }
+      };
+      elModalSecondary.onclick = () => {
+        inputEl.removeEventListener('keydown', handleEnter);
+        closeModal();
+      };
+    }
+
     // ======= 공유하기 기능 =======
     async function shareGame() {
       const gameUrl = window.location.href;
@@ -4959,6 +5084,29 @@ document.addEventListener('DOMContentLoaded', () => {
       addLog('저장된 게임을 불러왔습니다.');
     } else {
       addLog('환영합니다! 노동으로 종잣돈을 모아 첫 부동산을 구입해보세요.');
+      // 새 게임 시작 시 닉네임 입력 요청
+      if (!playerNickname) {
+        setTimeout(() => {
+          openInputModal(
+            '닉네임 설정',
+            '리더보드에 표시될 닉네임을 입력하세요.\n(최대 20자, 공백 가능)',
+            (nickname) => {
+              playerNickname = nickname || '익명';
+              saveGame(); // 닉네임 저장
+              addLog(`닉네임이 "${playerNickname}"으로 설정되었습니다.`);
+            },
+            {
+              icon: '✏️',
+              primaryLabel: '확인',
+              secondaryLabel: '나중에',
+              placeholder: '닉네임 입력',
+              maxLength: 20,
+              defaultValue: '익명',
+              required: false
+            }
+          );
+        }, 500); // UI 로드 후 표시
+      }
     }
     
     // 초기 배경 이미지 설정
@@ -5676,8 +5824,163 @@ document.addEventListener('DOMContentLoaded', () => {
         // 7. 업적 그리드
         updateAchievementGrid();
         
+        // 8. 리더보드는 통계 탭이 활성화될 때만 업데이트 (updateUI에서 매번 호출하지 않음)
+        // 리더보드 업데이트는 navBtns 이벤트 리스너에서 처리
+        
       } catch (e) {
         console.error('Stats tab update failed:', e);
+      }
+    }
+    
+    // 리더보드 UI 업데이트 함수 (디바운싱 및 로딩 상태 관리)
+    let __leaderboardLoading = false;
+    let __leaderboardLastUpdate = 0;
+    let __leaderboardUpdateTimer = null;
+    const LEADERBOARD_UPDATE_INTERVAL = 10000; // 10초마다 업데이트
+    const LEADERBOARD_TIMEOUT = 10000; // 10초 타임아웃
+    
+    async function updateLeaderboardUI(force = false) {
+      const container = document.getElementById('leaderboardContainer');
+      if (!container) return;
+      
+      // 이미 로딩 중이면 스킵 (force일 때는 강제 실행)
+      if (__leaderboardLoading && !force) {
+        console.log('리더보드: 이미 로딩 중, 스킵');
+        return;
+      }
+      
+      // 최근 업데이트로부터 충분한 시간이 지나지 않았으면 스킵 (force가 아닐 때만, 첫 호출 제외)
+      const now = Date.now();
+      if (!force && __leaderboardLastUpdate > 0 && now - __leaderboardLastUpdate < LEADERBOARD_UPDATE_INTERVAL) {
+        console.log('리더보드: 최근 업데이트로부터 시간이 짧음, 스킵');
+        return;
+      }
+      
+      // 디바운싱: 타이머가 있으면 취소하고 새로 설정
+      if (__leaderboardUpdateTimer) {
+        clearTimeout(__leaderboardUpdateTimer);
+        __leaderboardUpdateTimer = null;
+      }
+      
+      // 즉시 실행하지 않고 약간의 지연을 두어 연속 호출 방지
+      __leaderboardUpdateTimer = setTimeout(async () => {
+        __leaderboardLoading = true;
+        __leaderboardUpdateTimer = null;
+        
+        // 타임아웃 설정
+        const timeoutId = setTimeout(() => {
+          if (__leaderboardLoading) {
+            console.error('리더보드: 타임아웃 발생');
+            container.innerHTML = '<div class="leaderboard-error">리더보드를 불러오는 데 시간이 너무 오래 걸립니다. 네트워크를 확인해주세요.</div>';
+            __leaderboardLoading = false;
+            __leaderboardLastUpdate = Date.now();
+          }
+        }, LEADERBOARD_TIMEOUT);
+        
+        try {
+          // 로딩 메시지 표시
+          container.innerHTML = '<div class="leaderboard-loading">리더보드를 불러오는 중...</div>';
+          
+          console.log('리더보드: API 호출 시작');
+          const result = await getLeaderboard(10, 'assets');
+          clearTimeout(timeoutId);
+          
+          console.log('리더보드: API 응답 받음', result);
+          
+          if (!result.success) {
+            const errorMsg = result.error || '알 수 없는 오류';
+            console.error('리더보드: API 오류', errorMsg);
+            container.innerHTML = `<div class="leaderboard-error">리더보드를 불러올 수 없습니다: ${errorMsg}</div>`;
+            __leaderboardLoading = false;
+            __leaderboardLastUpdate = Date.now();
+            return;
+          }
+          
+          const entries = result.data || [];
+          if (entries.length === 0) {
+            console.log('리더보드: 기록 없음');
+            container.innerHTML = '<div class="leaderboard-loading">리더보드에 아직 기록이 없습니다.</div>';
+            __leaderboardLoading = false;
+            __leaderboardLastUpdate = Date.now();
+            return;
+          }
+          
+          console.log('리더보드: 항목 수', entries.length);
+          
+          // 리더보드 HTML 생성
+          const list = document.createElement('div');
+          list.className = 'leaderboard-list';
+          
+          entries.forEach((entry, index) => {
+            const item = document.createElement('div');
+            item.className = `leaderboard-item ${index < 3 ? 'top3' : ''}`;
+            
+            const rank = document.createElement('div');
+            rank.className = 'leaderboard-rank';
+            if (index === 0) rank.textContent = '🥇';
+            else if (index === 1) rank.textContent = '🥈';
+            else if (index === 2) rank.textContent = '🥉';
+            else rank.textContent = `${index + 1}`;
+            
+            const info = document.createElement('div');
+            info.className = 'leaderboard-info';
+            
+            const nickname = document.createElement('div');
+            nickname.className = 'leaderboard-nickname';
+            nickname.textContent = entry.nickname || '익명';
+            
+            const stats = document.createElement('div');
+            stats.className = 'leaderboard-stats';
+            
+            // 플레이타임 포맷
+            const playTimeMs = entry.play_time_ms || 0;
+            const playTimeMinutes = Math.floor(playTimeMs / 60000);
+            const playTimeHours = Math.floor(playTimeMinutes / 60);
+            const remainingMinutes = playTimeMinutes % 60;
+            const playTimeText = playTimeHours > 0 
+              ? `${playTimeHours}시간 ${remainingMinutes}분` 
+              : `${playTimeMinutes}분`;
+            
+            stats.innerHTML = `
+              <span>💰 ${formatStatsNumber(entry.total_assets || 0)}</span>
+              <span>⏱️ ${playTimeText}</span>
+            `;
+            
+            info.appendChild(nickname);
+            info.appendChild(stats);
+            
+            item.appendChild(rank);
+            item.appendChild(info);
+            list.appendChild(item);
+          });
+          
+          container.innerHTML = '';
+          container.appendChild(list);
+          __leaderboardLastUpdate = Date.now();
+          console.log('리더보드: 업데이트 완료');
+        } catch (error) {
+          clearTimeout(timeoutId);
+          console.error('리더보드 UI 업데이트 실패:', error);
+          container.innerHTML = `<div class="leaderboard-error">리더보드를 불러오는 중 오류가 발생했습니다: ${error.message || '알 수 없는 오류'}</div>`;
+          __leaderboardLastUpdate = Date.now();
+        } finally {
+          __leaderboardLoading = false;
+        }
+      }, force ? 0 : 300); // force가 아니면 300ms 지연
+    }
+    
+    // 리더보드 업데이트 함수 (게임 저장 시 호출)
+    async function updateLeaderboardEntry() {
+      if (!playerNickname) return; // 닉네임이 없으면 업데이트 안 함
+      
+      try {
+        const totalAssets = cash + calculateTotalAssetValue();
+        const currentSessionTime = Date.now() - sessionStartTime;
+        const totalPlayTimeMs = totalPlayTime + currentSessionTime;
+        
+        await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs);
+      } catch (error) {
+        console.error('리더보드 업데이트 실패:', error);
       }
     }
     
@@ -6034,10 +6337,23 @@ document.addEventListener('DOMContentLoaded', () => {
         // 선택한 탭 활성화
         document.getElementById(targetTab).classList.add('active');
         btn.classList.add('active');
+        
+        // 통계 탭이 열릴 때 리더보드 강제 업데이트
+        if (targetTab === 'statsTab') {
+          updateLeaderboardUI(true);
+        }
       });
     });
     
     updateUI(); // 초기 UI 업데이트
+    
+    // 초기 리더보드 로드 (통계 탭이 보이는 경우)
+    setTimeout(() => {
+      const statsTab = document.getElementById('statsTab');
+      if (statsTab && statsTab.classList.contains('active')) {
+        updateLeaderboardUI(true);
+      }
+    }, 1000);
     
     // 업그레이드 섹션 초기 상태 설정 (열림)
     const upgradeListElement = document.getElementById('upgradeList');

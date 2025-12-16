@@ -1807,6 +1807,87 @@
       font-size: 20px;
     }
     
+    /* 리더보드 스타일 */
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--panel);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.04);
+    }
+    
+    .leaderboard-item.top3 {
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 15px rgba(94, 234, 212, 0.3);
+    }
+    
+    .leaderboard-rank {
+      font-size: 18px;
+      font-weight: 700;
+      min-width: 32px;
+      text-align: center;
+      color: var(--accent);
+    }
+    
+    .leaderboard-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .leaderboard-nickname {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 14px;
+    }
+    
+    .leaderboard-stats {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .leaderboard-loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+    }
+    
+    .leaderboard-error {
+      text-align: center;
+      padding: 20px;
+      color: var(--bad);
+    }
+    
+    /* 닉네임 입력 모달 */
+    .game-modal-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 14px;
+      font-family: inherit;
+    }
+    
+    .game-modal-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.1);
+    }
+    
     /* 업적 그리드 */
     .achievement-grid {
       display: grid;
@@ -2503,6 +2584,18 @@
           </div>
         </div>
 
+        <!-- 8. 리더보드 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">🏅 리더보드 (TOP 10) <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div id="leaderboardContainer">
+              <div class="leaderboard-loading" style="text-align: center; padding: 20px; color: var(--muted);">
+                리더보드를 불러오는 중...
+              </div>
+            </div>
+          </div>
+        </div>
+
       </section>
     </div>
 
@@ -2572,6 +2665,10 @@
             <div class="settings-info-item">
               <span class="settings-info-label">사용자</span>
               <span class="settings-info-value" id="authUserLabel">게스트</span>
+            </div>
+            <div class="settings-info-item" id="nicknameInfoItem" style="display: none;">
+              <span class="settings-info-label">닉네임</span>
+              <span class="settings-info-value" id="playerNicknameLabel">-</span>
             </div>
           </div>
           <div class="settings-button-group" style="margin-top: 10px;">

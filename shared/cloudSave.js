@@ -57,6 +57,13 @@ export async function upsertCloudSave(gameSlug, saveObj) {
     save_ts: saveTs,
   };
 
+  // 디버깅: 저장되는 데이터에 닉네임 포함 여부 확인
+  if (saveObj?.nickname !== undefined) {
+    console.log('☁️ 클라우드 저장: 닉네임 포함됨:', saveObj.nickname || '(빈 문자열)');
+  } else {
+    console.warn('⚠️ 클라우드 저장: 닉네임 필드가 없음');
+  }
+
   const { error } = await sb.from(TABLE).upsert(payload, { onConflict: 'user_id,game_slug' });
 
   if (error) {
