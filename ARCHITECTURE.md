@@ -13,8 +13,12 @@
 - **현재 상태**: 허브 홈페이지가 아직 없어서, `http://clicksurvivor.com/` 접속 시 게임 경로로 **자동 리다이렉트**됨.
 
 ## 상위 구조 개요
-- **UI/마크업**: `index.html`, `seoulsurvival/index.html`
-  - 동일한 화면 구조가 2군데 존재(루트/서브폴더). UI 수정은 보통 **둘 다 동기화**.
+- **허브/루트**: `index.html`
+  - 현재는 **허브 홈페이지가 없어서** `/seoulsurvival/`로 즉시 이동시키는 **리다이렉트 페이지**로 동작.
+  - 추후 허브(게임 목록) 페이지를 만들면 이 메타 리다이렉트를 제거/대체.
+- **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
+  - 실제 게임 화면(HTML/CSS) 본체.
+  - `<script type="module" src="./src/main.js">`로 루트의 `src/main.js`를 로드해 게임 로직을 실행.
 - **게임 코어(대부분)**: `src/main.js`
   - 상태 변수(현금/보유/업그레이드/직급/이벤트/로그 등)와 메인 루프를 포함.
   - UI 업데이트, 저장/로드, 이벤트, 순차 해금, 업그레이드 해금/구매 처리 등 핵심 로직이 여기 집중.
@@ -66,6 +70,7 @@
 ## “레거시/주의” 포인트
 - `src/main.js`에 **통계 탭 업데이트 함수가 레거시로 남아 있고**, 동시에 `src/ui/statsTab.js` 모듈도 존재.
   - UI/포맷 관련 수정 시 “어느 쪽이 실제로 호출되는지” 확인 필요.
-- `index.html`과 `seoulsurvival/index.html`이 중복되어, UI 수정은 **대개 2군데 동기화**가 필요.
+- 과거에는 루트 `index.html`에도 게임 UI가 존재했으나, 현재는 **리다이렉트 역할**로 변경됨.
+  - UI 수정은 기본적으로 `seoulsurvival/index.html`을 기준으로 한다.
 
 

@@ -17,6 +17,14 @@
 - **도구**
   - `tools/extractUpgrades.mjs`: 업그레이드 표를 자동 추출/정리하는 스크립트 추가
   - `upgrade_report.md`는 생성물이므로 `.gitignore`로 제외
+- **문서/운영**
+  - `ARCHITECTURE.md`/`BALANCE_NOTES.md`/`DEVLOG.md` 도입으로 세션 컨텍스트 복원 강화
+  - `README.md`의 부팅 프롬프트를 “능동형(문서→구현→검증→문서/깃 정리)”으로 확장
+  - 서비스 URL/리다이렉트 맥락 명시:
+    - 허브: `http://clicksurvivor.com/`
+    - 게임: `https://clicksurvivor.com/seoulsurvival/`
+    - 현재 허브 부재로 홈 → 게임 리다이렉트
+  - 현재 루트 `index.html`은 허브 대신 `/seoulsurvival/`로 보내는 리다이렉트 페이지(추후 허브로 대체 예정)
 
 ## “다음에 재개할 때” 체크리스트
 - 새 세션에서는 `ARCHITECTURE.md` → `BALANCE_NOTES.md` → `DEVLOG.md` 순으로 읽고 시작
