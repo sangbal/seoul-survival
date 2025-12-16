@@ -20,11 +20,12 @@
 - **문서/운영**
   - `ARCHITECTURE.md`/`BALANCE_NOTES.md`/`DEVLOG.md` 도입으로 세션 컨텍스트 복원 강화
   - `README.md`의 부팅 프롬프트를 “능동형(문서→구현→검증→문서/깃 정리)”으로 확장
-  - 서비스 URL/리다이렉트 맥락 명시:
+  - 서비스 URL 맥락 명시:
     - 허브: `http://clicksurvivor.com/`
     - 게임: `https://clicksurvivor.com/seoulsurvival/`
-    - 현재 허브 부재로 홈 → 게임 리다이렉트
-  - 현재 루트 `index.html`은 허브 대신 `/seoulsurvival/`로 보내는 리다이렉트 페이지(추후 허브로 대체 예정)
+  - 폴더 구조 정리(옵션 A): `src/`, `assets/` → `seoulsurvival/src/`, `seoulsurvival/assets/` 로 이동(게임 완전 독립)
+  - 루트 `index.html`은 더 이상 리다이렉트가 아니라 **허브(준비 중) 페이지**로 변경
+  - `tools/extractUpgrades.mjs`는 `seoulsurvival/src/main.js`를 읽도록 경로 수정
 
 ## “다음에 재개할 때” 체크리스트
 - 새 세션에서는 `ARCHITECTURE.md` → `BALANCE_NOTES.md` → `DEVLOG.md` 순으로 읽고 시작

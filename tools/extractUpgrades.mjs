@@ -2,14 +2,14 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 /**
- * Extracts the `const UPGRADES = { ... }` object literal from src/main.js,
+ * Extracts the `const UPGRADES = { ... }` object literal from seoulsurvival/src/main.js,
  * evaluates it (functions are not executed), and writes a markdown table.
  *
  * Run:
  *   node tools/extractUpgrades.mjs
  */
 
-const SOURCE_PATH = "src/main.js";
+const SOURCE_PATH = "seoulsurvival/src/main.js";
 const OUTPUT_PATH = "upgrade_report.md";
 
 const s = fs.readFileSync(SOURCE_PATH, "utf8");

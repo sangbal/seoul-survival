@@ -5,32 +5,32 @@
 ## 실행/배포
 - **Dev**: `npm install` → `npm run dev` (Vite)
 - **정적 배포**: GitHub Pages용 `base: './'` (`vite.config.js`)
-- **엔트리**: `src/main.js` (ESM)
+- **엔트리(게임)**: `seoulsurvival/src/main.js` (ESM)
 
 ## 서비스 URL(중요)
 - **허브(홈페이지)**: `http://clicksurvivor.com/`
 - **게임(현재 서비스 경로)**: `https://clicksurvivor.com/seoulsurvival/`
-- **현재 상태**: 허브 홈페이지가 아직 없어서, `http://clicksurvivor.com/` 접속 시 게임 경로로 **자동 리다이렉트**됨.
+- **현재 상태**: 루트(`/`)는 **허브(준비 중) 페이지**, 게임은 `/seoulsurvival/` 서브패스에 독립 앱으로 존재.
 
 ## 상위 구조 개요
 - **허브/루트**: `index.html`
-  - 현재는 **허브 홈페이지가 없어서** `/seoulsurvival/`로 즉시 이동시키는 **리다이렉트 페이지**로 동작.
-  - 추후 허브(게임 목록) 페이지를 만들면 이 메타 리다이렉트를 제거/대체.
+  - 게임 목록/안내를 보여주는 **허브 페이지(준비 중)**.
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
-  - `<script type="module" src="./src/main.js">`로 루트의 `src/main.js`를 로드해 게임 로직을 실행.
-- **게임 코어(대부분)**: `src/main.js`
+  - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.
+- **게임 코어(대부분)**: `seoulsurvival/src/main.js`
   - 상태 변수(현금/보유/업그레이드/직급/이벤트/로그 등)와 메인 루프를 포함.
   - UI 업데이트, 저장/로드, 이벤트, 순차 해금, 업그레이드 해금/구매 처리 등 핵심 로직이 여기 집중.
 - **유틸/모듈 분리**
-  - `src/economy/pricing.js`: 금융/부동산 **구매/판매 비용** 계산(등비 합)
-  - `src/systems/market.js`: 시장 이벤트 스케줄/배수 계산(모듈형)
-  - `src/systems/achievements.js`: 업적 체크/알림(모듈형)
-  - `src/systems/upgrades.js`: 업그레이드 해금 체크(모듈형)
-  - `src/ui/statsTab.js`: 통계 탭 렌더러(모듈형)
-  - `src/ui/domRefs.js`: 자주 쓰는 DOM 참조 모음
-  - `src/ui/domUtils.js`: `safeText` 등 안전 DOM 조작 유틸
-  - `src/persist/storage.js`: LocalStorage JSON 안전 저장/로드 유틸
+  - `seoulsurvival/src/economy/pricing.js`: 금융/부동산 **구매/판매 비용** 계산(등비 합)
+  - `seoulsurvival/src/systems/market.js`: 시장 이벤트 스케줄/배수 계산(모듈형)
+  - `seoulsurvival/src/systems/achievements.js`: 업적 체크/알림(모듈형)
+  - `seoulsurvival/src/systems/upgrades.js`: 업그레이드 해금 체크(모듈형)
+  - `seoulsurvival/src/ui/statsTab.js`: 통계 탭 렌더러(모듈형)
+  - `seoulsurvival/src/ui/domRefs.js`: 자주 쓰는 DOM 참조 모음
+  - `seoulsurvival/src/ui/domUtils.js`: `safeText` 등 안전 DOM 조작 유틸
+  - `seoulsurvival/src/persist/storage.js`: LocalStorage JSON 안전 저장/로드 유틸
+  - **정적 리소스(이미지)**: `seoulsurvival/assets/images/*`
 
 ## 게임 루프 / 데이터 흐름(요약)
 1. **입력**: 노동 클릭(`workBtn`) / 구매-판매 버튼 / 탭 전환 / 설정 토글
@@ -47,8 +47,8 @@
 5. **저장/로드**: LocalStorage에 상태 저장(자동/수동/리셋)
 
 ## 핵심 데이터/테이블 위치
-- **직급(승진)**: `src/main.js`의 `CAREER_LEVELS`
-- **업그레이드**: `src/main.js`의 `UPGRADES`
+- **직급(승진)**: `seoulsurvival/src/main.js`의 `CAREER_LEVELS`
+- **업그레이드**: `seoulsurvival/src/main.js`의 `UPGRADES`
 - **기본 수익 테이블**
   - 금융: `FINANCIAL_INCOME`
   - 부동산: `BASE_RENT`
@@ -68,9 +68,9 @@
   - “🌐 홈페이지 이동” 링크 문구
 
 ## “레거시/주의” 포인트
-- `src/main.js`에 **통계 탭 업데이트 함수가 레거시로 남아 있고**, 동시에 `src/ui/statsTab.js` 모듈도 존재.
+- `seoulsurvival/src/main.js`에 **통계 탭 업데이트 함수가 레거시로 남아 있고**, 동시에 `seoulsurvival/src/ui/statsTab.js` 모듈도 존재.
   - UI/포맷 관련 수정 시 “어느 쪽이 실제로 호출되는지” 확인 필요.
-- 과거에는 루트 `index.html`에도 게임 UI가 존재했으나, 현재는 **리다이렉트 역할**로 변경됨.
-  - UI 수정은 기본적으로 `seoulsurvival/index.html`을 기준으로 한다.
+- 과거에는 루트 `index.html`이 게임/리다이렉트 역할을 했으나, 현재는 **허브 페이지**로 변경됨.
+  - UI 수정은 기본적으로 `seoulsurvival/index.html`을 기준으로 한다(루트는 허브).
 
 

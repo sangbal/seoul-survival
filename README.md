@@ -14,7 +14,7 @@
 - **Game(현재 서비스 경로)**: `https://clicksurvivor.com/seoulsurvival/`
 - **Repo**: `https://github.com/sangbal/seoul-survival`
 
-> 참고: 현재는 허브 홈페이지가 별도로 없어서 `http://clicksurvivor.com/` 접속 시 `https://clicksurvivor.com/seoulsurvival/` 로 자동 이동(리다이렉트)합니다.
+> 참고: 루트(`/`)는 허브(준비 중) 페이지이며, 게임은 `/seoulsurvival/`에서 플레이합니다.
 
 ## ✨ 주요 특징(v1.0)
 
@@ -39,6 +39,8 @@ npm run dev
 ```
 
 기본 주소는 `http://localhost:5173/` 입니다.
+- 허브: `http://localhost:5173/`
+- 게임: `http://localhost:5173/seoulsurvival/`
 
 ## 🤖 Cursor 바이브 코딩(세션 컨텍스트 유지)
 
@@ -66,15 +68,15 @@ npm run dev
 - 서비스 URL 규칙(중요):
   - 허브(홈): http://clicksurvivor.com/
   - 게임(현재 경로): https://clicksurvivor.com/seoulsurvival/
-  - 현재는 허브가 없어서 홈 접속 시 게임으로 리다이렉트됨
+  - 루트(`/`)는 허브(준비 중) 페이지, 게임은 `/seoulsurvival/` 서브패스
 
 [1) 작업 방식]
 - 내가 준 요구사항을 3~7개 체크리스트로 분해해서 제시하고, 바로 구현에 들어가라.
 - 근거 없는 추측 금지: grep/검색으로 실제 코드 위치를 찾고 관련 파일만 읽어라.
 - UI 수정 시 중복 파일 동기화 여부를 먼저 확인해라:
-  - index.html 과 seoulsurvival/index.html
+  - 게임 UI는 `seoulsurvival/index.html` (루트 `index.html`은 허브)
 - 레거시 주의:
-  - 통계 로직이 src/main.js(레거시)와 src/ui/statsTab.js(모듈)에 공존한다. 호출 경로 확인 후 수정해라.
+  - 통계 로직이 seoulsurvival/src/main.js(레거시)와 seoulsurvival/src/ui/statsTab.js(모듈)에 공존한다. 호출 경로 확인 후 수정해라.
 - Windows/PowerShell 주의:
   - `&&`, `head` 같은 명령은 그대로 쓰지 말고 PowerShell 호환으로 실행해라.
 
