@@ -42,6 +42,21 @@ npm run dev
 - 허브: `http://localhost:5173/`
 - 게임: `http://localhost:5173/seoulsurvival/`
 
+## 🔐 소셜 로그인(SSO) 도입(초기 스캐폴딩)
+
+허브(`/`)와 하위 게임(`/seoulsurvival/` 등)에서 **동일한 로그인 상태**를 공유하기 위해, 공통 Auth 모듈을 추가했습니다.
+
+- **공통 엔트리**: `shared/authBoot.js`
+- **설정 파일(필수)**: `shared/auth/config.js`
+  - `SUPABASE_URL`, `SUPABASE_ANON_KEY`를 실제 값으로 교체해야 로그인 동작
+  - 상태 저장 키는 `AUTH_STORAGE_KEY = 'clicksurvivor-auth'`로 고정(허브/게임 간 공유)
+
+현재 UI는 허브와 게임 설정 탭에서 아래를 제공합니다:
+- 로그인(기본: Google) + 프로바이더 버튼(Google/GitHub/Kakao)
+- 로그인 상태/사용자 표시, 로그아웃
+
+> 주의: 키를 설정하기 전에는 “SSO 설정 필요” 상태로 표시되며 로그인은 동작하지 않습니다.
+
 ## 🤖 Cursor 바이브 코딩(세션 컨텍스트 유지)
 
 새 프롬프트/새 창에서 AI가 프로젝트 맥락을 잃지 않도록, 아래 문서들을 유지합니다:

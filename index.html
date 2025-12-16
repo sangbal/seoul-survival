@@ -102,6 +102,22 @@
       cursor: pointer;
     }
     .ghostbtn[aria-disabled="true"]{ opacity: .65; cursor: not-allowed; }
+    .userchip{
+      height: 38px;
+      display:inline-flex;
+      align-items:center;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(7,11,20,.45);
+      color: rgba(229,231,235,.92);
+      font-weight: 900;
+      font-size: 13px;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     /* sections */
     section{ scroll-margin-top: calc(var(--headerH) + 16px); }
@@ -292,7 +308,9 @@
           <option value="ko">KO</option>
           <option value="en">EN</option>
         </select>
-        <button class="ghostbtn" id="loginBtn" aria-disabled="true" data-i18n="hub.header.login">로그인</button>
+        <span class="userchip" id="authUserLabel" hidden>Guest</span>
+        <button class="ghostbtn" id="loginBtn" aria-disabled="false" data-i18n="hub.header.login">로그인</button>
+        <button class="ghostbtn" id="logoutBtn" hidden>Logout</button>
       </div>
     </div>
   </header>
@@ -384,6 +402,14 @@
               <div class="muted" data-i18n="hub.account.body">
                 허브와 모든 게임에서 공통으로 동작하는 소셜 로그인(SSO)을 준비하고 있습니다.
               </div>
+              <div class="muted" id="authStatusLabel" style="margin-top: 8px; font-size: 12px;">
+                SSO 설정 필요 (shared/auth/config.js)
+              </div>
+              <div class="ctaRow" style="margin-top: 10px;">
+                <a class="btn" href="#" data-auth-provider="google">Google</a>
+                <a class="btn" href="#" data-auth-provider="github">GitHub</a>
+                <a class="btn" href="#" data-auth-provider="kakao">Kakao</a>
+              </div>
             </div>
           </div>
 
@@ -419,6 +445,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite">Coming soon</div>
   <script type="module" src="./hub/main.js"></script>
+  <script type="module" src="./shared/authBoot.js"></script>
 </body>
 </html>
 

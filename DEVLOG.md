@@ -15,6 +15,9 @@
     - CTA는 `플레이`/`자세히` 2개로 단순화
     - KO/EN i18n 추가(`?lang=` + LocalStorage + navigator fallback), 추후 JP/CN 확장 전제
     - 링크/에셋 경로는 Vite `base: './'`에 맞춰 상대 경로 유지
+  - 소셜 로그인(SSO) 초기 스캐폴딩 추가(허브/게임 공통):
+    - `shared/auth/*` + `shared/authBoot.js`로 허브(`/`)와 게임(`/seoulsurvival/`)에서 동일 로그인 상태 공유 기반 마련
+    - Supabase Auth(OAuth) 연결을 전제로 하며, `shared/auth/config.js`에 프로젝트 키 설정 필요
 - **밸런스**
   - CEO 달성 기준을 누적 10,000 클릭으로 조정(직급 간격 확대)
   - 노동 업그레이드 해금 조건을 직급(careerLevel) 기반으로 재정렬

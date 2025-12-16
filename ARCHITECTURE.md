@@ -21,6 +21,10 @@
   - 허브 i18n: `hub/i18n.js`, `hub/translations/{ko,en}.js`
   - 허브 언어 규칙: `?lang=ko|en` → LocalStorage(`clicksurvivor_lang`) → `navigator.language` fallback
   - 참고: 허브에서 쓰는 도트/스크린샷 이미지는 현재 `seoulsurvival/assets/images/*`를 재사용(추후 허브 전용 assets로 분리 가능)
+- **공통(SSO/Auth)**: `shared/auth/*`
+  - 허브/게임 공통 로그인 상태 공유(LocalStorage 키: `clicksurvivor-auth`)
+  - 초기 스캐폴딩으로 Supabase Auth(OAuth) 연결 지점을 제공
+  - 공통 부트스트랩: `shared/authBoot.js` (허브/게임 페이지에서 모두 로드)
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
   - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.

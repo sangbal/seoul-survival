@@ -2538,6 +2538,37 @@
           </div>
         </div>
 
+        <!-- 계정(소셜 로그인) -->
+        <div class="stats-section">
+          <h3>👤 계정 (소셜 로그인)</h3>
+          <div class="settings-info-group">
+            <div class="settings-info-item">
+              <span class="settings-info-label">상태</span>
+              <span class="settings-info-value" id="authStatusLabel">SSO 설정 필요 (shared/auth/config.js)</span>
+            </div>
+            <div class="settings-info-item">
+              <span class="settings-info-label">사용자</span>
+              <span class="settings-info-value" id="authUserLabel">게스트</span>
+            </div>
+          </div>
+          <div class="settings-button-group" style="margin-top: 10px;">
+            <button class="btn settings-btn" id="loginBtn" style="background: var(--primary);">
+              🔐 로그인(기본: Google)
+            </button>
+            <div class="settings-desc">
+              로그인은 허브/모든 게임에서 공통으로 동작하도록 개발 중입니다.
+            </div>
+            <div style="display:flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+              <button class="btn settings-btn" data-auth-provider="google" style="background: var(--btn); min-width: 160px;">Google</button>
+              <button class="btn settings-btn" data-auth-provider="github" style="background: var(--btn); min-width: 160px;">GitHub</button>
+              <button class="btn settings-btn" data-auth-provider="kakao" style="background: var(--btn); min-width: 160px;">Kakao</button>
+              <button class="btn settings-btn" id="logoutBtn" style="background: var(--danger); min-width: 160px;" hidden>
+                🚪 로그아웃
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- 시각 효과 설정 -->
         <div class="stats-section">
           <h3>🎨 시각 효과</h3>
@@ -2692,6 +2723,7 @@
   </div>
 
   <script type="module" src="./src/main.js?v=1.0.0"></script>
+  <script type="module" src="../shared/authBoot.js"></script>
 </body>
 </html>
 
