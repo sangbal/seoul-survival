@@ -55,11 +55,16 @@ export async function initAuthUI(opts) {
     if (logoutBtn) logoutBtn.hidden = !name;
     
     // providerButtons 컨테이너 표시/숨김 (로그인 시 숨김)
+    // 인라인 스타일이 있으므로 style.display를 직접 설정
     const authProviderButtons = document.getElementById('authProviderButtons');
-    if (authProviderButtons) authProviderButtons.hidden = !!name;
+    if (authProviderButtons) {
+      authProviderButtons.style.display = name ? 'none' : 'flex';
+    }
     
     const logoutButtonContainer = document.getElementById('logoutButtonContainer');
-    if (logoutButtonContainer) logoutButtonContainer.hidden = !name;
+    if (logoutButtonContainer) {
+      logoutButtonContainer.style.display = name ? 'flex' : 'none';
+    }
   }
 
   const initial = await getUser();
