@@ -5,6 +5,57 @@ import { getUser } from './auth/core.js';
 const GAME_SLUG = 'seoulsurvival';
 
 /**
+ * 닉네임 정규화 (앞뒤 공백 제거)
+ * @param {string} raw
+ * @returns {string}
+ */
+export function normalizeNickname(raw) {
+  return (raw || '').trim();
+}
+
+/**
+ * 닉네임 중복 여부 확인 (대소문자 구분 없음)
+ * - 비교 기준: normalizeNickname(nick).toLowerCase()를 key로 사용
+ * - 데이터 소스: leaderboard 테이블의 nickname 컬럼
+ * @param {string} nickname
+ * @returns {Promise<{ taken: boolean, reason?: string }>}
+ */
+export async function isNicknameTaken(nickname) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.warn('Leaderboard: Supabase client not configured for nickname check');
+    return { taken: false, reason: 'not_configured' };
+  }
+
+  const raw = normalizeNickname(nickname);
+  const key = raw.toLowerCase();
+  if (!key) {
+    // 빈 닉네임은 이 함수에서 막지 않고, 호출 측에서 처리
+    return { taken: false, reason: 'empty' };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('leaderboard')
+      .select('nickname')
+      .eq('game_slug', GAME_SLUG)
+      // 대소문자 구분 없이 동일 닉네임 여부 확인
+      .ilike('nickname', key)
+      .limit(1);
+
+    if (error) {
+      console.error('Nickname check error:', error);
+      return { taken: false, reason: 'error' };
+    }
+
+    return { taken: !!(data && data.length > 0) };
+  } catch (e) {
+    console.error('Nickname check exception:', e);
+    return { taken: false, reason: 'exception' };
+  }
+}
+
+/**
  * Update leaderboard entry for current user
  * @param {string} nickname - Player nickname
  * @param {number} totalAssets - Total assets value

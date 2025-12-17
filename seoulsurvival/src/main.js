@@ -8,7 +8,7 @@ import { safeClass, safeHTML, safeText } from './ui/domUtils.js';
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
 import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
 import { getUser, onAuthStateChange } from '../../shared/auth/core.js';
-import { updateLeaderboard, getLeaderboard } from '../../shared/leaderboard.js';
+import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname } from '../../shared/leaderboard.js';
 
 // 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
 // - Vite 빌드/개발서버: import.meta.env.DEV 사용
@@ -3524,7 +3524,39 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       setTimeout(() => {
-        const handleConfirm = (nickname) => {
+        const handleConfirm = async (nickname) => {
+          const raw = normalizeNickname(nickname);
+          const key = raw.toLowerCase();
+
+          // 닉네임 유효성 검사: 1~5자, 공백/특수문자(%, _) 불가
+          if (raw.length < 1 || raw.length > 5) {
+            openInfoModal('닉네임 길이 오류', '닉네임은 1~5자여야 합니다.', '⚠️');
+            __nicknameModalShown = false;
+            ensureNicknameModal();
+            return;
+          }
+          if (/\s/.test(raw)) {
+            openInfoModal('닉네임 형식 오류', '닉네임에는 공백을 포함할 수 없습니다.', '⚠️');
+            __nicknameModalShown = false;
+            ensureNicknameModal();
+            return;
+          }
+          if (/[%_]/.test(raw)) {
+            openInfoModal('닉네임 형식 오류', '닉네임에는 %, _ 문자를 사용할 수 없습니다.', '⚠️');
+            __nicknameModalShown = false;
+            ensureNicknameModal();
+            return;
+          }
+
+          // 닉네임 중복 여부 확인 (대소문자 구분 없음)
+          const { taken } = await isNicknameTaken(raw);
+          if (taken) {
+            openInfoModal('닉네임 중복', '이미 사용 중인 닉네임입니다.\n다른 닉네임을 입력해주세요.', '⚠️');
+            __nicknameModalShown = false;
+            ensureNicknameModal();
+            return;
+          }
+
           // 닉네임 결정 완료 → 클라우드 복구 차단 해제
           try {
             sessionStorage.removeItem(CLOUD_RESTORE_BLOCK_KEY);
@@ -3532,33 +3564,22 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn('sessionStorage remove 실패:', e);
           }
 
-          playerNickname = nickname || '익명';
+          playerNickname = raw;
           saveGame(); // 닉네임 저장
           addLog(`닉네임이 "${playerNickname}"으로 설정되었습니다.`);
         };
 
-        const handleCancel = () => {
-          // "나중에" 선택 → 닉네임 결정은 했으므로 차단 해제
-          try {
-            sessionStorage.removeItem(CLOUD_RESTORE_BLOCK_KEY);
-          } catch (e) {
-            console.warn('sessionStorage remove 실패:', e);
-          }
-        };
-
         openInputModal(
           '닉네임 설정',
-          '리더보드에 표시될 닉네임을 입력하세요.\n(최대 20자, 공백 가능)',
+          '리더보드에 표시될 닉네임을 입력하세요.\n(1~5자, 공백/%, _ 불가)',
           handleConfirm,
           {
             icon: '✏️',
             primaryLabel: '확인',
-            secondaryLabel: '나중에',
-            placeholder: '닉네임 입력',
-            maxLength: 20,
-            defaultValue: '익명',
-            required: false,
-            onCancel: handleCancel,
+            placeholder: '1~5자 닉네임',
+            maxLength: 5,
+            defaultValue: '',
+            required: true,
           }
         );
       }, 500); // UI 로드 후 표시
@@ -4708,12 +4729,18 @@ document.addEventListener('DOMContentLoaded', () => {
         inputEl = document.createElement('input');
         inputEl.type = 'text';
         inputEl.className = 'game-modal-input';
-        inputEl.placeholder = options.placeholder || '닉네임을 입력하세요';
-        inputEl.maxLength = options.maxLength || 20;
         elModalMessage.innerHTML = '';
         elModalMessage.appendChild(inputEl);
       } else {
         inputEl.value = '';
+      }
+
+      // placeholder / maxLength 적용
+      inputEl.placeholder = options.placeholder || inputEl.placeholder || '닉네임을 입력하세요';
+      if (typeof options.maxLength === 'number') {
+        inputEl.maxLength = options.maxLength;
+      } else if (!inputEl.maxLength || inputEl.maxLength <= 0) {
+        inputEl.maxLength = 20;
       }
       
       // 메시지 텍스트 추가 (있는 경우)
@@ -4725,9 +4752,13 @@ document.addEventListener('DOMContentLoaded', () => {
         elModalMessage.insertBefore(msgText, inputEl);
       }
 
-      elModalSecondary.style.display = 'inline-flex';
+      if (options.secondaryLabel) {
+        elModalSecondary.style.display = 'inline-flex';
+        elModalSecondary.textContent = options.secondaryLabel;
+      } else {
+        elModalSecondary.style.display = 'none';
+      }
       elModalPrimary.textContent = options.primaryLabel || '확인';
-      elModalSecondary.textContent = options.secondaryLabel || '취소';
 
       // Enter 키로 확인
       const handleEnter = (e) => {
@@ -4754,14 +4785,19 @@ document.addEventListener('DOMContentLoaded', () => {
           onConfirm(value || options.defaultValue || '익명');
         }
       };
-      elModalSecondary.onclick = () => {
-        inputEl.removeEventListener('keydown', handleEnter);
-        closeModal();
-        // onCancel 콜백이 있으면 호출
-        if (options.onCancel && typeof options.onCancel === 'function') {
-          options.onCancel();
-        }
-      };
+      // secondary 버튼은 options.secondaryLabel이 있을 때만 의미 있음
+      if (options.secondaryLabel) {
+        elModalSecondary.onclick = () => {
+          inputEl.removeEventListener('keydown', handleEnter);
+          closeModal();
+          // onCancel 콜백이 있으면 호출
+          if (options.onCancel && typeof options.onCancel === 'function') {
+            options.onCancel();
+          }
+        };
+      } else {
+        elModalSecondary.onclick = null;
+      }
     }
 
     // ======= 공유하기 기능 =======
