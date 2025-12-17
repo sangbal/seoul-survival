@@ -1,6 +1,17 @@
 import { defineConfig } from 'vite';
+import { resolve } from 'path';
 
-// GitHub Pages 등 정적 호스팅에서도 동작하도록 상대 base 사용
+// 허브(index.html) + 게임(seoulsurvival/index.html)을 모두 빌드
 export default defineConfig({
-  base: './',
+  // GitHub Pages + 커스텀 도메인 환경에서는 사이트 루트가 '/' 이므로 base는 '/'로 둔다.
+  // 게임 엔트리는 /seoulsurvival/ 경로로 별도 엔트리로 노출된다.
+  base: '/',
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        seoulsurvival: resolve(__dirname, 'seoulsurvival/index.html'),
+      },
+    },
+  },
 });

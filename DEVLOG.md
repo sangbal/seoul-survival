@@ -51,6 +51,7 @@
   - 리더보드 UI(`seoulsurvival/src/main.js`)는 Supabase 미설정이면 네트워크 호출을 스킵하고 "리더보드 설정이 아직 완료되지 않았어요" 안내만 표시해 무한 로딩을 방지.
   - README의 Supabase 설정 섹션을 `.env.local` 예시(`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) 기반으로 업데이트.
   - GitHub Actions 워크플로우(`.github/workflows/deploy.yml`)를 추가/보강해, CI에서 env를 Secrets로 주입하고 `npm run build` 결과(`dist`)를 `gh-pages` 브랜치로 배포하도록 구성 (`permissions.contents: write`, `publish_branch: gh-pages`, `cname: clicksurvivor.com` 설정).
+  - GitHub Pages에서 `/seoulsurvival/` 404 문제를 해결하기 위해 Vite 다중 엔트리 구성(`vite.config.js`)을 추가하고, `dist/index.html`(허브) + `dist/seoulsurvival/index.html`(게임) 둘 다 빌드되도록 수정.
 
 ## 2025-01-17
 - **[hub] 허브 홈페이지 UI/UX 개선**
