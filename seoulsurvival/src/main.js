@@ -827,6 +827,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 자동 저장 시스템
     const SAVE_KEY = 'seoulTycoonSaveV1';
+    // reset/닉네임 설정 플로우 동안 클라우드 복구를 차단하는 플래그 (sessionStorage)
+    const CLOUD_RESTORE_BLOCK_KEY = 'ss_blockCloudRestoreUntilNicknameDone';
+    // resetGame 이후 1회성 클라우드 복구 스킵 플래그 (sessionStorage)
+    const CLOUD_RESTORE_SKIP_KEY = 'ss_skipCloudRestoreOnce';
     let lastSaveTime = new Date();
     
     // 닉네임 (리더보드용)
@@ -3511,16 +3515,41 @@ document.addEventListener('DOMContentLoaded', () => {
       // 닉네임이 없으면 모달 오픈
       console.log('📝 닉네임 없음: 모달 오픈');
       __nicknameModalShown = true; // 플래그 설정 (모달 오픈 전에 설정하여 중복 방지)
+
+      // 닉네임 결정이 끝날 때까지 클라우드 복구를 세션 단위로 차단
+      try {
+        sessionStorage.setItem(CLOUD_RESTORE_BLOCK_KEY, '1');
+      } catch (e) {
+        console.warn('sessionStorage set 실패:', e);
+      }
       
       setTimeout(() => {
+        const handleConfirm = (nickname) => {
+          // 닉네임 결정 완료 → 클라우드 복구 차단 해제
+          try {
+            sessionStorage.removeItem(CLOUD_RESTORE_BLOCK_KEY);
+          } catch (e) {
+            console.warn('sessionStorage remove 실패:', e);
+          }
+
+          playerNickname = nickname || '익명';
+          saveGame(); // 닉네임 저장
+          addLog(`닉네임이 "${playerNickname}"으로 설정되었습니다.`);
+        };
+
+        const handleCancel = () => {
+          // "나중에" 선택 → 닉네임 결정은 했으므로 차단 해제
+          try {
+            sessionStorage.removeItem(CLOUD_RESTORE_BLOCK_KEY);
+          } catch (e) {
+            console.warn('sessionStorage remove 실패:', e);
+          }
+        };
+
         openInputModal(
           '닉네임 설정',
           '리더보드에 표시될 닉네임을 입력하세요.\n(최대 20자, 공백 가능)',
-          (nickname) => {
-            playerNickname = nickname || '익명';
-            saveGame(); // 닉네임 저장
-            addLog(`닉네임이 "${playerNickname}"으로 설정되었습니다.`);
-          },
+          handleConfirm,
           {
             icon: '✏️',
             primaryLabel: '확인',
@@ -3528,7 +3557,8 @@ document.addEventListener('DOMContentLoaded', () => {
             placeholder: '닉네임 입력',
             maxLength: 20,
             defaultValue: '익명',
-            required: false
+            required: false,
+            onCancel: handleCancel,
           }
         );
       }, 500); // UI 로드 후 표시
@@ -3666,6 +3696,15 @@ document.addEventListener('DOMContentLoaded', () => {
           // 저장 데이터 삭제
           localStorage.removeItem(SAVE_KEY);
           console.log('✅ LocalStorage cleared'); // 디버깅용
+          
+          // reset 직후 첫 부팅에서는 클라우드 복구 제안을 1회 스킵하고,
+          // 닉네임 결정이 끝날 때까지 클라우드 복구를 세션 단위로 차단
+          try {
+            sessionStorage.setItem(CLOUD_RESTORE_SKIP_KEY, '1');
+            sessionStorage.setItem(CLOUD_RESTORE_BLOCK_KEY, '1');
+          } catch (e) {
+            console.warn('sessionStorage set 실패:', e);
+          }
           
           // 즉시 페이지 새로고침
           // reload 후 ensureNicknameModal()이 닉네임 입력을 처리함
@@ -4718,6 +4757,10 @@ document.addEventListener('DOMContentLoaded', () => {
       elModalSecondary.onclick = () => {
         inputEl.removeEventListener('keydown', handleEnter);
         closeModal();
+        // onCancel 콜백이 있으면 호출
+        if (options.onCancel && typeof options.onCancel === 'function') {
+          options.onCancel();
+        }
       };
     }
 
@@ -5337,6 +5380,25 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {Promise<boolean>} true: reload가 예약됨, false: reload 예약 안 됨
      */
     async function maybeOfferCloudRestore() {
+      // 닉네임 결정이 끝날 때까지 클라우드 복구를 차단
+      try {
+        if (sessionStorage.getItem(CLOUD_RESTORE_BLOCK_KEY) === '1') {
+          return false;
+        }
+      } catch (e) {
+        console.warn('sessionStorage get 실패:', e);
+      }
+
+      // resetGame 직후 첫 부팅에서는 클라우드 복구 제안을 1회 스킵
+      try {
+        if (sessionStorage.getItem(CLOUD_RESTORE_SKIP_KEY) === '1') {
+          sessionStorage.removeItem(CLOUD_RESTORE_SKIP_KEY);
+          return false;
+        }
+      } catch (e) {
+        console.warn('sessionStorage get/remove 실패:', e);
+      }
+
       // 로컬 저장이 없을 때만 자동 제안(안전)
       const hasLocal = !!localStorage.getItem(SAVE_KEY);
       if (hasLocal) return false;
