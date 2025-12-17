@@ -11,6 +11,18 @@ import { getUser, onAuthStateChange } from '../../shared/auth/core.js';
 import { isSupabaseConfigured } from '../../shared/auth/config.js';
 import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname, getMyRank } from '../../shared/leaderboard.js';
 
+// 노동 직급별 배경 이미지 (Vite asset import로 번들링 시 경로 안정화)
+import workBg01 from '../assets/images/work_bg_01_alba_night.png';
+import workBg02 from '../assets/images/work_bg_02_gyeyakjik_night.png';
+import workBg03 from '../assets/images/work_bg_03_sawon_night.png';
+import workBg04 from '../assets/images/work_bg_04_daeri_night.png';
+import workBg05 from '../assets/images/work_bg_05_gwajang_night.png';
+import workBg06 from '../assets/images/work_bg_06_chajang_night.png';
+import workBg07 from '../assets/images/work_bg_07_bujang_night.png';
+import workBg08 from '../assets/images/work_bg_08_sangmu_night.png';
+import workBg09 from '../assets/images/work_bg_09_jeonmu_night.png';
+import workBg10 from '../assets/images/work_bg_10_ceo_night.png';
+
 // 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
 // - Vite 빌드/개발서버: import.meta.env.DEV 사용
 // - GitHub Pages처럼 번들 없이 ESM으로 직접 로드하는 경우: import.meta.env가 없을 수 있음
@@ -1739,17 +1751,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let careerLevel = 0;        // 현재 커리어 레벨
     let totalLaborIncome = 0;   // 총 노동 수익
     const CAREER_LEVELS = [
-      { name: "알바", multiplier: 1, requiredIncome: 0, requiredClicks: 0, bgImage: "assets/images/work_bg_01_alba_night.png" },                    // 1만원/클릭 (연봉 2000만)
+      { name: "알바", multiplier: 1, requiredIncome: 0, requiredClicks: 0, bgImage: workBg01 },                    // 1만원/클릭 (연봉 2000만)
       // 누적 클릭 기준 승진 간격 조정: 최종(CEO) 10,000 클릭에 도달하도록 전체적으로 간격을 벌림
-      { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 150, bgImage: "assets/images/work_bg_02_gyeyakjik_night.png" },        // 1.5만원/클릭 (연봉 3000만)
-      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 400, bgImage: "assets/images/work_bg_03_sawon_night.png" },          // 2만원/클릭 (연봉 4000만)
-      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 900, bgImage: "assets/images/work_bg_04_daeri_night.png" },        // 2.5만원/클릭 (연봉 5000만)
-      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 1650, bgImage: "assets/images/work_bg_05_gwajang_night.png" },          // 3만원/클릭 (연봉 6000만)
-      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 2650, bgImage: "assets/images/work_bg_06_chajang_night.png" },        // 3.5만원/클릭 (연봉 7000만)
-      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 3900, bgImage: "assets/images/work_bg_07_bujang_night.png" },          // 4만원/클릭 (연봉 8000만)
-      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 5450, bgImage: "assets/images/work_bg_08_sangmu_night.png" },         // 5만원/클릭 (연봉 1억)
-      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 7450, bgImage: "assets/images/work_bg_09_jeonmu_night.png" },       // 10만원/클릭 (연봉 2억)
-      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 10000, bgImage: "assets/images/work_bg_10_ceo_night.png" }         // 12만원/클릭 (밸런싱: 20 → 12)
+      { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 150, bgImage: workBg02 },        // 1.5만원/클릭 (연봉 3000만)
+      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 400, bgImage: workBg03 },          // 2만원/클릭 (연봉 4000만)
+      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 900, bgImage: workBg04 },        // 2.5만원/클릭 (연봉 5000만)
+      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 1650, bgImage: workBg05 },          // 3만원/클릭 (연봉 6000만)
+      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 2650, bgImage: workBg06 },        // 3.5만원/클릭 (연봉 7000만)
+      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 3900, bgImage: workBg07 },          // 4만원/클릭 (연봉 8000만)
+      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 5450, bgImage: workBg08 },         // 5만원/클릭 (연봉 1억)
+      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 7450, bgImage: workBg09 },       // 10만원/클릭 (연봉 2억)
+      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 10000, bgImage: workBg10 }         // 12만원/클릭 (밸런싱: 20 → 12)
     ];
     
     // 가격은 이제 동적으로 계산됨 (getPropertyCost 함수 사용)
