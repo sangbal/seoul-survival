@@ -4,6 +4,17 @@
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
 ## 2025-12-17
+- **[seoulsurvival] 닉네임 입력 모달 안정화**
+  - 닉네임 모달 중복 노출 문제 해결:
+    - `resolveFinalNickname()`: 로컬 저장에서 닉네임을 동기적으로 확인하는 단일 함수
+    - `ensureNicknameModal()`: 닉네임 모달 오픈의 단일 진입점, 세션 플래그(`__nicknameModalShown`)로 중복 방지
+    - 초기 부팅 시퀀스를 async IIFE로 감싸서 클라우드 세이브 병합과 닉네임 체크 타이밍 조정
+  - 클라우드 세이브 병합 타이밍 개선:
+    - `maybeOfferCloudRestore()`를 Promise 반환으로 변경, "불러오기"/"나중에" 선택에 따라 resolve 분기
+    - "나중에" 선택 시 즉시 `ensureNicknameModal()` 호출하여 닉네임 모달 표시
+    - Promise resolve 가드(`settled` 플래그)로 중복 호출 방지
+  - `resetGame()`에서 닉네임 입력 로직 제거, reload 후 `ensureNicknameModal()`이 처리하도록 변경
+  - `openConfirmModal()`에 `onCancel` 옵션 추가하여 기존 호출부 호환성 유지
 - **[seoulsurvival] 리더보드 시스템 구현**
   - 닉네임 입력 시스템:
     - 게임 새로 시작 시 닉네임 입력 모달 팝업

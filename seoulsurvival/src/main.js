@@ -832,6 +832,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 닉네임 (리더보드용)
     let playerNickname = '';
     
+    // 닉네임 모달 세션 플래그 (이번 세션에서 이미 모달을 열었는지)
+    let __nicknameModalShown = false;
+    
     // ======= 업그레이드 시스템 (Cookie Clicker 스타일) =======
     const UPGRADES = {
       // === 노동 관련 (재밸런싱) ===
@@ -3467,6 +3470,70 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
+    // ======= 닉네임 관리 함수 =======
+    
+    /**
+     * 로컬 저장에서 최종 닉네임을 확인하고 반환
+     * @returns {string} 닉네임 (없으면 빈 문자열)
+     */
+    function resolveFinalNickname() {
+      try {
+        const saveData = localStorage.getItem(SAVE_KEY);
+        if (!saveData) return '';
+        const data = JSON.parse(saveData);
+        return data.nickname || '';
+      } catch (error) {
+        console.error('닉네임 확인 실패:', error);
+        return '';
+      }
+    }
+    
+    /**
+     * 닉네임이 없으면 모달을 열고, 세션 플래그로 중복 방지
+     * 이 함수는 모든 닉네임 모달 오픈의 단일 진입점
+     */
+    function ensureNicknameModal() {
+      // 이미 이번 세션에서 모달을 열었으면 스킵
+      if (__nicknameModalShown) {
+        console.log('⏭️ 닉네임 모달: 이미 이번 세션에서 표시됨');
+        return;
+      }
+      
+      // 최종 닉네임 확인
+      const finalNickname = resolveFinalNickname();
+      if (finalNickname) {
+        // 닉네임이 있으면 playerNickname 업데이트하고 스킵
+        playerNickname = finalNickname;
+        console.log('✅ 닉네임 확인됨:', finalNickname);
+        return;
+      }
+      
+      // 닉네임이 없으면 모달 오픈
+      console.log('📝 닉네임 없음: 모달 오픈');
+      __nicknameModalShown = true; // 플래그 설정 (모달 오픈 전에 설정하여 중복 방지)
+      
+      setTimeout(() => {
+        openInputModal(
+          '닉네임 설정',
+          '리더보드에 표시될 닉네임을 입력하세요.\n(최대 20자, 공백 가능)',
+          (nickname) => {
+            playerNickname = nickname || '익명';
+            saveGame(); // 닉네임 저장
+            addLog(`닉네임이 "${playerNickname}"으로 설정되었습니다.`);
+          },
+          {
+            icon: '✏️',
+            primaryLabel: '확인',
+            secondaryLabel: '나중에',
+            placeholder: '닉네임 입력',
+            maxLength: 20,
+            defaultValue: '익명',
+            required: false
+          }
+        );
+      }, 500); // UI 로드 후 표시
+    }
+    
     // 게임 데이터 불러오기 함수
     function loadGame() {
       try {
@@ -3591,40 +3658,23 @@ document.addEventListener('DOMContentLoaded', () => {
         '⚠️ 모든 진행 상황이 삭제되며 복구할 수 없습니다.';
 
       openConfirmModal('게임 새로 시작', message, () => {
-        // 닉네임 입력 요청
-        openInputModal(
-          '닉네임 설정',
-          '리더보드에 표시될 닉네임을 입력하세요.\n(최대 20자, 공백 가능)',
-          (nickname) => {
-            try {
-              // 초기화 진행 메시지
-              addLog('🔄 게임을 초기화합니다...');
-              console.log('✅ User confirmed reset'); // 디버깅용
-              
-              // 닉네임 저장
-              playerNickname = nickname || '익명';
-              
-              // 저장 데이터 삭제
-              localStorage.removeItem(SAVE_KEY);
-              console.log('✅ LocalStorage cleared'); // 디버깅용
-              
-              // 즉시 페이지 새로고침
-              console.log('✅ Reloading page...'); // 디버깅용
-              location.reload();
-            } catch (error) {
-              console.error('❌ Error in resetGame:', error);
-              openInfoModal('오류', '게임 초기화 중 오류가 발생했습니다.\n페이지를 새로고침해주세요.', '⚠️');
-            }
-          },
-          {
-            icon: '✏️',
-            primaryLabel: '시작',
-            secondaryLabel: '취소',
-            placeholder: '닉네임 입력',
-            maxLength: 20,
-            defaultValue: '익명'
-          }
-        );
+        try {
+          // 초기화 진행 메시지
+          addLog('🔄 게임을 초기화합니다...');
+          console.log('✅ User confirmed reset'); // 디버깅용
+          
+          // 저장 데이터 삭제
+          localStorage.removeItem(SAVE_KEY);
+          console.log('✅ LocalStorage cleared'); // 디버깅용
+          
+          // 즉시 페이지 새로고침
+          // reload 후 ensureNicknameModal()이 닉네임 입력을 처리함
+          console.log('✅ Reloading page...'); // 디버깅용
+          location.reload();
+        } catch (error) {
+          console.error('❌ Error in resetGame:', error);
+          openInfoModal('오류', '게임 초기화 중 오류가 발생했습니다.\n페이지를 새로고침해주세요.', '⚠️');
+        }
       }, {
         icon: '🔄',
         primaryLabel: '새로 시작',
@@ -4590,6 +4640,10 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       elModalSecondary.onclick = () => {
         closeModal();
+        // onCancel 콜백이 있으면 호출
+        if (options.onCancel && typeof options.onCancel === 'function') {
+          options.onCancel();
+        }
       };
     }
 
@@ -5078,36 +5132,25 @@ document.addEventListener('DOMContentLoaded', () => {
       elCurrentYear.textContent = new Date().getFullYear();
     }
     
-    // 초기 렌더
-    const gameLoaded = loadGame(); // 게임 데이터 불러오기 시도
-    if (gameLoaded) {
-      addLog('저장된 게임을 불러왔습니다.');
-    } else {
-      addLog('환영합니다! 노동으로 종잣돈을 모아 첫 부동산을 구입해보세요.');
-      // 새 게임 시작 시 닉네임 입력 요청
-      if (!playerNickname) {
-        setTimeout(() => {
-          openInputModal(
-            '닉네임 설정',
-            '리더보드에 표시될 닉네임을 입력하세요.\n(최대 20자, 공백 가능)',
-            (nickname) => {
-              playerNickname = nickname || '익명';
-              saveGame(); // 닉네임 저장
-              addLog(`닉네임이 "${playerNickname}"으로 설정되었습니다.`);
-            },
-            {
-              icon: '✏️',
-              primaryLabel: '확인',
-              secondaryLabel: '나중에',
-              placeholder: '닉네임 입력',
-              maxLength: 20,
-              defaultValue: '익명',
-              required: false
-            }
-          );
-        }, 500); // UI 로드 후 표시
+    // 초기 렌더 (async IIFE로 감싸서 await 사용 가능하게 함)
+    (async () => {
+      const gameLoaded = loadGame(); // 게임 데이터 불러오기 시도
+      if (gameLoaded) {
+        addLog('저장된 게임을 불러왔습니다.');
+        // 로컬 저장이 있으면 즉시 닉네임 모달 확인
+        ensureNicknameModal();
+      } else {
+        addLog('환영합니다! 노동으로 종잣돈을 모아 첫 부동산을 구입해보세요.');
+        // 로컬 저장이 없으면 클라우드 복구를 먼저 확인
+        const willReload = await maybeOfferCloudRestore();
+        if (!willReload) {
+          // 클라우드 복구가 트리거되지 않았으면 닉네임 모달 확인
+          // (사용자가 "나중에"를 선택했거나, 클라우드 세이브가 없음)
+          ensureNicknameModal();
+        }
+        // willReload가 true면 리로드가 예약되었으므로 닉네임 모달은 리로드 후 처리됨
       }
-    }
+    })();
     
     // 초기 배경 이미지 설정
     const initialCareer = getCurrentCareer();
@@ -5289,16 +5332,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    /**
+     * 클라우드 세이브 복구를 제안하고, 사용자 선택에 따라 처리
+     * @returns {Promise<boolean>} true: reload가 예약됨, false: reload 예약 안 됨
+     */
     async function maybeOfferCloudRestore() {
       // 로컬 저장이 없을 때만 자동 제안(안전)
       const hasLocal = !!localStorage.getItem(SAVE_KEY);
-      if (hasLocal) return;
+      if (hasLocal) return false;
 
       const user = await getUser();
-      if (!user) return;
+      if (!user) return false;
 
       const r = await fetchCloudSave('seoulsurvival');
-      if (!r.ok || !r.found) return;
+      if (!r.ok || !r.found) return false;
 
       const cloudTime = r.save?.saveTime ? new Date(r.save.saveTime).toLocaleString() : (r.updated_at ? new Date(r.updated_at).toLocaleString() : '시간 정보 없음');
       const message =
@@ -5306,23 +5353,49 @@ document.addEventListener('DOMContentLoaded', () => {
         `저장 시간: ${cloudTime}\n\n` +
         '불러오시겠습니까?';
 
-      openConfirmModal('클라우드 세이브 발견', message, () => {
-        try {
-          localStorage.setItem(SAVE_KEY, JSON.stringify(r.save));
-          addLog('☁️ 클라우드 세이브를 적용했습니다. 페이지를 새로고침합니다...');
-          setTimeout(() => location.reload(), 600);
-        } catch {}
-      }, {
-        icon: '☁️',
-        primaryLabel: '불러오기',
-        secondaryLabel: '나중에',
+      // Promise를 반환하여 사용자 선택을 기다림
+      return new Promise((resolve) => {
+        let settled = false; // resolve 중복 호출 방지 가드
+        
+        const done = (value) => {
+          if (!settled) {
+            settled = true;
+            resolve(value);
+          }
+        };
+
+        openConfirmModal(
+          '클라우드 세이브 발견',
+          message,
+          () => {
+            // "불러오기" 클릭 시
+            try {
+              localStorage.setItem(SAVE_KEY, JSON.stringify(r.save));
+              addLog('☁️ 클라우드 세이브를 적용했습니다. 페이지를 새로고침합니다...');
+              setTimeout(() => location.reload(), 600);
+              done(true); // reload가 예약되었음을 반환
+            } catch (error) {
+              console.error('클라우드 세이브 적용 실패:', error);
+              done(false); // 에러 발생 시 false 반환
+            }
+          },
+          {
+            icon: '☁️',
+            primaryLabel: '불러오기',
+            secondaryLabel: '나중에',
+            onCancel: () => {
+              // "나중에" 클릭 시
+              done(false); // reload 예약 안 됨
+            }
+          }
+        );
       });
     }
 
     if (elCloudUploadBtn) elCloudUploadBtn.addEventListener('click', cloudUpload);
     if (elCloudDownloadBtn) elCloudDownloadBtn.addEventListener('click', cloudDownload);
     // 로컬 저장이 없으면 클라우드 복구를 1회 제안
-    maybeOfferCloudRestore();
+    // (위에서 이미 처리했으므로 여기서는 호출하지 않음)
 
     // 로그인 상태를 캐시해두면 autosave마다 getUser() 호출을 피할 수 있다.
     (async () => {
