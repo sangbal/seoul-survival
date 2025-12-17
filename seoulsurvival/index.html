@@ -1,0 +1,2914 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <!-- (iOS) 연속 탭/핀치로 인한 화면 확대 방지 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LFDPPHDBJ3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-LFDPPHDBJ3');
+  </script>
+  <meta name="description" content="Capital Clicker: Seoul Survival — 클릭으로 서울을 지키는 방치형 자본 성장 게임" />
+  <!-- SNS 공유 썸네일: settings_gameinfo_bg.webp 강제 사용 -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Capital Clicker: Seoul Survival" />
+  <meta property="og:description" content="클릭으로 돈을 벌고 투자·부동산으로 성장하는 서울 생존 타이쿤" />
+  <meta property="og:image" content="https://clicksurvivor.com/seoulsurvival/assets/images/settings_gameinfo_bg.webp" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="https://clicksurvivor.com/seoulsurvival/" />
+  <meta property="og:site_name" content="Capital Clicker: Seoul Survival" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Capital Clicker: Seoul Survival" />
+  <meta name="twitter:description" content="클릭으로 돈을 벌고 투자·부동산으로 성장하는 서울 생존 타이쿤" />
+  <meta name="twitter:image" content="https://clicksurvivor.com/seoulsurvival/assets/images/settings_gameinfo_bg.webp" />
+  <link rel="icon" type="image/png" href="/assets/logo-CaUs9YDr.png" />
+  <link rel="shortcut icon" type="image/png" href="/assets/logo-CaUs9YDr.png" />
+  <link rel="apple-touch-icon" href="/assets/logo-CaUs9YDr.png" />
+  <link rel="icon" href="/assets/logo-CaUs9YDr.png" type="image/png" sizes="any" />
+  <title>Capital Clicker: Seoul Survival</title>
+  <style>
+    :root {
+      --bg:#0b1220; --panel:#121a2b; --accent:#5eead4; --muted:#94a3b8; --text:#e5e7eb; --btn:#1f2a44; --btn2:#192238; --good:#34d399; --bad:#fb7185;
+      --bg2:#0f1628; --bg3:#0c1322; --primary:#60a5fa; --secondary:#a78bfa; --warning:#fbbf24; --info:#3b82f6;
+    }
+    
+    /* 스크롤바 스타일링 (웹킷 브라우저: Chrome, Edge, Safari) */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(18, 26, 43, 0.3); /* --panel의 투명 버전 */
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(94, 234, 212, 0.4); /* --accent의 투명 버전 */
+      border-radius: 5px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(94, 234, 212, 0.6); /* 호버 시 더 진하게 */
+      background-clip: padding-box;
+    }
+    
+    ::-webkit-scrollbar-thumb:active {
+      background: rgba(94, 234, 212, 0.8); /* 클릭 시 가장 진하게 */
+      background-clip: padding-box;
+    }
+    
+    /* Firefox 스크롤바 스타일링 */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(94, 234, 212, 0.4) rgba(18, 26, 43, 0.3);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    /* iOS 더블탭 확대/제스처 확대 방지(UX 상의 의도적 제한) */
+    html, body { touch-action: manipulation; }
+    /* iOS 연타 시 더블탭-줌이 버튼에서 발생하는 케이스가 있어 버튼에도 명시 */
+    #workBtn { touch-action: manipulation; }
+    body{margin:0; background:linear-gradient(180deg,#0b1220,#0b1324 40%,#0c1428); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial, Apple Color Emoji, Segoe UI Emoji}
+    .app{
+      /* 노동~설정 5개 섹션과 동일한 내부 폭을 갖는 레이아웃 컨테이너 */
+      max-width: 2000px;
+      margin:0 auto;
+      padding:16px 24px;      /* 좌우 여백: 섹션과 헤더 기준선 통일 */
+      padding-top:100px;
+      box-sizing:border-box;
+    }
+    .grid{display:grid; grid-template-columns: 1.1fr 0.9fr; gap:16px}
+    header{
+      position:fixed;
+      top:0;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:100;
+      background:linear-gradient(180deg,#0b1220,#0b1324);
+      box-shadow:0 4px 20px rgba(0,0,0,.5);
+      padding:8px 24px;       /* 좌우 여백을 .app/.tab-wrapper와 통일 */
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      max-width:2000px;       /* .app 과 동일 최대 폭 */
+      width:100%;
+      box-sizing:border-box;
+    }
+    .header-brand{
+      flex: 1 1 auto;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(18, 26, 43, 0.55);
+      border: 1px solid rgba(255,255,255,.06);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      user-select: none;
+    }
+    .header-brand .brand-icon{
+      width:16px;
+      height:16px;
+      border-radius:4px;
+      flex:0 0 auto;
+      filter: drop-shadow(0 3px 8px rgba(0,0,0,0.35));
+    }
+    .header-brand .brand-text{
+      font-size:12px;
+      letter-spacing:.2px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .header-brand .brand-text b{
+      color: var(--text);
+      font-weight: 700;
+    }
+    .statbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; flex:1 1 100%; min-width:0;}
+    .share-btn{flex-shrink:0;}
+    .chip{background:var(--panel); padding:6px 10px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; font-size:12px;}
+    .chip b{font-size:12px; font-weight:700;}
+    .muted{color:var(--muted)}
+
+    .card{background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,.3)}
+    .card h2{margin:0 0 10px; font-size:18px}
+
+    .work{
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      height:300px; 
+      border:1px dashed rgba(255,255,255,.08); 
+      border-radius:16px; 
+      background-size: cover;
+      background-position: center top;
+      background-repeat: no-repeat;
+      position: relative;
+      overflow: hidden;
+    }
+    .work::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(to top, rgba(11, 18, 32, 0.6), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .work > * {
+      position: relative;
+      z-index: 1;
+    }
+    .btn{
+      cursor:pointer; 
+      border:none; 
+      background:var(--accent); 
+      color:var(--bg); 
+      padding:8px 16px; 
+      border-radius:6px; 
+      font-weight:700; 
+      font-size:12px;
+      letter-spacing:.2px; 
+      transition:all 0.2s ease;
+      pointer-events:auto;
+    }
+    .btn:hover{
+      filter:brightness(1.1);
+      transform:scale(1.05);
+    }
+    .btn:active{transform:scale(0.98)}
+    .btn[disabled]{
+      opacity:.5; 
+      cursor:not-allowed;
+      background:var(--muted);
+    }
+    .btn-lg{
+      font-size:20px; 
+      padding:18px 28px; 
+      background:linear-gradient(180deg,#1f2a44,#1a2340);
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.1);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+
+    .upg-list{display:flex; flex-direction:column; gap:8px}
+    .row{
+      display:flex; 
+      align-items:center; 
+      gap:12px; 
+      padding:12px; 
+      border-radius:8px; 
+      background:var(--btn); 
+      border:2px solid transparent;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .row:hover{
+      background:var(--btn2);
+      border-color:var(--accent);
+      transform:translateY(-2px);
+    }
+
+    /* ======= 시장 이벤트 영향 표시(투자 섹션) ======= */
+    .event-mult-badge{
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.2px;
+      line-height:1;
+      white-space:nowrap;
+      user-select:none;
+    }
+    .event-mult-badge.is-visible{display:inline-flex}
+    .event-mult-badge.is-bull{
+      color: var(--good);
+      background: rgba(52, 211, 153, 0.10);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+    .event-mult-badge.is-bear{
+      color: var(--bad);
+      background: rgba(251, 113, 133, 0.10);
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+
+    /* 투자 섹션 상단 이벤트 상태 바 */
+    .market-event-bar{
+      display:none;
+      margin: 6px 0 10px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: rgba(18, 26, 43, 0.55);
+      border: 1px solid rgba(255,255,255,.06);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .market-event-bar.is-visible{display:block}
+    .market-event-bar b{color: var(--text)}
+    .market-event-bar .good{color: var(--good); font-weight:700}
+    .market-event-bar .bad{color: var(--bad); font-weight:700}
+
+    /* outline은 기존 affordable/hover border와 충돌이 적음 */
+    .row.event-bull{
+      outline: 2px solid rgba(52, 211, 153, 0.45);
+      outline-offset: 0px;
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.08);
+    }
+    .row.event-bear{
+      /* 요청: 악재(핑크) 바깥 테두리는 제거 (배지는 유지) */
+      outline: none;
+      box-shadow: none;
+    }
+    .row .meta{display:flex; flex-direction:column; flex:1; pointer-events:none;}
+    .row .meta .title{font-weight:700; font-size:14px;}
+    .row .meta .desc{color:var(--muted); font-size:12px; margin-top:4px;}
+    .row .meta .desc b{color:var(--accent); font-weight:600;}
+
+    .log{max-height:140px; overflow:auto; padding-right:6px}
+    .log p{margin:0 0 6px}
+    /* ======= 일기장(노동 섹션) ======= */
+    .diary-card h2{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin:0 0 10px;
+      font-size:16px;
+    }
+    .diary-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
+    }
+    .diary-header-meta{
+      font-size:12px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      flex: 0 0 auto;
+      text-align: right;
+    }
+    .diary-meta{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+    .diary-meta b{color:var(--text); font-weight:600}
+    .diary-log{
+      max-height:240px;
+      padding:10px 10px;
+      border-radius:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .diary-log p{
+      margin:0 0 10px;
+      font-size: 13px;
+      line-height:1.5;
+      white-space:pre-line;
+    }
+    /* 일기장: 독백 vs 정보(시스템) 가독성 분리 */
+    .diary-voice{
+      display:block;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+    .diary-info{
+      display:block;
+      margin-top: 0px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      letter-spacing: .1px;
+      line-height: 1.25;
+    }
+    .diary-log p:last-child{margin-bottom:0}
+    .diary-time{
+      color:var(--muted);
+      font-variant-numeric: tabular-nums;
+      margin-right:6px;
+    }
+
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:rgba(94,234,212,.12); color:var(--accent); font-size:12px}
+    
+    /* 진행률 바 스타일 */
+    .progress-container{width:100%; height:8px; background:rgba(255,255,255,.1); border-radius:4px; overflow:hidden; margin:4px 0}
+    .progress-bar{height:100%; background:linear-gradient(90deg,var(--accent),#34d399); transition:width 0.3s ease; border-radius:4px}
+
+    /* 노동 탭: 직급을 승진 프로그레스바 카드에 자연스럽게 녹이기 */
+    .career-meta-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .career-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(94,234,212,.25);
+      background: rgba(18, 26, 43, 0.55);
+      color: var(--accent);
+      font-weight:700;
+      font-size:13px;
+      line-height:1;
+      white-space:nowrap;
+    }
+    
+    /* 클릭 애니메이션 */
+    .click-effect{animation:clickPulse 0.3s ease-out}
+    @keyframes clickPulse{0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)}}
+    
+    /* 수익 증가 애니메이션 */
+    .income-increase{position:absolute; color:var(--good); font-weight:700; pointer-events:none; animation:incomeFloat 2s ease-out forwards}
+    @keyframes incomeFloat{0%{opacity:1; transform:translateY(0)} 100%{opacity:0; transform:translateY(-50px)}}
+    
+    /* 시장 이벤트 알림 애니메이션 */
+    @keyframes slideIn{0%{transform:translateX(100%); opacity:0} 100%{transform:translateX(0); opacity:1}}
+    
+    /* 업적 알림 애니메이션 */
+    @keyframes achievementPop{0%{transform:translate(-50%, -50%) scale(0.5); opacity:0} 50%{transform:translate(-50%, -50%) scale(1.1)} 100%{transform:translate(-50%, -50%) scale(1); opacity:1}}
+    
+    /* 구매 가능 알림 애니메이션 */
+    @keyframes slideInLeft{0%{transform:translateX(-100%); opacity:0} 100%{transform:translateX(0); opacity:1}}
+    
+    /* 떨어지는 쿠키 애니메이션 */
+    .falling-cookie {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      font-size: 24px;
+      animation: fallDown 2s ease-in forwards;
+    }
+    
+    @keyframes fallDown {
+      0% {
+        transform: translateY(-100px) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: translateY(50vh) rotate(180deg) scale(0.8);
+        opacity: 0.8;
+      }
+      100% {
+        transform: translateY(100vh) rotate(360deg) scale(0.6);
+        opacity: 0;
+      }
+    }
+    
+    /* 구매 가능한 버튼 스타일 */
+    .btn.affordable {
+      background: var(--good) !important;
+      color: white !important;
+      opacity: 1 !important;
+      box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+      animation: pulse 2s infinite;
+    }
+    
+    /* 구매 불가능한 버튼 스타일 */
+    .btn.unaffordable {
+      background: var(--muted) !important;
+      color: var(--text) !important;
+      opacity: 0.7 !important;
+      cursor: not-allowed !important;
+    }
+    
+    /* 리스크 표시 스타일 */
+    .risk-indicator {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    
+    .risk-level {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    
+    .risk-low { 
+      color: #4CAF50; 
+      background: rgba(76, 175, 80, 0.1);
+    }
+    .risk-medium { 
+      color: #FF9800; 
+      background: rgba(255, 152, 0, 0.1);
+    }
+    .risk-high { 
+      color: #F44336; 
+      background: rgba(244, 67, 54, 0.1);
+    }
+    .risk-extreme { 
+      color: #9C27B0; 
+      background: rgba(156, 39, 176, 0.1);
+    }
+    
+    .risk-bar {
+      width: 60px;
+      height: 4px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-left: 5px;
+    }
+    
+    .risk-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    
+    .risk-fill.low { 
+      width: 20%; 
+      background: #4CAF50; 
+    }
+    .risk-fill.medium { 
+      width: 40%; 
+      background: #FF9800; 
+    }
+    .risk-fill.high { 
+      width: 60%; 
+      background: #F44336; 
+    }
+    .risk-fill.extreme { 
+      width: 80%; 
+      background: #9C27B0; 
+    }
+    
+    /* 업그레이드 아이템에 리스크 정보 추가 */
+    .upgrade-item .risk-info {
+      margin-top: 8px;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    
+    /* 상품 설명에 리스크 정보 추가 */
+    .product-risk-info {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    
+    /* 구매 가능한 버튼 애니메이션 */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    /* 구매 수량 선택 시스템 */
+    .purchase-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: var(--bg2);
+      border-radius: 8px;
+    }
+    
+    .mode-toggle {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .mode-toggle button {
+      padding: 6px 12px;
+      border: none;
+      background: var(--bg3);
+      color: var(--muted);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .mode-toggle button.active {
+      background: var(--good);
+      color: white;
+    }
+    
+    .quantity-selector {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .quantity-selector button {
+      padding: 6px 10px;
+      border: none;
+      background: var(--bg3);
+      color: var(--muted);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      min-width: 32px;
+    }
+    
+    .quantity-selector button.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    /* 건물 목록 색상 시스템 (업그레이드 스타일 통일) */
+    .building-item {
+      transition: all 0.2s ease;
+    }
+    
+    .building-item.affordable {
+      border-color: var(--good);
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+      animation: upgradeGlow 2s infinite;
+    }
+    
+    .building-item.affordable .cost {
+      color: var(--good);
+      font-weight: 600;
+    }
+    
+    .building-item.unaffordable {
+      opacity: 0.7;
+    }
+    
+    .building-item.unaffordable .cost {
+      color: var(--bad);
+      font-weight: 600;
+    }
+    
+    .building-item.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .building-item.locked .cost {
+      color: var(--muted);
+    }
+    
+    /* 업그레이드 리스트 - Cookie Clicker 스타일 */
+    .upgrade-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-top: 4px;
+      padding-bottom: 4px;
+    }
+    
+    .upgrade-list:empty::after {
+      content: '해금된 업그레이드가 없습니다';
+      display: block;
+      text-align: center;
+      color: var(--muted);
+      padding: 20px;
+      font-size: 13px;
+    }
+    
+    .upgrade-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--btn);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .upgrade-item:hover {
+      background: var(--btn2);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      z-index: 10;
+    }
+    
+    .upgrade-item.affordable {
+      border-color: var(--good);
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+      animation: upgradeGlow 2s infinite;
+    }
+    
+    @keyframes upgradeGlow {
+      0%, 100% { box-shadow: 0 0 10px rgba(52, 211, 153, 0.3); }
+      50% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.5); }
+    }
+    
+    /* 승진 시 전환 애니메이션 */
+    @keyframes careerPromotion {
+      0% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(94, 234, 212, 0);
+      }
+      50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(94, 234, 212, 0.6);
+      }
+      100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(94, 234, 212, 0);
+      }
+    }
+    
+    .career-card {
+      transition: all 0.3s ease;
+    }
+    
+    .upgrade-item.purchased {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: var(--bg2);
+    }
+    
+    /* 순차 해금 시스템 - 잠김 상태 */
+    .row.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(0.9);
+      position: relative;
+      pointer-events: none;
+    }
+    
+    /* 잠긴 상품의 내용 숨기기 */
+    .row.locked .meta .desc {
+      display: none;
+    }
+    
+    /* 잠긴 상품의 제목만 표시 (회색 처리) */
+    .row.locked .meta .title {
+      color: var(--muted);
+      opacity: 0.6;
+    }
+    
+    .row.locked::before {
+      content: '🔒';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      z-index: 10;
+      pointer-events: none;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+    
+    .row.locked:hover {
+      transform: none;
+      border-color: transparent;
+      background: var(--btn);
+    }
+    
+    .row.locked .btn {
+      background: var(--muted);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    /* 해금 애니메이션 */
+    .row.just-unlocked {
+      animation: unlockGlow 1s ease-out;
+      position: relative;
+      z-index: 100;
+      isolation: isolate;
+      will-change: box-shadow, border-color;
+    }
+    
+    @keyframes unlockGlow {
+      0% {
+        box-shadow: 0 0 40px var(--good);
+        border-color: var(--good);
+        background-color: rgba(34, 197, 94, 0.1);
+      }
+      50% {
+        box-shadow: 0 0 60px var(--good);
+        background-color: rgba(34, 197, 94, 0.2);
+      }
+      100% {
+        box-shadow: none;
+        border-color: transparent;
+        background-color: transparent;
+      }
+    }
+    
+    .upgrade-icon {
+      font-size: 32px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      border-radius: 8px;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+    
+    .upgrade-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      pointer-events: none;
+    }
+    
+    .upgrade-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+    }
+    
+    .upgrade-desc {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .upgrade-cost {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    
+    .upgrade-status {
+      font-size: 11px;
+      padding: 4px 8px;
+      background: var(--accent);
+      color: var(--bg);
+      border-radius: 4px;
+      font-weight: 700;
+      animation: statusPulse 1s infinite;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+    
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
+    .upgrade-count {
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    
+    /* 구매 완료 시 반짝 효과 */
+    .purchase-success {
+      animation: sparkle 0.6s ease-out !important;
+      position: relative !important;
+      z-index: 1000 !important;
+      isolation: isolate !important;
+      will-change: background-color, box-shadow !important;
+    }
+    
+    @keyframes sparkle {
+      0% { 
+        background-color: var(--good) !important;
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7) !important;
+      }
+      50% { 
+        background-color: #ffd700 !important;
+        box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.5) !important;
+      }
+      100% { 
+        background-color: var(--good) !important;
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0) !important;
+      }
+    }
+    
+    /* 토글 버튼 스타일 */
+    .toggle-btn {
+      cursor: pointer;
+      user-select: none;
+      font-size: 14px;
+      color: var(--muted);
+      transition: color 0.3s ease;
+      margin-left: 8px;
+    }
+    
+    .toggle-btn:hover {
+      color: var(--primary);
+    }
+    
+    .toggle-btn.collapsed {
+      transform: rotate(-90deg);
+    }
+    
+    /* 접힌 섹션 스타일 */
+    .collapsed-section {
+      display: none;
+    }
+    
+    footer{
+      margin-top:16px; 
+      color:var(--muted); 
+      font-size:12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .save-status {
+      color: var(--good);
+      font-weight: 500;
+    }
+    
+    .reset-btn {
+      background: var(--bad);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-left: 12px;
+      box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
+    }
+    
+    .reset-btn:hover {
+      background: #d32f2f;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(244, 67, 54, 0.4);
+    }
+    
+    .reset-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
+    }
+    
+    /* 툴팁 스타일 */
+    .stat-tooltip {
+      position: relative;
+      cursor: help;
+      transition: all 0.2s;
+    }
+    .stat-tooltip:hover {
+      background: var(--bg2);
+      transform: translateY(-2px);
+    }
+    
+    /* 공유/즐겨찾기 버튼(칩 스타일로 헤더 표기와 융화) */
+    button.share-btn.chip,
+    button.favorite-btn.chip{
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    button.share-btn.chip:hover,
+    button.favorite-btn.chip:hover{
+      background: var(--bg2);
+      transform: translateY(-2px);
+    }
+
+    button.share-btn.chip:active,
+    button.favorite-btn.chip:active{
+      transform: translateY(0);
+    }
+
+    .share-btn .share-icon {
+      width: 16px;
+      height: 16px;
+      display: block;
+      fill: currentColor;
+      flex: 0 0 auto;
+    }
+
+    button.share-btn.chip.copied {
+      background: var(--good);
+    }
+
+    button.share-btn.chip:disabled,
+    button.favorite-btn.chip:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    /* ======= 공통 모달(UI 안내/확인) ======= */
+    .game-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    
+    .game-modal {
+      width: min(420px, 90vw);
+      background: linear-gradient(180deg, var(--bg2), var(--bg3));
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+      padding: 18px 20px 16px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    
+    .game-modal-title {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .game-modal-title span.icon {
+      font-size: 18px;
+    }
+    
+    .game-modal-message {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+    
+    .game-modal-message b {
+      color: var(--accent);
+    }
+    
+    .game-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    
+    .game-modal-actions .btn-secondary {
+      background: var(--btn);
+      color: var(--text);
+    }
+    
+    .game-modal-actions .btn-secondary:hover {
+      background: var(--btn2);
+    }
+    
+    .game-modal-hidden {
+      display: none;
+    }
+    
+    /* ======= 모바일 최적화 ======= */
+    @media (max-width: 768px) {
+      /* 그리드를 1열로 변경 */
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      
+      /* 헤더 최적화 */
+      header {
+        padding: 8px 12px;
+        flex-wrap: wrap;
+      }
+      
+      .statbar {
+        gap: 6px;
+        width: 100%;
+      }
+      
+      .share-btn,
+      .favorite-btn {
+        /* 모바일에서도 플로팅 없이 상단 표기(칩)와 같이 배치 */
+        font-size: 12px;
+      }
+      
+      .share-btn .share-label,
+      .favorite-btn .favorite-label {
+        display: none;
+      }
+      
+      .chip {
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+      
+      .chip b {
+        font-size: 12px;
+      }
+      
+      /* 앱 패딩 조정 */
+      .app {
+        padding: 8px;
+        padding-top: 78px;
+      }
+      
+      /* 버튼 크기 확대 (터치 최적화) */
+      .btn {
+        min-height: 44px;
+        min-width: 44px;
+        font-size: 14px;
+      }
+      
+      .btn-lg {
+        padding: 16px 24px;
+        font-size: 16px;
+      }
+      
+      /* 투자 섹션 */
+      .mode-toggle button,
+      .quantity-selector button {
+        min-height: 40px;
+        min-width: 40px;
+        font-size: 14px;
+      }
+      
+      /* 카드 패딩 조정 */
+      .card {
+        padding: 12px;
+      }
+      
+      /* 노동 버튼 영역 높이 축소 */
+      .work {
+        height: 200px;
+      }
+      
+      /* 건물 아이템 폰트 크기 */
+      .building-item {
+        font-size: 13px;
+      }
+      
+      /* 업그레이드 아이템 */
+      .upgrade-item {
+        font-size: 13px;
+        padding: 10px;
+      }
+      
+      /* 푸터 세로 배치 */
+      footer > div > div:last-child {
+        flex-direction: column !important;
+        gap: 8px !important;
+        width: 100%;
+      }
+      
+      footer button {
+        width: 100%;
+      }
+      
+      /* 로그 영역 높이 조정 */
+      .log {
+        max-height: 120px;
+      }
+      
+      /* 일기장 로그 영역 모바일 반응형 조정 */
+      .diary-log {
+        max-height: calc(100vh - 400px);
+        min-height: 120px;
+        width: 100%;
+      }
+      
+      /* 리셋 버튼 크기 조정 */
+      .reset-btn {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+    }
+    
+    /* 소형 모바일 (480px 이하) */
+    @media (max-width: 480px) {
+      body {
+        font-size: 13px;
+      }
+      
+      .app {
+        padding: 4px;
+        padding-top: 74px;
+      }
+      
+      header {
+        padding: 6px 8px;
+      }
+      
+      .chip {
+        padding: 4px 6px;
+        font-size: 11px;
+      }
+      
+      .chip b {
+        font-size: 13px;
+      }
+      
+      .card h2 {
+        font-size: 16px;
+      }
+      
+      .work {
+        height: 180px;
+      }
+      
+      /* 일기장 로그 영역 소형 모바일 반응형 조정 */
+      .diary-log {
+        max-height: calc(100vh - 350px);
+        min-height: 100px;
+      }
+      
+      .btn-lg {
+        padding: 12px 20px;
+        font-size: 14px;
+      }
+    }
+    
+    /* ======= 하단 네비게이션 바 (모바일 전용) ======= */
+    .bottom-nav {
+      display: none; /* 기본적으로 숨김 (PC) */
+    }
+    
+    /* PC에서 grid 레이아웃 컨테이너 */
+    .tab-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr; /* 4열: 노동 + 투자 + 통계 + 설정 (동일 넓이) */
+      gap: 16px;
+    }
+    
+    /* PC에서는 모든 탭 컨텐츠 표시 */
+    .tab-content {
+      display: block;
+    }
+    
+    /* 통계 탭과 설정 탭은 PC에서도 표시 */
+    #statsTab, #settingsTab {
+      display: block;
+    }
+    
+    /* 통계 탭과 설정 탭 컴팩트 스타일 (PC용) */
+    #statsTab .stats-section,
+    #settingsTab .stats-section {
+      margin-bottom: 16px;
+      padding: 12px;
+    }
+    
+    #statsTab .stat-value,
+    #settingsTab .stat-value {
+      font-size: 16px;
+    }
+
+    /* 통계 탭: 길이가 긴 값(성장 속도/다음 마일스톤/시간당 수익) 1줄 유지 */
+    #statsTab #growthRate,
+    #statsTab #nextMilestone,
+    #statsTab #hourlyRate {
+      white-space: nowrap;
+      font-size: 14px;
+      line-height: 1.15;
+      letter-spacing: -0.2px;
+      font-variant-numeric: tabular-nums;
+    }
+    
+    #workTab h2,
+    #shopTab h2,
+    #statsTab h2,
+    #settingsTab h2,
+    #rankingTab h2 {
+      font-size: 16px;
+    }
+    
+    #statsTab h3,
+    #settingsTab h3,
+    #rankingTab h3 {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    
+    /* 통계 탭 스타일 */
+    .stats-section {
+      margin-bottom: 24px;
+      padding: 16px;
+      background: var(--bg2);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    
+    /* 게임 정보 섹션 배경 이미지 */
+    .game-info-section {
+      background-image: url('/assets/settings_gameinfo_bg-D2hEbKCP.webp');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .game-info-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(11, 18, 32, 0.7);
+      z-index: 0;
+    }
+    
+    .game-info-section > * {
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* 토글 스위치 스타일 */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--muted);
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: var(--good);
+    }
+    
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+    
+    .toggle-switch input:focus + .toggle-slider {
+      box-shadow: 0 0 1px var(--good);
+    }
+    
+    /* 설정 탭 전용 스타일 */
+    .settings-button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .settings-btn {
+      width: 100%;
+      margin: 0;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .settings-desc {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 0 4px;
+      line-height: 1.4;
+    }
+    
+    .settings-warning {
+      padding: 12px;
+      background: var(--panel);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    
+    .settings-toggle-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .settings-toggle-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: var(--panel);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    
+    .settings-toggle-item:hover {
+      background: var(--btn2);
+    }
+    
+    .settings-toggle-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .settings-toggle-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .settings-toggle-desc {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    
+    .settings-shortcut-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .settings-shortcut-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: var(--panel);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    
+    .settings-shortcut-item:hover {
+      background: var(--btn2);
+    }
+    
+    .settings-shortcut-label {
+      font-size: 13px;
+      color: var(--text);
+    }
+    
+    .settings-shortcut-key {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .settings-info-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .settings-info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    
+    .settings-info-item:last-child {
+      border-bottom: none;
+    }
+    
+    .settings-info-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .settings-info-value {
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    
+    .settings-link-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .settings-link {
+      color: var(--accent);
+      text-decoration: none;
+      padding: 10px;
+      background: var(--panel);
+      border-radius: 8px;
+      font-size: 13px;
+      transition: all 0.2s;
+      display: block;
+      text-align: center;
+    }
+    
+    .settings-link:hover {
+      background: var(--bg2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,.2);
+    }
+    
+    .stats-section {
+      position: relative;
+    }
+    
+    .stats-section.stats-pinned {
+      /* 요청: 통계 전체가 스크롤되도록 고정 해제 */
+      position: relative;
+      top: auto;
+      z-index: auto;
+      background: var(--bg2);
+      padding: 16px;
+      margin: 0 0 24px 0;
+      border-bottom: none;
+    }
+    
+    .stats-section h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: var(--accent);
+    }
+    
+    .stats-toggle {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: var(--accent);
+      transition: color 0.2s;
+    }
+    
+    .stats-toggle:hover {
+      color: var(--accent);
+      opacity: 0.8;
+    }
+    
+    .toggle-icon {
+      font-size: 12px;
+      transition: transform 0.3s;
+    }
+    
+    .stats-section.collapsed .toggle-icon {
+      transform: rotate(-90deg);
+    }
+    
+    .stats-content {
+      max-height: 2000px;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, opacity 0.3s;
+      opacity: 1;
+    }
+    
+    .stats-section.collapsed .stats-content {
+      max-height: 0;
+      opacity: 0;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .stat-item.highlight {
+      background: linear-gradient(135deg, rgba(94, 234, 212, 0.1), rgba(94, 234, 212, 0.05));
+      border: 1px solid rgba(94, 234, 212, 0.2);
+    }
+    
+    .stat-item.milestone {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    
+    /* 통계 그리드 */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px;
+      background: var(--panel);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.04);
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    
+    /* 수익 구조 바 */
+    .income-breakdown {
+      margin-top: 8px;
+    }
+    
+    .income-bar {
+      display: flex;
+      height: 60px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid var(--bg3);
+      margin-bottom: 12px;
+    }
+    
+    .income-segment {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+      min-width: 2%;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .income-segment::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    .income-bar.animated .income-segment {
+      animation: slideIn 0.6s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        width: 0% !important;
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    .income-segment.labor {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    
+    .income-segment.financial {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+    
+    .income-segment.property {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+    
+    .income-legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+    
+    .legend-color.labor {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    
+    .legend-color.financial {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+    
+    .legend-color.property {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .legend-color.cash {
+      /* 현금 컬러 = 노동 컬러 */
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    
+    /* 자산 상세 */
+    .asset-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .asset-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: var(--panel);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.04);
+      transition: all 0.2s;
+    }
+    
+    /* 통계 섹션 잠금 상태 */
+    .asset-row.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(0.9);
+      position: relative;
+      pointer-events: none;
+    }
+    
+    .asset-row.locked .asset-info {
+      opacity: 0.6;
+    }
+    
+    .asset-row.locked::before {
+      content: '🔒';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      z-index: 10;
+      pointer-events: none;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+    
+    .asset-contribution {
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    
+    .asset-value {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    
+    /* 도넛 차트 */
+    .donut-chart-container {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 20px auto;
+    }
+    
+    #assetDonutChart {
+      transform: rotate(-90deg);
+    }
+    
+    .donut-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    
+    .donut-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .asset-icon {
+      font-size: 24px;
+      min-width: 32px;
+      text-align: center;
+    }
+    
+    .asset-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .asset-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .asset-name span {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 12px;
+    }
+    
+    .asset-production {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .asset-production b {
+      color: var(--good);
+    }
+    
+    /* 효율 분석 */
+    .efficiency-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .efficiency-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--panel);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.04);
+    }
+    
+    .efficiency-item.best {
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 15px rgba(94, 234, 212, 0.3);
+    }
+    
+    .rank {
+      font-size: 20px;
+    }
+    
+    /* 리더보드 스타일 */
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--panel);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.04);
+    }
+    
+    .leaderboard-item.top3 {
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 15px rgba(94, 234, 212, 0.3);
+    }
+    
+    .leaderboard-rank {
+      font-size: 18px;
+      font-weight: 700;
+      min-width: 32px;
+      text-align: center;
+      color: var(--accent);
+    }
+    
+    .leaderboard-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .leaderboard-nickname {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 14px;
+    }
+    
+    .leaderboard-stats {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .leaderboard-loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+    }
+    
+    .leaderboard-error {
+      text-align: center;
+      padding: 20px;
+      color: var(--bad);
+    }
+    
+    /* 닉네임 입력 모달 */
+    .game-modal-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 14px;
+      font-family: inherit;
+    }
+    
+    .game-modal-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.1);
+    }
+    
+    /* 업적 그리드 */
+    .achievement-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+      gap: 8px;
+    }
+    
+    .achievement-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      background: var(--panel);
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,.1);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      user-select: none;
+    }
+    
+    .achievement-icon.unlocked {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px rgba(94, 234, 212, 0.5);
+    }
+    
+    .achievement-icon.locked {
+      opacity: 0.3;
+      filter: grayscale(100%);
+    }
+    
+    .achievement-icon:hover {
+      transform: scale(1.1);
+    }
+    
+    /* 업적 툴팁 스타일 */
+    .achievement-tooltip {
+      position: fixed;
+      background: var(--panel);
+      color: var(--text);
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid var(--accent);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      white-space: pre-line;
+      font-size: 12px;
+      line-height: 1.5;
+      z-index: 10000;
+      min-width: 200px;
+      max-width: 300px;
+      text-align: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      /* 요구사항: 클릭 즉시 표시/해제 */
+      transition: none;
+      transform: translateX(-50%);
+    }
+    
+    .achievement-tooltip.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    
+    /* 툴팁 화살표 */
+    .achievement-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: var(--accent);
+    }
+
+    /* 툴팁이 아래에 표시될 때(아이콘 아래): 화살표를 위로 */
+    .achievement-tooltip.bottom::after {
+      top: auto;
+      bottom: 100%;
+      border-top-color: transparent;
+      border-bottom-color: var(--accent);
+    }
+    
+    /* 모바일에서 툴팁 위치 조정 */
+    @media (max-width: 768px) {
+      /* 모바일에서 화살표/방향을 강제하지 않음 (PC와 동일하게 유지) */
+      .achievement-tooltip { 
+        min-width: 250px;
+        max-width: 90vw;
+      }
+    }
+    
+    /* 데스크톱(와이드): 5개 패널을 한 줄에 나열 (가로 스크롤 금지) */
+    @media (min-width: 1280px) {
+      html, body {
+        overflow-x: hidden; /* 페이지 가로 스크롤바 방지 */
+      }
+
+      /* 최상위 래퍼 id가 있으면 같이 방어(없으면 무시) */
+      #app, .app, .root, .container {
+        overflow-x: hidden;
+      }
+
+      .tab-wrapper {
+        display: flex;
+        flex-wrap: nowrap;        /* 한 줄 고정 */
+        gap: 8px;                 /* 섹션 간 최소 여백 */
+        align-items: flex-start;
+
+        /* 가로 스크롤 방지 */
+        overflow-x: hidden;
+
+        padding: 0 0 16px;       /* 가로 패딩은 .app에서 담당 */
+        justify-content: center;  /* 중앙 정렬 */
+
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* PC에서는 모든 탭을 항상 표시 (한 줄에 5개) */
+      .tab-content {
+        display: block !important;
+
+        /* 가로 공간을 균등 분배하되, 예전 PC 버전 감각(최대 380px)을 유지 */
+        flex: 1 1 clamp(320px, 20vw, 380px);
+        max-width: clamp(320px, 20vw, 380px);
+        min-width: 320px;
+
+        /* 내부 컨텐츠가 길어지면 페이지 전체 스크롤로 처리 */
+        height: auto;
+        overflow-y: visible;
+
+        box-sizing: border-box;
+      }
+
+      /* 내부 요소가 폭을 넘치지 않도록 방어 */
+      .tab-content * {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+    }
+    
+    /* 모바일/중간 폭: 하단 네비 + 단일 탭 표시 */
+    @media (max-width: 1439px) {
+      /* Grid 레이아웃 해제 */
+      .tab-wrapper {
+        display: block;
+      }
+      
+      /* 하단 네비게이션 표시 */
+      .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(180deg, #0b1220, #0b1324);
+        box-shadow: 0 -4px 20px rgba(0,0,0,.5);
+        justify-content: space-around;
+        padding: 8px 0;
+        z-index: 100;
+      }
+      
+      .nav-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding: 6px 4px;
+        background: none;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 18px;
+        min-width: 0;
+      }
+      
+      .nav-btn span {
+        font-size: 10px;
+        font-weight: 500;
+      }
+      
+      .nav-btn.active {
+        color: var(--accent);
+      }
+      
+      .nav-btn:hover {
+        background: var(--bg2);
+      }
+      
+      /* 탭 컨텐츠 전환 시스템 */
+      .tab-content {
+        display: none;
+        width: 100%;
+      }
+      
+      .tab-content.active {
+        display: block;
+      }
+      
+      /* 통계 탭과 설정 탭 표시 */
+      #statsTab, #settingsTab {
+        display: none;
+      }
+      
+      #statsTab.active, #settingsTab.active {
+        display: block;
+      }
+      
+      /* 하단 네비 때문에 여백 추가 */
+      .app {
+        padding-bottom: 80px;
+      }
+      
+      /* 통계 탭 모바일 최적화 */
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .stat-item {
+        padding: 10px;
+      }
+      
+      .stat-value {
+        font-size: 16px;
+      }
+      
+      .income-bar {
+        height: 50px;
+      }
+      
+      .achievement-grid {
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+      }
+      
+      .achievement-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/seoulsurvival-DWgsXaS6.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/authBoot-CoIjDg_k.js">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-brand" aria-label="Capital Clicker: Seoul Survival">
+        <img class="brand-icon" src="/assets/logo-CaUs9YDr.png" alt="" aria-hidden="true" />
+        <span class="brand-text"><b>Capital Clicker:</b> Seoul Survival</span>
+      </div>
+
+      <!-- 즐겨찾기 / 홈 화면 안내 버튼 (공유 버튼 왼쪽) -->
+      <button
+        class="chip favorite-btn"
+        id="favoriteBtn"
+        type="button"
+        title="즐겨찾기 / 홈 화면에 추가 안내"
+        aria-label="즐겨찾기 / 홈 화면에 추가 안내"
+      >
+        <span class="favorite-icon">⭐</span>
+        <span class="favorite-label">즐겨찾기</span>
+      </button>
+
+      <button class="chip share-btn" id="shareBtn" type="button" title="게임 공유하기" aria-label="게임 공유하기">
+        <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.6 2.6 0 0 0 0-1.39l7.02-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .06.59L7.03 9.7A3 3 0 1 0 7 14.3l7.02 4.11A3 3 0 1 0 18 16.08z"></path>
+        </svg>
+        <span class="share-label">공유</span>
+      </button>
+      <div class="statbar">
+        <div class="chip"><span>💵 현금</span><b id="cash">0</b></div>
+        <div class="chip stat-tooltip" id="financialChip" title=""><span>💰 금융</span><b id="financial">0</b><span class="muted">개</span></div>
+        <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
+        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당</span><b id="rps">0</b></div>
+      </div>
+    </header>
+
+    <div class="tab-wrapper">
+      <!-- 노동 탭 -->
+      <div id="workTab" class="tab-content active">
+      <section class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h2 style="margin: 0;">🛠️ 노동</h2>
+        </div>
+        <div class="work">
+          <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼, 클릭당 수익" aria-describedby="clickIncomeButton">🛠️ 노동 +<span id="clickIncomeButton" aria-label="클릭당 수익 금액">1만</span>원</button>
+        </div>
+        <!-- 승진 진행 카드 -->
+        <div class="career-progress-card" style="margin-top: 12px; padding: 12px; background: var(--bg2); border-radius: 8px;">
+          <div class="career-meta-row">
+            <div class="career-badge">💼 <span id="currentCareer" aria-live="polite">알바</span></div>
+            <span class="desc" id="careerRemaining" style="font-size: 12px; color: var(--accent);" aria-live="polite">다음 승진까지 40클릭 남음</span>
+          </div>
+          <div class="progress-container" style="margin-bottom: 6px;">
+            <div class="progress-bar" id="careerProgress" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="승진 진행률"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="desc" id="careerProgressText" style="font-size: 12px;" aria-live="polite">0% (0/40)</span>
+            <span class="desc" style="font-size: 12px; color: transparent;">.</span>
+          </div>
+        </div>
+        <div class="card diary-card" style="margin-top:12px">
+          <h2>
+            <span class="diary-title">📓 일기장</span>
+            <span class="diary-header-meta" id="diaryHeaderMeta">----.--.--(--일차)</span>
+          </h2>
+          <div id="log" class="log diary-log" aria-label="일기장"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 투자 탭 -->
+    <div id="shopTab" class="tab-content">
+      <section>
+        <div class="card">
+          <h2>💰 투자</h2>
+          <div id="marketEventBar" class="market-event-bar" aria-live="polite"></div>
+          
+          <!-- 업그레이드 리스트 - Cookie Clicker 스타일 -->
+          <h3>업그레이드 <span class="upgrade-count" id="upgradeCount">(0)</span> <span class="toggle-btn" id="toggleUpgrades" aria-label="업그레이드 섹션 토글">▼</span></h3>
+          <div class="upgrade-list" id="upgradeList">
+            <!-- 동적으로 생성됨 -->
+          </div>
+
+          <!-- 구매 수량 선택 시스템 -->
+          <div class="purchase-options">
+            <div class="mode-toggle">
+              <button id="buyMode" class="active">구매</button>
+              <button id="sellMode">판매</button>
+            </div>
+            <div class="quantity-selector">
+              <button id="qty1" class="active">1</button>
+              <button id="qty5">5</button>
+              <button id="qty10">10</button>
+            </div>
+          </div>
+          
+          <h3>금융상품 <span class="toggle-btn" id="toggleFinancial" aria-label="금융상품 섹션 토글">▼</span></h3>
+        <div class="upg-list" id="financialSection">
+          <div class="row building-item" id="depositItem">
+            <div class="meta">
+                <span class="title">💰 예금</span>
+                <span class="desc">• 각 예금이 초당 <b id="incomePerDeposit">10원</b> 생산</span>
+                <span class="desc">• <b id="depositCount">0</b>개 예금이 초당 <b id="depositTotalIncome">0원</b> 생산 (총 수익의 <b id="depositPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="depositLifetime">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="depositCurrentPrice">5만</b>원</span>
+            </div>
+              <button id="buyDeposit" class="btn">구입</button>
+          </div>
+
+            <div class="row building-item" id="savingsItem">
+            <div class="meta">
+                <span class="title">🏦 적금</span>
+                <span class="desc">• 각 적금이 초당 <b id="incomePerSavings">120원</b> 생산</span>
+                <span class="desc">• <b id="savingsCount">0</b>개 적금이 초당 <b id="savingsTotalIncome">0원</b> 생산 (총 수익의 <b id="savingsPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="savingsLifetimeDisplay">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="savingsCurrentPrice">50만</b>원</span>
+            </div>
+              <button id="buySavings" class="btn">구입</button>
+          </div>
+
+          <div class="row building-item" id="bondItem">
+            <div class="meta">
+                <span class="title">📈 국내주식</span>
+                <span class="desc">• 각 주식이 초당 <b id="incomePerBond">1,125원</b> 생산</span>
+                <span class="desc">• <b id="bondCount">0</b>개 주식이 초당 <b id="bondTotalIncome">0원</b> 생산 (총 수익의 <b id="bondPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="bondLifetimeDisplay">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="bondCurrentPrice">500만</b>원</span>
+            </div>
+            <button id="buyBond" class="btn">구입</button>
+          </div>
+
+          <div class="row building-item" id="usStockItem">
+            <div class="meta">
+                <span class="title">🇺🇸 미국주식</span>
+                <span class="desc">• 각 주식이 초당 <b id="incomePerUsStock">6,000원</b> 생산</span>
+                <span class="desc">• <b id="usStockCount">0</b>개 주식이 초당 <b id="usStockTotalIncome">0원</b> 생산 (총 수익의 <b id="usStockPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="usStockLifetimeDisplay">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="usStockCurrentPrice">2,500만</b>원</span>
+            </div>
+            <button id="buyUsStock" class="btn">구입</button>
+          </div>
+
+          <div class="row building-item" id="cryptoItem">
+            <div class="meta">
+                <span class="title">₿ 코인</span>
+                <span class="desc">• 각 코인이 초당 <b id="incomePerCrypto">25,000원</b> 생산</span>
+                <span class="desc">• <b id="cryptoCount">0</b>개 코인이 초당 <b id="cryptoTotalIncome">0원</b> 생산 (총 수익의 <b id="cryptoPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="cryptoLifetimeDisplay">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="cryptoCurrentPrice">1억</b>원</span>
+            </div>
+            <button id="buyCrypto" class="btn">구입</button>
+          </div>
+          </div>
+          
+          <h3>부동산 <span class="toggle-btn" id="toggleProperties" aria-label="부동산 섹션 토글">▼</span></h3>
+          <div class="upg-list" id="propertySection">
+            <div class="row building-item" id="villaItem">
+              <div class="meta">
+                <span class="title">🏘️ 빌라</span>
+                <span class="desc">• 각 빌라가 초당 <b id="rentPerVilla">250원</b> 생산</span>
+                <span class="desc">• <b id="villaCount">0</b>채 빌라가 초당 <b id="villaTotalIncome">0원</b> 생산 (총 수익의 <b id="villaPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="villaLifetimeDisplay">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="villaCurrentPrice">2.5억</b>원</span>
+              </div>
+              <button id="buyVilla" class="btn">구입</button>
+            </div>
+
+            <div class="row building-item" id="officetelItem">
+              <div class="meta">
+                <span class="title">🏢 오피스텔</span>
+                <span class="desc">• 각 오피스텔이 초당 <b id="rentPerOfficetel">500원</b> 생산</span>
+                <span class="desc">• <b id="officetelCount">0</b>채 오피스텔이 초당 <b id="officetelTotalIncome">0원</b> 생산 (총 수익의 <b id="officetelPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="officetelLifetimeDisplay">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="officetelCurrentPrice">3.5억</b>원</span>
+              </div>
+              <button id="buyOfficetel" class="btn">구입</button>
+            </div>
+
+            <div class="row building-item" id="aptItem">
+              <div class="meta">
+                <span class="title">🏬 아파트</span>
+                <span class="desc">• 각 아파트가 초당 <b id="rentPerApt">1,000원</b> 생산</span>
+                <span class="desc">• <b id="aptCount">0</b>채 아파트가 초당 <b id="aptTotalIncome">0원</b> 생산 (총 수익의 <b id="aptPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="aptLifetimeDisplay">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="aptCurrentPrice">8억</b>원</span>
+              </div>
+              <button id="buyApt" class="btn">구입</button>
+            </div>
+
+            <div class="row building-item" id="shopItem">
+              <div class="meta">
+                <span class="title">🏪 상가</span>
+                <span class="desc">• 각 상가가 초당 <b id="rentPerShop">2,000원</b> 생산</span>
+                <span class="desc">• <b id="shopCount">0</b>채 상가가 초당 <b id="shopTotalIncome">0원</b> 생산 (총 수익의 <b id="shopPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="shopLifetimeDisplay">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="shopCurrentPrice">12억</b>원</span>
+              </div>
+              <button id="buyShop" class="btn">구입</button>
+            </div>
+
+            <div class="row building-item" id="buildingItem">
+              <div class="meta">
+                <span class="title">🏙️ 빌딩</span>
+                <span class="desc">• 각 빌딩이 초당 <b id="rentPerBuilding">5,000원</b> 생산</span>
+                <span class="desc">• <b id="buildingCount">0</b>채 빌딩이 초당 <b id="buildingTotalIncome">0원</b> 생산 (총 수익의 <b id="buildingPercent">0%</b>)</span>
+                <span class="desc">• 지금까지 <b id="buildingLifetimeDisplay">0원</b> 생산</span>
+                <span class="desc">현재가: <b id="buildingCurrentPrice">30억</b>원</span>
+              </div>
+              <button id="buyBuilding" class="btn">구입</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      </div>
+
+    <!-- 통계 탭 -->
+    <div id="statsTab" class="tab-content">
+      <section class="card">
+        <h2>📊 통계</h2>
+        
+        <!-- 1. 핵심 지표 (고정) -->
+        <div class="stats-section stats-pinned">
+          <h3>💰 전체 수익</h3>
+          <div class="stat-grid">
+            <div class="stat-item highlight">
+              <span class="stat-label">총 자산</span>
+              <span class="stat-value" id="totalAssets">0원</span>
+            </div>
+            <div class="stat-item highlight">
+              <span class="stat-label">총 누적 수익</span>
+              <span class="stat-value" id="totalEarnings">0원</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">초당 수익</span>
+              <span class="stat-value" id="rpsStats">0원/초</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">클릭당 수익</span>
+              <span class="stat-value" id="clickIncomeStats">0원</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 성장 추적 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">📈 성장 추적 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="stat-grid">
+              <div class="stat-item">
+                <span class="stat-label">최근 1시간 수익</span>
+                <span class="stat-value" id="hourlyEarnings">0원</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">최근 24시간 수익</span>
+                <span class="stat-value" id="dailyEarnings">0원</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">성장 속도</span>
+                <span class="stat-value" id="growthRate">0%/시간</span>
+              </div>
+              <div class="stat-item milestone">
+                <span class="stat-label">다음 마일스톤</span>
+                <span class="stat-value" id="nextMilestone">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 플레이 정보 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">⏱️ 플레이 정보 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="stat-grid">
+              <div class="stat-item">
+                <span class="stat-label">총 클릭 횟수</span>
+                <span class="stat-value" id="totalClicksStats">0회</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">노동 수익</span>
+                <span class="stat-value" id="laborIncomeStats">0원</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">플레이 시간</span>
+                <span class="stat-value" id="playTimeStats">0분</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">시간당 수익</span>
+                <span class="stat-value" id="hourlyRate">0원/시간</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 효율 분석 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">⚡ 효율 순위 (개당 초당 수익) <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="efficiency-list">
+              <div class="efficiency-item best">
+                <span class="rank">🥇</span>
+                <span id="bestEfficiency">-</span>
+              </div>
+              <div class="efficiency-item">
+                <span class="rank">🥈</span>
+                <span id="secondEfficiency">-</span>
+              </div>
+              <div class="efficiency-item">
+                <span class="rank">🥉</span>
+                <span id="thirdEfficiency">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 수익 구조 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">📈 수익 구조 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="income-breakdown">
+              <div class="income-bar animated">
+                <div class="income-segment labor" id="laborSegment" style="width: 0%">
+                  <span>🛠️ 0%</span>
+                </div>
+                <div class="income-segment financial" id="financialSegment" style="width: 0%">
+                  <span>💰 0%</span>
+                </div>
+                <div class="income-segment property" id="propertySegment" style="width: 0%">
+                  <span>🏢 0%</span>
+                </div>
+              </div>
+              <div class="income-legend">
+                <div class="legend-item">
+                  <span class="legend-color labor"></span>
+                  <span id="laborLegend">노동: 0%</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-color financial"></span>
+                  <span id="financialLegend">금융: 0%</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-color property"></span>
+                  <span id="propertyLegend">부동산: 0%</span>
+                </div>
+              </div>
+            </div>
+            <!-- 자산 비율 도넛 차트 -->
+            <div class="donut-chart-container">
+              <canvas id="assetDonutChart" width="200" height="200"></canvas>
+              <div class="donut-center">
+                <span class="donut-label">자산 비율</span>
+              </div>
+            </div>
+            <div class="income-legend" style="justify-content:center;">
+              <div class="legend-item">
+                <span class="legend-color cash"></span>
+                <span>현금</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color financial"></span>
+                <span>금융</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color property"></span>
+                <span>부동산</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. 금융상품 상세 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">💼 금융상품 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="asset-stats">
+              <div class="asset-row">
+                <span class="asset-icon">💰</span>
+                <div class="asset-info">
+                  <div class="asset-name">예금 <span id="depositsOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="depositsLifetimeStats">0원</b> <span class="asset-contribution" id="depositsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="depositsValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">🏦</span>
+                <div class="asset-info">
+                  <div class="asset-name">적금 <span id="savingsOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="savingsLifetimeStats">0원</b> <span class="asset-contribution" id="savingsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="savingsValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">📈</span>
+                <div class="asset-info">
+                  <div class="asset-name">주식 <span id="bondsOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="bondsLifetimeStats">0원</b> <span class="asset-contribution" id="bondsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="bondsValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">🇺🇸</span>
+                <div class="asset-info">
+                  <div class="asset-name">미국주식 <span id="usStocksOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="usStocksLifetimeStats">0원</b> <span class="asset-contribution" id="usStocksContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="usStocksValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">₿</span>
+                <div class="asset-info">
+                  <div class="asset-name">코인 <span id="cryptosOwnedStats">0개</span></div>
+                  <div class="asset-production">누적 수익: <b id="cryptosLifetimeStats">0원</b> <span class="asset-contribution" id="cryptosContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="cryptosValue">0원</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. 부동산 상세 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">🏢 부동산 <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="asset-stats">
+              <div class="asset-row">
+                <span class="asset-icon">🏘️</span>
+                <div class="asset-info">
+                  <div class="asset-name">빌라 <span id="villasOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="villasLifetimeStats">0원</b> <span class="asset-contribution" id="villasContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="villasValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">🏢</span>
+                <div class="asset-info">
+                  <div class="asset-name">오피스텔 <span id="officetelsOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="officetelsLifetimeStats">0원</b> <span class="asset-contribution" id="officetelsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="officetelsValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">🏘️</span>
+                <div class="asset-info">
+                  <div class="asset-name">아파트 <span id="apartmentsOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="apartmentsLifetimeStats">0원</b> <span class="asset-contribution" id="apartmentsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="apartmentsValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">🏪</span>
+                <div class="asset-info">
+                  <div class="asset-name">상가 <span id="shopsOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="shopsLifetimeStats">0원</b> <span class="asset-contribution" id="shopsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="shopsValue">0원</b></div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <span class="asset-icon">🏙️</span>
+                <div class="asset-info">
+                  <div class="asset-name">빌딩 <span id="buildingsOwnedStats">0채</span></div>
+                  <div class="asset-production">누적 수익: <b id="buildingsLifetimeStats">0원</b> <span class="asset-contribution" id="buildingsContribution">(0%)</span></div>
+                  <div class="asset-value">총 가치: <b id="buildingsValue">0원</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- 랭킹 탭 -->
+    <div id="rankingTab" class="tab-content">
+      <section class="card">
+        <h2>🏅 랭킹</h2>
+        <p class="leaderboard-refresh-note">
+          기록은 주기적으로 갱신됩니다. <span id="leaderboardLastUpdated">마지막 갱신: -</span>
+        </p>
+
+        <!-- 내 순위 영역 -->
+        <div class="stats-section" id="myRankSection">
+          <h3>내 순위</h3>
+          <div class="leaderboard-my-rank" id="myRankContent">
+            <!-- JS에서 닉네임/자산/플레이타임 및 순위(TBD)를 채움 -->
+            <div class="leaderboard-my-rank-empty">
+              닉네임을 설정하면 내 순위와 기록이 여기 표시됩니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- 글로벌 리더보드 (TOP 10) -->
+        <div class="stats-section">
+          <h3>글로벌 리더보드 (TOP 10)</h3>
+          <div id="leaderboardContainer">
+            <div class="leaderboard-loading" style="text-align: center; padding: 20px; color: var(--muted);">
+              리더보드를 불러오는 중...
+            </div>
+          </div>
+        </div>
+
+        <!-- 업적 그리드 (통계 탭에서 이동) -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">🏆 업적 (<span id="achievementProgress">0/0</span>) <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="achievement-grid" id="achievementGrid">
+              <!-- JavaScript로 동적 생성 -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 설정 탭 -->
+    <div id="settingsTab" class="tab-content">
+      <section class="card">
+        <h2>⚙️ 설정</h2>
+
+        <!-- 게임 정보 (맨 위로 이동) -->
+        <div class="stats-section game-info-section">
+          <h3>📋 게임 정보</h3>
+          <div style="text-align: center; margin-bottom: 16px;">
+            <img src="/assets/logo-CaUs9YDr.png" alt="Capital Clicker: Seoul Survival" style="max-width: 120px; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));" />
+          </div>
+          <div class="stat-grid">
+            <div class="stat-item" style="grid-column: 1 / 3;">
+              <span class="stat-label">게임 제목</span>
+              <span class="stat-value">Capital Clicker: Seoul Survival</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">개발자</span>
+              <span class="stat-value">clicksurvivor</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">버전</span>
+              <span class="stat-value">v1.0</span>
+            </div>
+          </div>
+          <div class="settings-link-group" style="margin-top: 16px;">
+            <a href="/" target="_blank" rel="noopener noreferrer" class="settings-link">
+              🌐 홈페이지 이동
+            </a>
+          </div>
+        </div>
+
+        <!-- 시각 효과 설정 -->
+        <div class="stats-section">
+          <h3>🎨 시각 효과</h3>
+          <div class="settings-toggle-group">
+            <div class="settings-toggle-item">
+              <div class="settings-toggle-info">
+                <span class="settings-toggle-label">파티클 켬</span>
+                <div class="settings-toggle-desc">
+                  떨어지는 지폐/상품 애니메이션
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleParticles" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="settings-toggle-item">
+              <div class="settings-toggle-info">
+                <span class="settings-toggle-label">화려한 그래픽 켬</span>
+                <div class="settings-toggle-desc">
+                  시각 효과 향상 (비활성화 시 성능 향상)
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleFancyGraphics" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 숫자 표시 설정 -->
+        <div class="stats-section">
+          <h3>🔢 숫자 표시</h3>
+          <div class="settings-toggle-group">
+            <div class="settings-toggle-item">
+              <div class="settings-toggle-info">
+                <span class="settings-toggle-label">짧은 숫자 켬</span>
+                <div class="settings-toggle-desc">
+                  큰 숫자를 간단하게 표시 (예: 1,000만 → 1천만)
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleShortNumbers">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 계정(소셜 로그인) -->
+        <div class="stats-section">
+          <h3>👤 계정 (소셜 로그인)</h3>
+          <div class="settings-info-group">
+            <div class="settings-info-item">
+              <span class="settings-info-label">상태</span>
+              <span class="settings-info-value" id="authStatusLabel">SSO 설정 필요 (shared/auth/config.js)</span>
+            </div>
+            <div class="settings-info-item">
+              <span class="settings-info-label">사용자</span>
+              <span class="settings-info-value" id="authUserLabel">게스트</span>
+            </div>
+            <div class="settings-info-item" id="nicknameInfoItem" style="display: none;">
+              <span class="settings-info-label">닉네임</span>
+              <span class="settings-info-value" id="playerNicknameLabel">-</span>
+            </div>
+          </div>
+          <div class="settings-button-group" style="margin-top: 10px;">
+            <div id="authProviderButtons" style="display:flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn settings-btn" data-auth-provider="google" style="background: var(--primary); color: white; min-width: 160px;">🔐 Google로 로그인</button>
+            </div>
+            <div id="logoutButtonContainer" style="display:flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;" hidden>
+              <button class="btn settings-btn" id="logoutBtn" style="background: var(--bad); color: white; min-width: 160px;">
+                🚪 로그아웃
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 저장 관리 (통합) -->
+        <div class="stats-section">
+          <h3>💾 저장 관리</h3>
+          <div class="settings-button-group">
+            <!-- 클라우드 저장 (로그인 사용자만) -->
+            <div id="cloudSaveSection" style="display: none;">
+              <div class="settings-desc" style="margin-bottom: 10px;">
+                ☁️ 클라우드 세이브: 로그인한 사용자는 클라우드에 저장하여 여러 기기에서 진행 상황을 동기화할 수 있습니다.
+              </div>
+              <div style="display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                <button class="btn settings-btn" id="cloudUploadBtn" style="background: var(--info); color: white; min-width: 160px;">
+                  ☁️ 클라우드 저장
+                </button>
+                <button class="btn settings-btn" id="cloudDownloadBtn" style="background: var(--btn2); color: var(--text); min-width: 160px;">
+                  ☁️ 클라우드 불러오기
+                </button>
+              </div>
+              <div class="settings-desc" id="cloudSaveHint" style="margin-bottom: 10px;">
+                로컬 저장은 5초마다 자동으로 이루어집니다. 클라우드 저장은 탭을 닫을 때 자동으로 업로드되며, 수동으로도 저장/불러오기가 가능합니다.
+              </div>
+              <div class="settings-info-group" style="margin-bottom: 16px;">
+                <div class="settings-info-item">
+                  <span class="settings-info-label">마지막 클라우드 동기화</span>
+                  <span class="settings-info-value" id="cloudLastSync">--:--</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 비로그인 상태 안내 -->
+            <div id="guestSaveInfo" class="settings-desc" style="margin-bottom: 16px;">
+              게스트 모드에서는 브라우저 LocalStorage에만 저장됩니다. 여러 기기에서 진행 상황을 동기화하려면 로그인이 필요합니다.
+            </div>
+
+            <!-- 저장 정보 -->
+            <div class="settings-info-group" style="margin-bottom: 16px;">
+              <div class="settings-info-item">
+                <span class="settings-info-label">자동 저장 주기</span>
+                <span class="settings-info-value">5초마다</span>
+              </div>
+              <div class="settings-info-item">
+                <span class="settings-info-label">저장 위치</span>
+                <span class="settings-info-value">브라우저 LocalStorage</span>
+              </div>
+              <div class="settings-info-item">
+                <span class="settings-info-label">마지막 저장</span>
+                <span class="settings-info-value" id="lastSaveTimeSettings">--:--</span>
+              </div>
+            </div>
+
+            <!-- 저장 내보내기/가져오기 (숨김) -->
+            <button class="btn settings-btn" id="exportSaveBtn" style="background: var(--primary); color: white; min-width: 160px; display: none;">
+              📤 저장 내보내기
+            </button>
+            <div class="settings-desc" style="display: none;">
+              저장 내용을 백업하거나 다른 컴퓨터로 전송
+            </div>
+            <button class="btn settings-btn" id="importSaveBtn" style="background: var(--secondary); color: white; min-width: 160px; display: none;">
+              📥 저장 가져오기
+            </button>
+            <div class="settings-desc" style="display: none;">
+              백업한 저장 파일 불러오기
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+          </div>
+        </div>
+
+        <!-- 게임 새로 시작 (분리) -->
+        <div class="stats-section">
+          <h3>🔄 게임 새로 시작</h3>
+          <div class="settings-button-group">
+            <button class="reset-btn settings-btn" id="resetBtnSettings" style="background: var(--bad); color: white; min-width: 160px;">
+              🔄 게임 새로 시작
+            </button>
+            <div class="settings-warning">
+              ⚠️ 게임을 새로 시작하면 모든 진행 상황이 삭제되며 복구할 수 없습니다.
+            </div>
+          </div>
+        </div>
+
+        
+      </section>
+    </div>
+
+    </div><!-- /.tab-wrapper -->
+
+    <!-- 하단 네비게이션 -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-tab="workTab">
+        <div>🛠️</div>
+        <span>노동</span>
+      </button>
+      <button class="nav-btn" data-tab="shopTab">
+        <div>💰</div>
+        <span>투자</span>
+      </button>
+      <button class="nav-btn" data-tab="statsTab">
+        <div>📊</div>
+        <span>통계</span>
+      </button>
+      <button class="nav-btn" data-tab="rankingTab">
+        <div>🏅</div>
+        <span>랭킹</span>
+      </button>
+      <button class="nav-btn" data-tab="settingsTab">
+        <div>⚙️</div>
+        <span>설정</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- 공통 모달: 안내 / 확인 -->
+  <div id="gameModalRoot" class="game-modal-overlay game-modal-hidden" role="dialog" aria-modal="true" aria-labelledby="gameModalTitle" aria-describedby="gameModalMessage">
+    <div class="game-modal">
+      <h2 id="gameModalTitle" class="game-modal-title">
+        <span class="icon">ℹ️</span>
+        <span class="text">알림</span>
+      </h2>
+      <p id="gameModalMessage" class="game-modal-message"></p>
+      <div class="game-modal-actions">
+        <button id="gameModalSecondary" type="button" class="btn btn-secondary">취소</button>
+        <button id="gameModalPrimary" type="button" class="btn">확인</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+
