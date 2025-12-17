@@ -56,6 +56,7 @@ function showInAppBrowserWarningIfNeeded() {
     <strong>Chrome / Safari 등 기본 브라우저에서 다시 열어 주세요.</strong>
     <div class="inapp-warning-actions">
       <button type="button" class="btn-small" id="copyGameUrlBtn">URL 복사</button>
+      <button type="button" class="btn-small" id="closeInappWarningBtn">확인</button>
     </div>
   `;
   document.body.prepend(banner);
@@ -95,6 +96,13 @@ function showInAppBrowserWarningIfNeeded() {
       } catch (err) {
         alert(url + '\n위 주소를 복사해서 Chrome/Safari에서 직접 열어 주세요.');
       }
+    });
+  }
+
+  const closeBtn = banner.querySelector('#closeInappWarningBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      banner.remove();
     });
   }
 }
@@ -6355,14 +6363,11 @@ document.addEventListener('DOMContentLoaded', () => {
               // 먼저 로그인 상태 확인
               const user = await getUser();
               if (!user) {
-                // 비로그인 상태: 바로 로그인 버튼 표시
+                // 비로그인 상태: 간단한 문구 + 버튼만 표시
                 myRankContent.innerHTML = `
-                  <div class="my-rank-card">
-                    <div class="my-rank-header">
-                      <span class="my-rank-label">내 기록</span>
-                      <span class="my-rank-note">로그인 필요</span>
-                    </div>
-                    <div class="my-rank-meta" style="justify-content: center; padding: 20px 0;">
+                  <div class="leaderboard-my-rank-empty">
+                    로그인 후에 내 순위를 볼 수 있습니다.
+                    <div class="leaderboard-my-rank-actions">
                       <button type="button" class="btn" id="openLoginFromRanking">
                         🔐 Google로 로그인
                       </button>
@@ -6398,14 +6403,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!rankResult.success || !rankResult.data) {
                   let innerHtml = '';
                   if (rankResult.errorType === 'forbidden') {
-                    // 권한 부족: 로그인 버튼 표시
+                    // 권한 부족: 간단한 문구 + 버튼만 표시
                     innerHtml = `
-                      <div class="my-rank-card">
-                        <div class="my-rank-header">
-                          <span class="my-rank-label">내 기록</span>
-                          <span class="my-rank-note">로그인 필요</span>
-                        </div>
-                        <div class="my-rank-meta" style="justify-content: center; padding: 20px 0;">
+                      <div class="leaderboard-my-rank-empty">
+                        로그인 후에 내 순위를 볼 수 있습니다.
+                        <div class="leaderboard-my-rank-actions">
                           <button type="button" class="btn" id="openLoginFromRanking">
                             🔐 Google로 로그인
                           </button>
