@@ -3863,6 +3863,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (nicknameInfoItem) {
           nicknameInfoItem.style.display = playerNickname ? 'flex' : 'none';
         }
+
+        // Supabase 진단 배지는 프로덕션에서는 표시하지 않음 (디버그 코드 제거)
         // totalClicks 값 유효성 검사
         if (typeof totalClicks !== 'number' || totalClicks < 0) {
           console.warn('Invalid totalClicks value:', totalClicks, 'resetting to 0');
@@ -6010,6 +6012,28 @@ document.addEventListener('DOMContentLoaded', () => {
     let __leaderboardUpdateTimer = null;
     const LEADERBOARD_UPDATE_INTERVAL = 10000; // 10초마다 업데이트
     const LEADERBOARD_TIMEOUT = 7000; // 7초 타임아웃
+
+    // 플레이타임 포맷터 (ms 고정)
+    function formatPlaytimeMs(ms) {
+      if (!ms || ms <= 0) return '—';
+      const minutes = Math.floor(ms / 1000 / 60);
+      if (minutes <= 0) return '1분 미만';
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      if (h > 0) return m ? `${h}시간 ${m}분` : `${h}시간`;
+      return `${m}분`;
+    }
+
+    function formatPlaytimeMsShort(ms) {
+      if (!ms || ms <= 0) return '—';
+      const minutes = Math.floor(ms / 1000 / 60);
+      if (minutes <= 0) return '<1m';
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      if (h >= 100) return `${h}h`; // 너무 길어지면 분 생략
+      if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+      return `${m}m`;
+    }
     
     async function updateLeaderboardUI(force = false) {
       const container = document.getElementById('leaderboardContainer');
@@ -6141,68 +6165,71 @@ document.addEventListener('DOMContentLoaded', () => {
           
           console.log('리더보드: 항목 수', entries.length);
           
-          // 리더보드 HTML 생성
-          const list = document.createElement('div');
-          list.className = 'leaderboard-list';
+          // 리더보드 HTML 생성 (테이블 형태)
+          const table = document.createElement('table');
+          table.className = 'leaderboard-table';
+
+          const thead = document.createElement('thead');
+          thead.innerHTML = `
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-nickname">닉네임</th>
+              <th class="col-assets">자산</th>
+              <th class="col-playtime">시간</th>
+            </tr>
+          `;
+          table.appendChild(thead);
+
+          const tbody = document.createElement('tbody');
           
           let myEntry = null;
           const currentNickLower = (playerNickname || '').trim().toLowerCase();
 
           entries.forEach((entry, index) => {
-            const item = document.createElement('div');
-            item.className = `leaderboard-item ${index < 3 ? 'top3' : ''}`;
-            
-            const rank = document.createElement('div');
-            rank.className = 'leaderboard-rank';
-            if (index === 0) rank.textContent = '🥇';
-            else if (index === 1) rank.textContent = '🥈';
-            else if (index === 2) rank.textContent = '🥉';
-            else rank.textContent = `${index + 1}`;
-            
-            const info = document.createElement('div');
-            info.className = 'leaderboard-info';
-            
-            const nickname = document.createElement('div');
-            nickname.className = 'leaderboard-nickname';
-            nickname.textContent = entry.nickname || '익명';
-            
-            const stats = document.createElement('div');
-            stats.className = 'leaderboard-stats';
-            
-            // 플레이타임 포맷
-            const playTimeMs = entry.play_time_ms || 0;
-            const playTimeMinutes = Math.floor(playTimeMs / 60000);
-            const playTimeHours = Math.floor(playTimeMinutes / 60);
-            const remainingMinutes = playTimeMinutes % 60;
-            const playTimeText = playTimeHours > 0 
-              ? `${playTimeHours}시간 ${remainingMinutes}분` 
-              : `${playTimeMinutes}분`;
-            
-            stats.innerHTML = `
-              <span>💰 ${formatStatsNumber(entry.total_assets || 0)}</span>
-              <span>⏱️ ${playTimeText}</span>
-            `;
-            
-            info.appendChild(nickname);
-            info.appendChild(stats);
+            const tr = document.createElement('tr');
+
+            // 순위 셀
+            const rankTd = document.createElement('td');
+            rankTd.className = 'col-rank';
+            rankTd.textContent = String(index + 1);
+
+            // 닉네임 셀
+            const nickTd = document.createElement('td');
+            nickTd.className = 'col-nickname';
+            nickTd.textContent = entry.nickname || '익명';
+
+            // 자산 셀
+            const assetsTd = document.createElement('td');
+            assetsTd.className = 'col-assets';
+            const assetsValue = Math.floor(entry.total_assets || 0);
+            assetsTd.textContent = `${assetsValue.toLocaleString('ko-KR')}원`;
+
+            // 플레이타임 셀
+            const playtimeTd = document.createElement('td');
+            playtimeTd.className = 'col-playtime';
+            playtimeTd.textContent = formatPlaytimeMsShort(entry.play_time_ms || 0);
             
             // 내 닉네임 하이라이트 + 내 엔트리 캐시
             const entryNickLower = (entry.nickname || '').trim().toLowerCase();
             if (currentNickLower && currentNickLower === entryNickLower) {
-              item.classList.add('is-me');
+              tr.classList.add('is-me');
               myEntry = {
                 rank: index + 1,
                 ...entry
               };
             }
 
-            item.appendChild(rank);
-            item.appendChild(info);
-            list.appendChild(item);
+            tr.appendChild(rankTd);
+            tr.appendChild(nickTd);
+            tr.appendChild(assetsTd);
+            tr.appendChild(playtimeTd);
+            tbody.appendChild(tr);
           });
-          
+
+          table.appendChild(tbody);
+
           container.innerHTML = '';
-          container.appendChild(list);
+          container.appendChild(table);
           __leaderboardLastUpdate = Date.now();
           console.log('리더보드: 업데이트 완료');
 
@@ -6227,24 +6254,20 @@ document.addEventListener('DOMContentLoaded', () => {
               `;
             } else if (myEntry) {
               // Top10 안에 있을 때: 이미 계산된 myEntry 사용
-              const playTimeMs = myEntry.play_time_ms || 0;
-              const playTimeMinutes = Math.floor(playTimeMs / 60000);
-              const playTimeHours = Math.floor(playTimeMinutes / 60);
-              const remainingMinutes = playTimeMinutes % 60;
-              const playTimeText = playTimeHours > 0 
-                ? `${playTimeHours}시간 ${remainingMinutes}분` 
-                : `${playTimeMinutes}분`;
-
+              const playTimeText = formatPlaytimeMs(myEntry.play_time_ms || 0);
               myRankContent.innerHTML = `
-                <div class="leaderboard-my-rank-row is-me">
-                  <div class="leaderboard-my-rank-main">
-                    <span class="label">내 닉네임</span>
-                    <span class="value">${myEntry.nickname || playerNickname || '익명'}</span>
+                <div class="my-rank-card">
+                  <div class="my-rank-header">
+                    <span class="my-rank-label">내 기록</span>
+                    <span class="my-rank-rank-badge">${myEntry.rank}위</span>
                   </div>
-                  <div class="leaderboard-my-rank-stats">
-                    <span>순위: ${myEntry.rank}위 (TOP 10)</span>
-                    <span>💰 ${formatStatsNumber(myEntry.total_assets || 0)}</span>
-                    <span>⏱️ ${playTimeText}</span>
+                  <div class="my-rank-main">
+                    <div class="my-rank-name">${myEntry.nickname || playerNickname || '익명'}</div>
+                    <div class="my-rank-assets">💰 ${formatStatsNumber(myEntry.total_assets || 0)}</div>
+                  </div>
+                  <div class="my-rank-meta">
+                    <span class="my-rank-playtime">⏱️ ${playTimeText}</span>
+                    <span class="my-rank-note">TOP 10 내 순위</span>
                   </div>
                 </div>
               `;
@@ -6273,24 +6296,20 @@ document.addEventListener('DOMContentLoaded', () => {
                   `;
                 } else {
                   const me = rankResult.data;
-                  const playTimeMs = me.play_time_ms || 0;
-                  const playTimeMinutes = Math.floor(playTimeMs / 60000);
-                  const playTimeHours = Math.floor(playTimeMinutes / 60);
-                  const remainingMinutes = playTimeMinutes % 60;
-                  const playTimeText = playTimeHours > 0 
-                    ? `${playTimeHours}시간 ${remainingMinutes}분` 
-                    : `${playTimeMinutes}분`;
-
+                  const playTimeText = formatPlaytimeMs(me.play_time_ms || 0);
                   myRankContent.innerHTML = `
-                    <div class="leaderboard-my-rank-row is-me">
-                      <div class="leaderboard-my-rank-main">
-                        <span class="label">내 닉네임</span>
-                        <span class="value">${me.nickname || playerNickname || '익명'}</span>
+                    <div class="my-rank-card">
+                      <div class="my-rank-header">
+                        <span class="my-rank-label">내 기록</span>
+                        <span class="my-rank-rank-badge">${me.rank}위</span>
                       </div>
-                      <div class="leaderboard-my-rank-stats">
-                        <span>순위: ${me.rank}위</span>
-                        <span>💰 ${formatStatsNumber(me.total_assets || 0)}</span>
-                        <span>⏱️ ${playTimeText}</span>
+                      <div class="my-rank-main">
+                        <div class="my-rank-name">${me.nickname || playerNickname || '익명'}</div>
+                        <div class="my-rank-assets">💰 ${formatStatsNumber(me.total_assets || 0)}</div>
+                      </div>
+                      <div class="my-rank-meta">
+                        <span class="my-rank-playtime">⏱️ ${playTimeText}</span>
+                        <span class="my-rank-note">내 실제 순위</span>
                       </div>
                     </div>
                   `;
@@ -6690,8 +6709,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // 즉시 1회 업데이트
       updateLeaderboardUI(true);
       
-      // 10초마다 폴링
-      __lbInterval = setInterval(() => {
+      // 다음 분(정각)까지 대기 후, 1분마다 갱신
+      const now = Date.now();
+      const delayToNextMinute = 60000 - (now % 60000);
+
+      __lbInterval = setTimeout(function tick() {
         const rankingActive = rankingTab.classList.contains('active');
         // 모바일에서는 active 여부를 계속 검사, 데스크톱에서는 IntersectionObserver가 stop을 담당
         if (!isDesktopLayout() && !rankingActive) {
@@ -6699,12 +6721,13 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         updateLeaderboardUI(false);
-      }, 10000);
+        __lbInterval = setTimeout(tick, 60000);
+      }, delayToNextMinute);
     }
     
     function stopLeaderboardPolling() {
       if (__lbInterval) {
-        clearInterval(__lbInterval);
+        clearTimeout(__lbInterval);
         __lbInterval = null;
       }
     }

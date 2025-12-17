@@ -44,7 +44,7 @@
   - Supabase `leaderboard` 테이블 사용 (테이블/RLS는 `supabase/leaderboard.sql`로 관리)
   - 리더보드 데이터: 닉네임, 총 자산, 플레이타임
   - 업데이트: 게임 저장 시 30초마다 자동 업데이트 (닉네임이 있을 때만)
-  - 조회: **랭킹 탭**에서만 업데이트 (로딩 상태 관리, 10초 쿨다운, 타임아웃 처리, IntersectionObserver 기반 가시성 체크)
+  - 조회: **랭킹 탭**에서만 업데이트 (로딩 상태 관리, 1분 간격 폴링, 타임아웃 처리, IntersectionObserver 기반 가시성 체크)
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
   - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.

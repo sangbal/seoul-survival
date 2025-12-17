@@ -1833,66 +1833,146 @@
       font-size: 20px;
     }
     
-    /* 리더보드 스타일 */
-    .leaderboard-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .leaderboard-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      background: var(--panel);
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,.04);
-    }
-    
-    .leaderboard-item.top3 {
-      border: 2px solid var(--accent);
-      box-shadow: 0 0 15px rgba(94, 234, 212, 0.3);
-    }
-    
-    .leaderboard-rank {
-      font-size: 18px;
-      font-weight: 700;
-      min-width: 32px;
-      text-align: center;
-      color: var(--accent);
-    }
-    
-    .leaderboard-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    
-    .leaderboard-nickname {
-      font-weight: 600;
-      color: var(--text);
-      font-size: 14px;
-    }
-    
-    .leaderboard-stats {
-      display: flex;
-      gap: 12px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-    
+    /* 리더보드 스타일 (테이블 + 내 기록 카드) */
     .leaderboard-loading {
       text-align: center;
       padding: 20px;
       color: var(--muted);
     }
-    
     .leaderboard-error {
       text-align: center;
       padding: 20px;
       color: var(--bad);
+    }
+
+    .leaderboard-my-rank {
+      margin-bottom: 12px;
+    }
+    .leaderboard-my-rank-empty,
+    .leaderboard-my-rank-loading,
+    .leaderboard-my-rank-error {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .leaderboard-my-rank-error {
+      color: var(--danger);
+    }
+
+    .my-rank-card {
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6));
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .my-rank-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .my-rank-label {
+      font-weight: 600;
+    }
+    .my-rank-rank-badge {
+      font-weight: 700;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      color: rgb(56, 189, 248);
+    }
+    .my-rank-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .my-rank-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .my-rank-assets {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+    }
+    .my-rank-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .my-rank-playtime {
+      opacity: 0.9;
+    }
+    .my-rank-note {
+      opacity: 0.8;
+    }
+
+    .leaderboard-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .leaderboard-table thead th,
+    .leaderboard-table tbody td {
+      padding: 10px 10px;
+      line-height: 1.2;
+      vertical-align: middle;
+    }
+    .leaderboard-table thead th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .leaderboard-table tbody tr + tr td {
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .leaderboard-table .col-rank {
+      width: 40px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .leaderboard-table .col-nickname {
+      min-width: 5ch;
+      width: 5ch;
+      max-width: 5ch;
+      overflow: visible;
+      text-overflow: clip;
+      white-space: nowrap;
+    }
+    .leaderboard-table .col-assets {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .leaderboard-table .col-playtime {
+      width: 56px;
+      text-align: right;
+      font-size: 12px;
+      opacity: 0.85;
+      white-space: nowrap;
+    }
+    .leaderboard-table tbody tr.is-me {
+      background: rgba(120,255,220,0.06);
+    }
+    .leaderboard-table tbody tr.is-me td:first-child {
+      position: relative;
+    }
+    .leaderboard-table tbody tr.is-me td:first-child::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      border-radius: 2px;
+      background: rgba(120,255,220,0.9);
     }
     
     /* 닉네임 입력 모달 */
@@ -2640,9 +2720,9 @@
 
         <!-- 내 순위 영역 -->
         <div class="stats-section" id="myRankSection">
-          <h3>내 순위</h3>
+          <h3>내 기록</h3>
           <div class="leaderboard-my-rank" id="myRankContent">
-            <!-- JS에서 닉네임/자산/플레이타임 및 순위(TBD)를 채움 -->
+            <!-- JS에서 닉네임/자산/플레이타임 및 순위를 채움 -->
             <div class="leaderboard-my-rank-empty">
               닉네임을 설정하면 내 순위와 기록이 여기 표시됩니다.
             </div>
@@ -2759,7 +2839,7 @@
           <div class="settings-info-group">
             <div class="settings-info-item">
               <span class="settings-info-label">상태</span>
-              <span class="settings-info-value" id="authStatusLabel">SSO 설정 필요 (shared/auth/config.js)</span>
+              <span class="settings-info-value" id="authStatusLabel">게스트 모드 (로그인 준비 중)</span>
             </div>
             <div class="settings-info-item">
               <span class="settings-info-label">사용자</span>

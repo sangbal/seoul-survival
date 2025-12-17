@@ -8,6 +8,15 @@
 // 정적 ESM 환경(직접 호스팅)에서는 env가 비어 있어 SSO/리더보드가 비활성(게스트 모드)로 동작한다.
 const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
 
+// 진단용 로그 (개발 시 env 주입 여부 확인)
+try {
+  console.log('[env] VITE_SUPABASE_URL:', env.VITE_SUPABASE_URL);
+  console.log(
+    '[env] VITE_SUPABASE_ANON_KEY length:',
+    (env.VITE_SUPABASE_ANON_KEY || '').length
+  );
+} catch {}
+
 export const SUPABASE_URL = env.VITE_SUPABASE_URL ?? '';
 export const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY ?? '';
 
@@ -15,13 +24,25 @@ export const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY ?? '';
 export const AUTH_STORAGE_KEY = 'clicksurvivor-auth';
 
 export function isSupabaseConfigured() {
-  return (
+  const ok =
     typeof SUPABASE_URL === 'string' &&
     typeof SUPABASE_ANON_KEY === 'string' &&
     SUPABASE_URL.startsWith('https://') &&
     SUPABASE_URL.length > 'https://'.length &&
-    SUPABASE_ANON_KEY.length > 0
-  );
+    SUPABASE_ANON_KEY.length > 0;
+
+  if (!ok) {
+    try {
+      console.warn('[auth] Supabase not configured', {
+        urlEmpty: !SUPABASE_URL,
+        anonEmpty: !SUPABASE_ANON_KEY,
+        urlValue: SUPABASE_URL || '(empty)',
+        anonLen: (SUPABASE_ANON_KEY || '').length,
+      });
+    } catch {}
+  }
+
+  return ok;
 }
 
 

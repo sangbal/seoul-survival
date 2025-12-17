@@ -50,3 +50,7 @@ _backup/
 # Generated reports
 upgrade_report.md
 
+# Env files (Supabase 등 민감 정보)
+.env.local
+.env
+

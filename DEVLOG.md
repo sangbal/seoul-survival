@@ -52,6 +52,9 @@
   - README의 Supabase 설정 섹션을 `.env.local` 예시(`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) 기반으로 업데이트.
   - GitHub Actions 워크플로우(`.github/workflows/deploy.yml`)를 추가/보강해, CI에서 env를 Secrets로 주입하고 `npm run build` 결과(`dist`)를 `gh-pages` 브랜치로 배포하도록 구성 (`permissions.contents: write`, `publish_branch: gh-pages`, `cname: clicksurvivor.com` 설정).
   - GitHub Pages에서 `/seoulsurvival/` 404 문제를 해결하기 위해 Vite 다중 엔트리 구성(`vite.config.js`)을 추가하고, `dist/index.html`(허브) + `dist/seoulsurvival/index.html`(게임) 둘 다 빌드되도록 수정.
+  - 랭킹 탭 UI를 "내 기록 카드 + TOP10 순위표(table)" 구조로 개편: `seoulsurvival/src/main.js`의 `updateLeaderboardUI()`에서 div 리스트 렌더링을 `<table class="leaderboard-table">` 기반으로 변경하고, `myRankContent`는 `.my-rank-card` 카드형 레이아웃으로 재구성하여 프리미어리그 스타일의 가독성 높은 순위/내 기록 표시를 제공.
+  - 로컬/배포 환경에서 Supabase env 주입 여부를 진단하기 위해 `shared/auth/config.js`에 env/키 길이 로그와 `isSupabaseConfigured()` 상세 로그를 추가했으며, 최종 프로덕션 UI에서는 설정 탭 Supabase 디버그 배지를 제거해 사용자-facing 화면을 정리.
+  - 리더보드 TOP10 순위표의 레이아웃을 안정화하기 위해 `.leaderboard-table`에 table-layout: fixed, 컬럼 폭 재조정(.col-rank/.col-assets/.col-playtime) 및 row 구분선을 적용하고, 플레이타임은 `formatPlaytimeMs`/`formatPlaytimeMsShort` 헬퍼로 `43분`, `2h 03m` 같은 축약 포맷으로 표시하도록 개선했으며, 닉네임은 최대 5글자가 항상 잘리지 않도록 5ch 폭을 보장.
 
 ## 2025-01-17
 - **[hub] 허브 홈페이지 UI/UX 개선**
@@ -147,7 +150,7 @@
 ### 리더보드 쓰기/읽기 정합성 메모
 - **쓰기(Write)**: 게임 진행 중 `saveGame()` 호출 시 `updateLeaderboardEntry()`가 불려, Supabase `leaderboard` 테이블에 `nickname / total_assets / play_time_ms`를 업서트한다.
 - **읽기(Read)**: 랭킹 탭의 `updateLeaderboardUI()`는 항상 Supabase 서버에 저장된 값을 기준으로 `getLeaderboard()`/`getMyRank()`를 호출해 Top 10과 내 순위를 표시한다.
-- **즉시 최신화가 아닌 이유**: 리더보드 쓰기는 게임 저장 이벤트에 묶여 있고, 읽기는 랭킹 탭이 화면에 보일 때 10초 간격 폴링 + 네트워크/타임아웃/권한 에러 처리 후 UI를 갱신하기 때문에, 저장 직후 한두 번의 폴링 주기 지연이 있을 수 있다.
+- **즉시 최신화가 아닌 이유**: 리더보드 쓰기는 게임 저장 이벤트에 묶여 있고, 읽기는 랭킹 탭이 화면에 보일 때 **매 분(정각 기준) 1회** 폴링 + 네트워크/타임아웃/권한 에러 처리 후 UI를 갱신하기 때문에, 저장 직후 한두 번의 폴링 주기 지연이 있을 수 있다.
 - **PC 레이아웃**: 데스크톱에서는 탭 active 여부 대신 IntersectionObserver로 랭킹 영역이 실제로 화면에 보이는 동안에만 폴링을 수행하므로, 숨겨진 상태에서 불필요한 호출은 하지 않는다.
 - **요약**: 리더보드는 “최근 저장된 서버 상태”를 보여주며, 저장 빈도/탭 노출/네트워크 상태에 따라 체감상 약간의 지연이 발생할 수 있지만, 무한 로딩 대신 명시적인 에러/갱신 시각 UI로 상태를 노출한다.
 
