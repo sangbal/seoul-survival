@@ -7,7 +7,7 @@ import { getDomRefs } from './ui/domRefs.js';
 import { safeClass, safeHTML, safeText } from './ui/domUtils.js';
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
 import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
-import { getUser, onAuthStateChange } from '../../shared/auth/core.js';
+import { getUser, onAuthStateChange, signInWithOAuth } from '../../shared/auth/core.js';
 import { isSupabaseConfigured } from '../../shared/auth/config.js';
 import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname, getMyRank } from '../../shared/leaderboard.js';
 
@@ -65,10 +65,35 @@ function showInAppBrowserWarningIfNeeded() {
     copyBtn.addEventListener('click', async () => {
       const url = 'https://clicksurvivor.com/seoulsurvival/';
       try {
-        await navigator.clipboard.writeText(url);
-        alert('주소가 복사되었습니다.\nChrome/Safari 주소창에 붙여넣어 열어 주세요.');
-      } catch {
-        alert(url + '\n위 주소를 Chrome/Safari 에서 직접 열어 주세요.');
+        // 클립보드 API 시도 (HTTPS/localhost에서 동작)
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+          alert('주소가 복사되었습니다.\nChrome/Safari 주소창에 붙여넣어 열어 주세요.');
+          return;
+        }
+        // Fallback: execCommand 사용
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) {
+            alert('주소가 복사되었습니다.\nChrome/Safari 주소창에 붙여넣어 열어 주세요.');
+          } else {
+            throw new Error('execCommand failed');
+          }
+        } catch (err) {
+          alert(url + '\n위 주소를 복사해서 Chrome/Safari에서 직접 열어 주세요.');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      } catch (err) {
+        alert(url + '\n위 주소를 복사해서 Chrome/Safari에서 직접 열어 주세요.');
       }
     });
   }
@@ -6060,24 +6085,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // 설정 탭의 Google 로그인 버튼으로 스크롤/하이라이트 (랭킹 탭에서 호출)
-    function focusGoogleLoginFromRanking() {
-      try {
-        const settingsNavBtn = document.querySelector('.nav-btn[data-tab="settingsTab"]');
-        if (settingsNavBtn) settingsNavBtn.click();
-
-        setTimeout(() => {
-          const googleBtn = document.querySelector('#authProviderButtons [data-auth-provider="google"]');
-          if (!googleBtn) return;
-          googleBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          googleBtn.classList.add('pulse-once');
-          setTimeout(() => googleBtn.classList.remove('pulse-once'), 1000);
-        }, 200);
-      } catch (e) {
-        console.warn('focusGoogleLoginFromRanking error', e);
-      }
-    }
-
     // 리더보드 UI 업데이트 함수 (디바운싱 및 로딩/실패/타임아웃 상태 관리)
     let __leaderboardLoading = false;
     let __leaderboardLastUpdate = 0;
@@ -6356,19 +6363,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!rankResult.success || !rankResult.data) {
                   let innerHtml = '';
                   if (rankResult.errorType === 'forbidden') {
-                    // 비로그인/권한 부족: 로그인 유도 카드
+                    // 비로그인/권한 부족: 로그인 버튼만 표시
                     innerHtml = `
                       <div class="my-rank-card">
                         <div class="my-rank-header">
                           <span class="my-rank-label">내 기록</span>
                           <span class="my-rank-note">로그인 필요</span>
                         </div>
-                        <div class="my-rank-main">
-                          <div class="my-rank-name">게스트</div>
-                          <div class="my-rank-assets">Google 로그인 후 내 순위를 볼 수 있습니다.</div>
-                        </div>
-                        <div class="my-rank-meta">
-                          <button type="button" class="btn btn-small" id="openLoginFromRanking">
+                        <div class="my-rank-meta" style="justify-content: center; padding: 20px 0;">
+                          <button type="button" class="btn" id="openLoginFromRanking">
                             🔐 Google로 로그인
                           </button>
                         </div>
@@ -6392,9 +6395,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                   const loginBtn = document.getElementById('openLoginFromRanking');
                   if (loginBtn) {
-                    loginBtn.addEventListener('click', (e) => {
+                    loginBtn.addEventListener('click', async (e) => {
                       e.preventDefault();
-                      focusGoogleLoginFromRanking();
+                      if (!isSupabaseConfigured()) {
+                        alert('현재는 게스트 모드입니다. 로그인 기능은 준비 중입니다.');
+                        return;
+                      }
+                      const result = await signInWithOAuth('google');
+                      if (!result.ok) {
+                        alert('로그인에 실패했습니다. 다시 시도해 주세요.');
+                      }
                     });
                   }
                 } else {
