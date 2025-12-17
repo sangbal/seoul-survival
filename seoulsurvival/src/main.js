@@ -33,6 +33,47 @@ if (!__IS_DEV__) {
   console.error = () => {};
 }
 
+// 인앱 브라우저(카카오톡/인스타 등) 감지
+function detectInAppBrowser() {
+  const ua = navigator.userAgent || '';
+  const isKakao = ua.includes('KAKAOTALK');
+  const isInstagram = ua.includes('Instagram');
+  const isFacebook = ua.includes('FBAN') || ua.includes('FBAV');
+  const isLine = ua.includes('Line');
+  const isWeChat = ua.includes('MicroMessenger');
+  const isInApp = isKakao || isInstagram || isFacebook || isLine || isWeChat;
+  return { isInApp, isKakao, isInstagram, isFacebook, isLine, isWeChat };
+}
+
+function showInAppBrowserWarningIfNeeded() {
+  const { isInApp } = detectInAppBrowser();
+  if (!isInApp) return;
+
+  const banner = document.createElement('div');
+  banner.className = 'inapp-warning-banner';
+  banner.innerHTML = `
+    이 브라우저에서는 Google 로그인이 제한될 수 있습니다.<br />
+    <strong>Chrome / Safari 등 기본 브라우저에서 다시 열어 주세요.</strong>
+    <div class="inapp-warning-actions">
+      <button type="button" class="btn-small" id="copyGameUrlBtn">URL 복사</button>
+    </div>
+  `;
+  document.body.prepend(banner);
+
+  const copyBtn = banner.querySelector('#copyGameUrlBtn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const url = 'https://clicksurvivor.com/seoulsurvival/';
+      try {
+        await navigator.clipboard.writeText(url);
+        alert('주소가 복사되었습니다.\nChrome/Safari 주소창에 붙여넣어 열어 주세요.');
+      } catch {
+        alert(url + '\n위 주소를 Chrome/Safari 에서 직접 열어 주세요.');
+      }
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // ======= fixed header 높이만큼 본문 상단 여백 자동 보정 =======
@@ -46,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     __syncHeaderHeightVar();
+    showInAppBrowserWarningIfNeeded();
     window.addEventListener('resize', __syncHeaderHeightVar);
     // 모바일 주소창/뷰포트 변화 대응
     try {
@@ -6018,6 +6060,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
+    // 설정 탭의 Google 로그인 버튼으로 스크롤/하이라이트 (랭킹 탭에서 호출)
+    function focusGoogleLoginFromRanking() {
+      try {
+        const settingsNavBtn = document.querySelector('.nav-btn[data-tab="settingsTab"]');
+        if (settingsNavBtn) settingsNavBtn.click();
+
+        setTimeout(() => {
+          const googleBtn = document.querySelector('#authProviderButtons [data-auth-provider="google"]');
+          if (!googleBtn) return;
+          googleBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          googleBtn.classList.add('pulse-once');
+          setTimeout(() => googleBtn.classList.remove('pulse-once'), 1000);
+        }, 200);
+      } catch (e) {
+        console.warn('focusGoogleLoginFromRanking error', e);
+      }
+    }
+
     // 리더보드 UI 업데이트 함수 (디바운싱 및 로딩/실패/타임아웃 상태 관리)
     let __leaderboardLoading = false;
     let __leaderboardLastUpdate = 0;
@@ -6294,18 +6354,49 @@ document.addEventListener('DOMContentLoaded', () => {
               try {
                 const rankResult = await getMyRank(playerNickname, 'assets');
                 if (!rankResult.success || !rankResult.data) {
-                  const msg =
-                    rankResult.errorType === 'forbidden'
-                      ? '권한이 없어 내 순위를 불러올 수 없습니다.'
-                      : rankResult.errorType === 'network'
-                      ? '네트워크 오류로 내 순위를 불러올 수 없습니다.'
-                      : '내 순위를 불러올 수 없습니다.';
+                  let innerHtml = '';
+                  if (rankResult.errorType === 'forbidden') {
+                    // 비로그인/권한 부족: 로그인 유도 카드
+                    innerHtml = `
+                      <div class="my-rank-card">
+                        <div class="my-rank-header">
+                          <span class="my-rank-label">내 기록</span>
+                          <span class="my-rank-note">로그인 필요</span>
+                        </div>
+                        <div class="my-rank-main">
+                          <div class="my-rank-name">게스트</div>
+                          <div class="my-rank-assets">Google 로그인 후 내 순위를 볼 수 있습니다.</div>
+                        </div>
+                        <div class="my-rank-meta">
+                          <button type="button" class="btn btn-small" id="openLoginFromRanking">
+                            🔐 Google로 로그인
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                  } else if (rankResult.errorType === 'network') {
+                    innerHtml = `
+                      <div class="leaderboard-my-rank-error">
+                        네트워크 오류로 내 순위를 불러올 수 없습니다.
+                      </div>
+                    `;
+                  } else {
+                    innerHtml = `
+                      <div class="leaderboard-my-rank-error">
+                        내 순위를 불러올 수 없습니다.
+                      </div>
+                    `;
+                  }
 
-                  myRankContent.innerHTML = `
-                    <div class="leaderboard-my-rank-error">
-                      ${msg}
-                    </div>
-                  `;
+                  myRankContent.innerHTML = innerHtml;
+
+                  const loginBtn = document.getElementById('openLoginFromRanking');
+                  if (loginBtn) {
+                    loginBtn.addEventListener('click', (e) => {
+                      e.preventDefault();
+                      focusGoogleLoginFromRanking();
+                    });
+                  }
                 } else {
                   const me = rankResult.data;
                   const playTimeText = formatPlaytimeMs(me.play_time_ms || 0);
