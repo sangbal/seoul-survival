@@ -78,9 +78,33 @@
     /* iOS 연타 시 더블탭-줌이 버튼에서 발생하는 케이스가 있어 버튼에도 명시 */
     #workBtn { touch-action: manipulation; }
     body{margin:0; background:linear-gradient(180deg,#0b1220,#0b1324 40%,#0c1428); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Arial, Apple Color Emoji, Segoe UI Emoji}
-    .app{max-width:1400px; margin:0 auto; padding:16px; padding-top:100px;}
+    .app{
+      /* 노동~설정 5개 섹션과 동일한 내부 폭을 갖는 레이아웃 컨테이너 */
+      max-width: 2000px;
+      margin:0 auto;
+      padding:16px 24px;      /* 좌우 여백: 섹션과 헤더 기준선 통일 */
+      padding-top:100px;
+      box-sizing:border-box;
+    }
     .grid{display:grid; grid-template-columns: 1.1fr 0.9fr; gap:16px}
-    header{position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:100; background:linear-gradient(180deg,#0b1220,#0b1324); box-shadow:0 4px 20px rgba(0,0,0,.5); padding:8px 16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; max-width:1400px; width:100%;}
+    header{
+      position:fixed;
+      top:0;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:100;
+      background:linear-gradient(180deg,#0b1220,#0b1324);
+      box-shadow:0 4px 20px rgba(0,0,0,.5);
+      padding:8px 24px;       /* 좌우 여백을 .app/.tab-wrapper와 통일 */
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      max-width:2000px;       /* .app 과 동일 최대 폭 */
+      width:100%;
+      box-sizing:border-box;
+    }
     .header-brand{
       flex: 1 1 auto;
       display:flex;
@@ -1213,12 +1237,14 @@
     #workTab h2,
     #shopTab h2,
     #statsTab h2,
-    #settingsTab h2 {
+    #settingsTab h2,
+    #rankingTab h2 {
       font-size: 16px;
     }
     
     #statsTab h3,
-    #settingsTab h3 {
+    #settingsTab h3,
+    #rankingTab h3 {
       font-size: 14px;
       margin-bottom: 10px;
     }
@@ -1983,31 +2009,58 @@
       }
     }
     
-    /* 태블릿: 2열 그리드 (노동 + 투자), 통계는 하단 */
-    @media (max-width: 1366px) {
+    /* 데스크톱(와이드): 5개 패널을 한 줄에 나열 (가로 스크롤 금지) */
+    @media (min-width: 1280px) {
+      html, body {
+        overflow-x: hidden; /* 페이지 가로 스크롤바 방지 */
+      }
+
+      /* 최상위 래퍼 id가 있으면 같이 방어(없으면 무시) */
+      #app, .app, .root, .container {
+        overflow-x: hidden;
+      }
+
       .tab-wrapper {
-        grid-template-columns: 1.1fr 0.9fr; /* 2열로 변경 */
-        grid-template-rows: auto auto;
+        display: flex;
+        flex-wrap: nowrap;        /* 한 줄 고정 */
+        gap: 8px;                 /* 섹션 간 최소 여백 */
+        align-items: flex-start;
+
+        /* 가로 스크롤 방지 */
+        overflow-x: hidden;
+
+        padding: 0 0 16px;       /* 가로 패딩은 .app에서 담당 */
+        justify-content: center;  /* 중앙 정렬 */
+
+        width: 100%;
+        box-sizing: border-box;
       }
-      
-      #workTab {
-        grid-column: 1;
-        grid-row: 1;
+
+      /* PC에서는 모든 탭을 항상 표시 (한 줄에 5개) */
+      .tab-content {
+        display: block !important;
+
+        /* 가로 공간을 균등 분배하되, 예전 PC 버전 감각(최대 380px)을 유지 */
+        flex: 1 1 clamp(320px, 20vw, 380px);
+        max-width: clamp(320px, 20vw, 380px);
+        min-width: 320px;
+
+        /* 내부 컨텐츠가 길어지면 페이지 전체 스크롤로 처리 */
+        height: auto;
+        overflow-y: visible;
+
+        box-sizing: border-box;
       }
-      
-      #shopTab {
-        grid-column: 2;
-        grid-row: 1;
-      }
-      
-      #statsTab {
-        grid-column: 1 / -1; /* 전체 너비 */
-        grid-row: 2;
+
+      /* 내부 요소가 폭을 넘치지 않도록 방어 */
+      .tab-content * {
+        max-width: 100%;
+        box-sizing: border-box;
       }
     }
     
-    /* 모바일에서만 하단 네비와 탭 시스템 활성화 */
-    @media (max-width: 768px) {
+    /* 모바일/중간 폭: 하단 네비 + 단일 탭 표시 */
+    @media (max-width: 1439px) {
       /* Grid 레이아웃 해제 */
       .tab-wrapper {
         display: block;
@@ -2144,8 +2197,8 @@
     </header>
 
     <div class="tab-wrapper">
-    <!-- 노동 탭 -->
-    <div id="workTab" class="tab-content active">
+      <!-- 노동 탭 -->
+      <div id="workTab" class="tab-content active">
       <section class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <h2 style="margin: 0;">🛠️ 노동</h2>
@@ -2320,7 +2373,7 @@
           </div>
         </div>
       </section>
-    </div>
+      </div>
 
     <!-- 통계 탭 -->
     <div id="statsTab" class="tab-content">
@@ -2400,7 +2453,28 @@
           </div>
         </div>
 
-        <!-- 3. 수익 구조 -->
+        <!-- 3. 효율 분석 -->
+        <div class="stats-section collapsible">
+          <h3 class="stats-toggle">⚡ 효율 순위 (개당 초당 수익) <span class="toggle-icon">▼</span></h3>
+          <div class="stats-content">
+            <div class="efficiency-list">
+              <div class="efficiency-item best">
+                <span class="rank">🥇</span>
+                <span id="bestEfficiency">-</span>
+              </div>
+              <div class="efficiency-item">
+                <span class="rank">🥈</span>
+                <span id="secondEfficiency">-</span>
+              </div>
+              <div class="efficiency-item">
+                <span class="rank">🥉</span>
+                <span id="thirdEfficiency">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 수익 구조 -->
         <div class="stats-section collapsible">
           <h3 class="stats-toggle">📈 수익 구조 <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
@@ -2455,7 +2529,7 @@
           </div>
         </div>
 
-        <!-- 4. 금융상품 상세 -->
+        <!-- 5. 금융상품 상세 -->
         <div class="stats-section collapsible">
           <h3 class="stats-toggle">💼 금융상품 <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
@@ -2504,7 +2578,7 @@
           </div>
         </div>
 
-        <!-- 5. 부동산 상세 -->
+        <!-- 6. 부동산 상세 -->
         <div class="stats-section collapsible">
           <h3 class="stats-toggle">🏢 부동산 <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
@@ -2553,28 +2627,39 @@
           </div>
         </div>
 
-        <!-- 6. 효율 분석 -->
-        <div class="stats-section collapsible">
-          <h3 class="stats-toggle">⚡ 효율 순위 (개당 초당 수익) <span class="toggle-icon">▼</span></h3>
-          <div class="stats-content">
-            <div class="efficiency-list">
-              <div class="efficiency-item best">
-                <span class="rank">🥇</span>
-                <span id="bestEfficiency">-</span>
-              </div>
-              <div class="efficiency-item">
-                <span class="rank">🥈</span>
-                <span id="secondEfficiency">-</span>
-              </div>
-              <div class="efficiency-item">
-                <span class="rank">🥉</span>
-                <span id="thirdEfficiency">-</span>
-              </div>
+      </section>
+    </div>
+
+    <!-- 랭킹 탭 -->
+    <div id="rankingTab" class="tab-content">
+      <section class="card">
+        <h2>🏅 랭킹</h2>
+        <p class="leaderboard-refresh-note">
+          기록은 주기적으로 갱신됩니다. <span id="leaderboardLastUpdated">마지막 갱신: -</span>
+        </p>
+
+        <!-- 내 순위 영역 -->
+        <div class="stats-section" id="myRankSection">
+          <h3>내 순위</h3>
+          <div class="leaderboard-my-rank" id="myRankContent">
+            <!-- JS에서 닉네임/자산/플레이타임 및 순위(TBD)를 채움 -->
+            <div class="leaderboard-my-rank-empty">
+              닉네임을 설정하면 내 순위와 기록이 여기 표시됩니다.
             </div>
           </div>
         </div>
 
-        <!-- 7. 업적 그리드 -->
+        <!-- 글로벌 리더보드 (TOP 10) -->
+        <div class="stats-section">
+          <h3>글로벌 리더보드 (TOP 10)</h3>
+          <div id="leaderboardContainer">
+            <div class="leaderboard-loading" style="text-align: center; padding: 20px; color: var(--muted);">
+              리더보드를 불러오는 중...
+            </div>
+          </div>
+        </div>
+
+        <!-- 업적 그리드 (통계 탭에서 이동) -->
         <div class="stats-section collapsible">
           <h3 class="stats-toggle">🏆 업적 (<span id="achievementProgress">0/0</span>) <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
@@ -2583,19 +2668,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 8. 리더보드 -->
-        <div class="stats-section collapsible">
-          <h3 class="stats-toggle">🏅 리더보드 (TOP 10) <span class="toggle-icon">▼</span></h3>
-          <div class="stats-content">
-            <div id="leaderboardContainer">
-              <div class="leaderboard-loading" style="text-align: center; padding: 20px; color: var(--muted);">
-                리더보드를 불러오는 중...
-              </div>
-            </div>
-          </div>
-        </div>
-
       </section>
     </div>
 
@@ -2603,7 +2675,34 @@
     <div id="settingsTab" class="tab-content">
       <section class="card">
         <h2>⚙️ 설정</h2>
-        
+
+        <!-- 게임 정보 (맨 위로 이동) -->
+        <div class="stats-section game-info-section">
+          <h3>📋 게임 정보</h3>
+          <div style="text-align: center; margin-bottom: 16px;">
+            <img src="assets/images/logo.png" alt="Capital Clicker: Seoul Survival" style="max-width: 120px; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));" />
+          </div>
+          <div class="stat-grid">
+            <div class="stat-item" style="grid-column: 1 / 3;">
+              <span class="stat-label">게임 제목</span>
+              <span class="stat-value">Capital Clicker: Seoul Survival</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">개발자</span>
+              <span class="stat-value">clicksurvivor</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">버전</span>
+              <span class="stat-value">v1.0</span>
+            </div>
+          </div>
+          <div class="settings-link-group" style="margin-top: 16px;">
+            <a href="/" target="_blank" rel="noopener noreferrer" class="settings-link">
+              🌐 홈페이지 이동
+            </a>
+          </div>
+        </div>
+
         <!-- 시각 효과 설정 -->
         <div class="stats-section">
           <h3>🎨 시각 효과</h3>
@@ -2762,34 +2861,10 @@
           </div>
         </div>
 
-        <!-- 게임 정보 (최하단) -->
-        <div class="stats-section game-info-section">
-          <h3>📋 게임 정보</h3>
-          <div style="text-align: center; margin-bottom: 16px;">
-            <img src="assets/images/logo.png" alt="Capital Clicker: Seoul Survival" style="max-width: 120px; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));" />
-          </div>
-          <div class="stat-grid">
-            <div class="stat-item" style="grid-column: 1 / 3;">
-              <span class="stat-label">게임 제목</span>
-              <span class="stat-value">Capital Clicker: Seoul Survival</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">개발자</span>
-              <span class="stat-value">clicksurvivor</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">버전</span>
-              <span class="stat-value">v1.0</span>
-            </div>
-          </div>
-          <div class="settings-link-group" style="margin-top: 16px;">
-            <a href="/" target="_blank" rel="noopener noreferrer" class="settings-link">
-              🌐 홈페이지 이동
-            </a>
-          </div>
-        </div>
+        
       </section>
     </div>
+
     </div><!-- /.tab-wrapper -->
 
     <!-- 하단 네비게이션 -->
@@ -2805,6 +2880,10 @@
       <button class="nav-btn" data-tab="statsTab">
         <div>📊</div>
         <span>통계</span>
+      </button>
+      <button class="nav-btn" data-tab="rankingTab">
+        <div>🏅</div>
+        <span>랭킹</span>
       </button>
       <button class="nav-btn" data-tab="settingsTab">
         <div>⚙️</div>

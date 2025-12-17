@@ -8,7 +8,7 @@ import { safeClass, safeHTML, safeText } from './ui/domUtils.js';
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
 import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
 import { getUser, onAuthStateChange } from '../../shared/auth/core.js';
-import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname } from '../../shared/leaderboard.js';
+import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname, getMyRank } from '../../shared/leaderboard.js';
 
 // 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
 // - Vite 빌드/개발서버: import.meta.env.DEV 사용
@@ -6003,12 +6003,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // 리더보드 UI 업데이트 함수 (디바운싱 및 로딩 상태 관리)
+    // 리더보드 UI 업데이트 함수 (디바운싱 및 로딩/실패/타임아웃 상태 관리)
     let __leaderboardLoading = false;
     let __leaderboardLastUpdate = 0;
     let __leaderboardUpdateTimer = null;
     const LEADERBOARD_UPDATE_INTERVAL = 10000; // 10초마다 업데이트
-    const LEADERBOARD_TIMEOUT = 10000; // 10초 타임아웃
+    const LEADERBOARD_TIMEOUT = 7000; // 7초 타임아웃
     
     async function updateLeaderboardUI(force = false) {
       const container = document.getElementById('leaderboardContainer');
@@ -6038,11 +6038,22 @@ document.addEventListener('DOMContentLoaded', () => {
         __leaderboardLoading = true;
         __leaderboardUpdateTimer = null;
         
-        // 타임아웃 설정
+        // 타임아웃 설정 (7초 후에도 응답이 없으면 실패로 간주)
         const timeoutId = setTimeout(() => {
           if (__leaderboardLoading) {
             console.error('리더보드: 타임아웃 발생');
-            container.innerHTML = '<div class="leaderboard-error">리더보드를 불러오는 데 시간이 너무 오래 걸립니다. 네트워크를 확인해주세요.</div>';
+            container.innerHTML = `
+              <div class="leaderboard-error">
+                <div>리더보드 불러오기 실패 (타임아웃)</div>
+                <button class="leaderboard-retry-btn">다시 시도</button>
+              </div>
+            `;
+            const retryBtn = container.querySelector('.leaderboard-retry-btn');
+            if (retryBtn) {
+              retryBtn.addEventListener('click', () => {
+                updateLeaderboardUI(true);
+              });
+            }
             __leaderboardLoading = false;
             __leaderboardLastUpdate = Date.now();
           }
@@ -6060,8 +6071,38 @@ document.addEventListener('DOMContentLoaded', () => {
           
           if (!result.success) {
             const errorMsg = result.error || '알 수 없는 오류';
-            console.error('리더보드: API 오류', errorMsg);
-            container.innerHTML = `<div class="leaderboard-error">리더보드를 불러올 수 없습니다: ${errorMsg}</div>`;
+            const status = result.status;
+            const errorType = result.errorType;
+
+            console.error('리더보드: API 오류', { errorMsg, status, errorType });
+
+            let userMessage = '';
+            if (errorType === 'forbidden' || status === 401 || status === 403) {
+              userMessage = '권한이 없어 리더보드를 불러올 수 없습니다.';
+            } else if (errorType === 'config') {
+              userMessage = '리더보드 설정 오류: Supabase 설정을 확인해주세요.';
+            } else if (errorType === 'schema') {
+              userMessage = '리더보드 테이블이 설정되지 않았습니다. 관리자에게 문의해주세요.';
+            } else if (errorType === 'network') {
+              userMessage = '네트워크 오류로 리더보드를 불러올 수 없습니다.';
+            } else {
+              userMessage = `리더보드를 불러올 수 없습니다: ${errorMsg}`;
+            }
+
+            container.innerHTML = `
+              <div class="leaderboard-error">
+                <div>${userMessage}</div>
+                <button class="leaderboard-retry-btn">다시 시도</button>
+              </div>
+            `;
+
+            const retryBtn = container.querySelector('.leaderboard-retry-btn');
+            if (retryBtn) {
+              retryBtn.addEventListener('click', () => {
+                updateLeaderboardUI(true);
+              });
+            }
+
             __leaderboardLoading = false;
             __leaderboardLastUpdate = Date.now();
             return;
@@ -6070,9 +6111,18 @@ document.addEventListener('DOMContentLoaded', () => {
           const entries = result.data || [];
           if (entries.length === 0) {
             console.log('리더보드: 기록 없음');
-            container.innerHTML = '<div class="leaderboard-loading">리더보드에 아직 기록이 없습니다.</div>';
+            container.innerHTML = '<div class="leaderboard-empty">리더보드에 아직 기록이 없습니다.</div>';
             __leaderboardLoading = false;
             __leaderboardLastUpdate = Date.now();
+            // 내 순위 영역도 비움
+            const myRankContent = document.getElementById('myRankContent');
+            if (myRankContent) {
+              myRankContent.innerHTML = `
+                <div class="leaderboard-my-rank-empty">
+                  리더보드 기록이 아직 없습니다.
+                </div>
+              `;
+            }
             return;
           }
           
@@ -6082,6 +6132,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const list = document.createElement('div');
           list.className = 'leaderboard-list';
           
+          let myEntry = null;
+          const currentNickLower = (playerNickname || '').trim().toLowerCase();
+
           entries.forEach((entry, index) => {
             const item = document.createElement('div');
             item.className = `leaderboard-item ${index < 3 ? 'top3' : ''}`;
@@ -6120,6 +6173,16 @@ document.addEventListener('DOMContentLoaded', () => {
             info.appendChild(nickname);
             info.appendChild(stats);
             
+            // 내 닉네임 하이라이트 + 내 엔트리 캐시
+            const entryNickLower = (entry.nickname || '').trim().toLowerCase();
+            if (currentNickLower && currentNickLower === entryNickLower) {
+              item.classList.add('is-me');
+              myEntry = {
+                rank: index + 1,
+                ...entry
+              };
+            }
+
             item.appendChild(rank);
             item.appendChild(info);
             list.appendChild(item);
@@ -6129,6 +6192,106 @@ document.addEventListener('DOMContentLoaded', () => {
           container.appendChild(list);
           __leaderboardLastUpdate = Date.now();
           console.log('리더보드: 업데이트 완료');
+
+          // 마지막 갱신 시각 표시
+          const lastUpdatedEl = document.getElementById('leaderboardLastUpdated');
+          if (lastUpdatedEl) {
+            const d = new Date(__leaderboardLastUpdate);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            const ss = String(d.getSeconds()).padStart(2, '0');
+            lastUpdatedEl.textContent = `마지막 갱신: ${hh}:${mm}:${ss}`;
+          }
+
+          // 내 순위 영역 업데이트 (Top10 및 Top10 밖 모두)
+          const myRankContent = document.getElementById('myRankContent');
+          if (myRankContent) {
+            if (!currentNickLower) {
+              myRankContent.innerHTML = `
+                <div class="leaderboard-my-rank-empty">
+                  닉네임을 설정하면 내 순위와 기록이 여기 표시됩니다.
+                </div>
+              `;
+            } else if (myEntry) {
+              // Top10 안에 있을 때: 이미 계산된 myEntry 사용
+              const playTimeMs = myEntry.play_time_ms || 0;
+              const playTimeMinutes = Math.floor(playTimeMs / 60000);
+              const playTimeHours = Math.floor(playTimeMinutes / 60);
+              const remainingMinutes = playTimeMinutes % 60;
+              const playTimeText = playTimeHours > 0 
+                ? `${playTimeHours}시간 ${remainingMinutes}분` 
+                : `${playTimeMinutes}분`;
+
+              myRankContent.innerHTML = `
+                <div class="leaderboard-my-rank-row is-me">
+                  <div class="leaderboard-my-rank-main">
+                    <span class="label">내 닉네임</span>
+                    <span class="value">${myEntry.nickname || playerNickname || '익명'}</span>
+                  </div>
+                  <div class="leaderboard-my-rank-stats">
+                    <span>순위: ${myEntry.rank}위 (TOP 10)</span>
+                    <span>💰 ${formatStatsNumber(myEntry.total_assets || 0)}</span>
+                    <span>⏱️ ${playTimeText}</span>
+                  </div>
+                </div>
+              `;
+            } else {
+              // 닉네임은 있지만 Top10 밖인 경우: RPC로 실제 순위 조회
+              myRankContent.innerHTML = `
+                <div class="leaderboard-my-rank-loading">
+                  내 순위를 불러오는 중...
+                </div>
+              `;
+
+              try {
+                const rankResult = await getMyRank(playerNickname, 'assets');
+                if (!rankResult.success || !rankResult.data) {
+                  const msg =
+                    rankResult.errorType === 'forbidden'
+                      ? '권한이 없어 내 순위를 불러올 수 없습니다.'
+                      : rankResult.errorType === 'network'
+                      ? '네트워크 오류로 내 순위를 불러올 수 없습니다.'
+                      : '내 순위를 불러올 수 없습니다.';
+
+                  myRankContent.innerHTML = `
+                    <div class="leaderboard-my-rank-error">
+                      ${msg}
+                    </div>
+                  `;
+                } else {
+                  const me = rankResult.data;
+                  const playTimeMs = me.play_time_ms || 0;
+                  const playTimeMinutes = Math.floor(playTimeMs / 60000);
+                  const playTimeHours = Math.floor(playTimeMinutes / 60);
+                  const remainingMinutes = playTimeMinutes % 60;
+                  const playTimeText = playTimeHours > 0 
+                    ? `${playTimeHours}시간 ${remainingMinutes}분` 
+                    : `${playTimeMinutes}분`;
+
+                  myRankContent.innerHTML = `
+                    <div class="leaderboard-my-rank-row is-me">
+                      <div class="leaderboard-my-rank-main">
+                        <span class="label">내 닉네임</span>
+                        <span class="value">${me.nickname || playerNickname || '익명'}</span>
+                      </div>
+                      <div class="leaderboard-my-rank-stats">
+                        <span>순위: ${me.rank}위</span>
+                        <span>💰 ${formatStatsNumber(me.total_assets || 0)}</span>
+                        <span>⏱️ ${playTimeText}</span>
+                      </div>
+                    </div>
+                  `;
+                }
+              } catch (e) {
+                console.error('내 순위 RPC 호출 실패:', e);
+                myRankContent.innerHTML = `
+                  <div class="leaderboard-my-rank-error">
+                    내 순위를 불러오는 중 오류가 발생했습니다.
+                  </div>
+                `;
+              }
+            }
+          }
         } catch (error) {
           clearTimeout(timeoutId);
           console.error('리더보드 UI 업데이트 실패:', error);
@@ -6493,6 +6656,85 @@ document.addEventListener('DOMContentLoaded', () => {
       safeText(document.getElementById('achievementProgress'), `${unlockedCount}/${totalAchievements}`);
     }
     
+    // ======= 리더보드 폴링 제어 (랭킹 탭 전용) =======
+    let __lbInterval = null;
+    let __lbObserver = null;
+    
+    function isDesktopLayout() {
+      return window.matchMedia && window.matchMedia('(min-width: 769px)').matches;
+    }
+    
+    function startLeaderboardPolling() {
+      const rankingTab = document.getElementById('rankingTab');
+      if (!rankingTab) return;
+      
+      // 모바일(탭형)에서는 active 탭일 때만 폴링
+      if (!isDesktopLayout() && !rankingTab.classList.contains('active')) return;
+      
+      // 이미 폴링 중이면 스킵
+      if (__lbInterval) return;
+      
+      // 즉시 1회 업데이트
+      updateLeaderboardUI(true);
+      
+      // 10초마다 폴링
+      __lbInterval = setInterval(() => {
+        const rankingActive = rankingTab.classList.contains('active');
+        // 모바일에서는 active 여부를 계속 검사, 데스크톱에서는 IntersectionObserver가 stop을 담당
+        if (!isDesktopLayout() && !rankingActive) {
+          stopLeaderboardPolling();
+          return;
+        }
+        updateLeaderboardUI(false);
+      }, 10000);
+    }
+    
+    function stopLeaderboardPolling() {
+      if (__lbInterval) {
+        clearInterval(__lbInterval);
+        __lbInterval = null;
+      }
+    }
+    
+    function setupLeaderboardObserver() {
+      const rankingTab = document.getElementById('rankingTab');
+      const container = document.getElementById('leaderboardContainer');
+      if (!rankingTab || !container) return;
+      
+      if (!('IntersectionObserver' in window)) {
+        console.log('IntersectionObserver 미지원: active 탭 기준으로만 리더보드 폴링 제어');
+        return;
+      }
+      
+      if (__lbObserver) {
+        __lbObserver.disconnect();
+      }
+      
+      __lbObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const isVisible = entry.isIntersecting;
+          const rankingActive = rankingTab.classList.contains('active');
+          
+          // 데스크톱: 보이면 폴링 시작, 안 보이면 중단
+          // 모바일: active + visible일 때만 시작
+          const shouldStart = isDesktopLayout()
+            ? isVisible
+            : isVisible && rankingActive;
+          
+          if (shouldStart) {
+            startLeaderboardPolling();
+          } else {
+            stopLeaderboardPolling();
+          }
+        });
+      }, {
+        root: null,
+        threshold: 0.1
+      });
+      
+      __lbObserver.observe(container);
+    }
+    
     // ======= 하단 네비게이션 탭 전환 =======
     const navBtns = document.querySelectorAll('.nav-btn');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -6506,24 +6748,30 @@ document.addEventListener('DOMContentLoaded', () => {
         navBtns.forEach(navBtn => navBtn.classList.remove('active'));
         
         // 선택한 탭 활성화
-        document.getElementById(targetTab).classList.add('active');
+        const tabEl = document.getElementById(targetTab);
+        if (tabEl) {
+          tabEl.classList.add('active');
+        }
         btn.classList.add('active');
         
-        // 통계 탭이 열릴 때 리더보드 강제 업데이트
-        if (targetTab === 'statsTab') {
-          updateLeaderboardUI(true);
+        // 랭킹 탭 전용 리더보드 폴링 제어
+        if (targetTab === 'rankingTab') {
+          startLeaderboardPolling();
+        } else {
+          stopLeaderboardPolling();
         }
       });
     });
     
     updateUI(); // 초기 UI 업데이트
     
-    // 초기 리더보드 로드 (통계 탭이 보이는 경우)
+    // 초기 리더보드 로드/폴링 및 Observer 설정
     setTimeout(() => {
-      const statsTab = document.getElementById('statsTab');
-      if (statsTab && statsTab.classList.contains('active')) {
-        updateLeaderboardUI(true);
+      const rankingTab = document.getElementById('rankingTab');
+      if (rankingTab && rankingTab.classList.contains('active')) {
+        startLeaderboardPolling();
       }
+      setupLeaderboardObserver();
     }, 1000);
     
     // 업그레이드 섹션 초기 상태 설정 (열림)

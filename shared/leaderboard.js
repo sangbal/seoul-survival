@@ -110,7 +110,16 @@ export async function getLeaderboard(limit = 10, sortBy = 'assets') {
     const supabase = getSupabaseClient();
     if (!supabase) {
       console.error('Leaderboard: Supabase client not configured');
-      return { success: false, error: 'Supabase가 설정되지 않았습니다. shared/auth/config.js를 확인해주세요.', data: [] };
+      console.warn('[LB] fetch failed', {
+        reason: 'not_configured',
+        phase: 'init'
+      });
+      return {
+        success: false,
+        error: 'Supabase가 설정되지 않았습니다. shared/auth/config.js를 확인해주세요.',
+        data: [],
+        errorType: 'config'
+      };
     }
     
     let query = supabase
@@ -129,17 +138,152 @@ export async function getLeaderboard(limit = 10, sortBy = 'assets') {
 
     if (error) {
       console.error('Leaderboard fetch error:', error);
-      // 테이블이 없는 경우를 구분
-      if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
-        return { success: false, error: '리더보드 테이블이 없습니다. Supabase SQL Editor에서 supabase/leaderboard.sql을 실행해주세요.', data: [] };
+      const status = error.status ?? error.code ?? null;
+      const isTableMissing =
+        error.code === 'PGRST116' ||
+        error.message?.includes('relation') ||
+        error.message?.includes('does not exist');
+      const isForbidden =
+        status === 401 ||
+        status === 403 ||
+        error.message?.toLowerCase?.().includes('permission denied') ||
+        error.message?.toLowerCase?.().includes('rls');
+
+      console.warn('[LB] fetch failed', {
+        phase: 'select',
+        status,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+
+      if (isTableMissing) {
+        return {
+          success: false,
+          error: '리더보드 테이블이 없습니다. Supabase SQL Editor에서 supabase/leaderboard.sql을 실행해주세요.',
+          data: [],
+          errorType: 'schema',
+          status
+        };
       }
-      return { success: false, error: error.message, data: [] };
+
+      if (isForbidden) {
+        return {
+          success: false,
+          error: '권한이 없어 리더보드를 불러올 수 없습니다.',
+          data: [],
+          errorType: 'forbidden',
+          status
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message,
+        data: [],
+        errorType: 'generic',
+        status
+      };
     }
 
-    return { success: true, data: data || [] };
+    return {
+      success: true,
+      data: data || []
+    };
   } catch (error) {
     console.error('Leaderboard fetch exception:', error);
-    return { success: false, error: error.message || '알 수 없는 오류', data: [] };
+    console.warn('[LB] fetch failed', {
+      phase: 'exception',
+      message: error?.message,
+      error
+    });
+
+    return {
+      success: false,
+      error: error.message || '알 수 없는 오류',
+      data: [],
+      errorType: 'network'
+    };
+  }
+}
+
+/**
+ * 내 리더보드 기록/순위 조회 (1차 버전: 순위는 TBD, 기록만 반환)
+ * @param {string} nickname
+ * @param {'assets' | 'playtime'} sortBy
+ * @returns {Promise<{ success: boolean, data: any | null, rank: number | null }>}
+ */
+export async function getMyRank(nickname, sortBy = 'assets') {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.warn('[LB] my_rank failed', { reason: 'not_configured' });
+    return { success: false, data: null, errorType: 'config' };
+  }
+
+  const raw = normalizeNickname(nickname);
+  const key = raw.toLowerCase();
+  if (!key) {
+    return { success: false, data: null, errorType: 'no_nickname' };
+  }
+
+  try {
+    const { data, error, status } = await supabase.rpc('get_my_rank', {
+      p_game_slug: GAME_SLUG,
+      p_nickname: key,
+      p_sort_by: sortBy
+    });
+
+    if (error) {
+      console.error('My rank RPC error:', error);
+      console.warn('[LB] my_rank failed', {
+        phase: 'rpc',
+        status: status ?? error.status,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      const errType =
+        status === 401 || status === 403
+          ? 'forbidden'
+          : 'generic';
+      return {
+        success: false,
+        data: null,
+        error: error.message,
+        errorType: errType,
+        status: status ?? error.status
+      };
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) {
+      return { success: false, data: null, errorType: 'not_found' };
+    }
+
+    return {
+      success: true,
+      data: {
+        rank: row.rank,
+        nickname: row.nickname,
+        total_assets: row.total_assets,
+        play_time_ms: row.play_time_ms
+      }
+    };
+  } catch (error) {
+    console.error('My rank RPC exception:', error);
+    console.warn('[LB] my_rank failed', {
+      phase: 'exception',
+      message: error?.message,
+      error
+    });
+    return {
+      success: false,
+      data: null,
+      error: error.message || '알 수 없는 오류',
+      errorType: 'network'
+    };
   }
 }
 
