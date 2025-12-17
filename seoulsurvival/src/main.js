@@ -6352,6 +6352,41 @@ document.addEventListener('DOMContentLoaded', () => {
               `;
             } else {
               // 닉네임은 있지만 Top10 밖인 경우: RPC로 실제 순위 조회
+              // 먼저 로그인 상태 확인
+              const user = await getUser();
+              if (!user) {
+                // 비로그인 상태: 바로 로그인 버튼 표시
+                myRankContent.innerHTML = `
+                  <div class="my-rank-card">
+                    <div class="my-rank-header">
+                      <span class="my-rank-label">내 기록</span>
+                      <span class="my-rank-note">로그인 필요</span>
+                    </div>
+                    <div class="my-rank-meta" style="justify-content: center; padding: 20px 0;">
+                      <button type="button" class="btn" id="openLoginFromRanking">
+                        🔐 Google로 로그인
+                      </button>
+                    </div>
+                  </div>
+                `;
+                const loginBtn = document.getElementById('openLoginFromRanking');
+                if (loginBtn) {
+                  loginBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    if (!isSupabaseConfigured()) {
+                      alert('현재는 게스트 모드입니다. 로그인 기능은 준비 중입니다.');
+                      return;
+                    }
+                    const result = await signInWithOAuth('google');
+                    if (!result.ok) {
+                      alert('로그인에 실패했습니다. 다시 시도해 주세요.');
+                    }
+                  });
+                }
+                return;
+              }
+
+              // 로그인 상태: RPC로 순위 조회
               myRankContent.innerHTML = `
                 <div class="leaderboard-my-rank-loading">
                   내 순위를 불러오는 중...
@@ -6363,7 +6398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!rankResult.success || !rankResult.data) {
                   let innerHtml = '';
                   if (rankResult.errorType === 'forbidden') {
-                    // 비로그인/권한 부족: 로그인 버튼만 표시
+                    // 권한 부족: 로그인 버튼 표시
                     innerHtml = `
                       <div class="my-rank-card">
                         <div class="my-rank-header">
@@ -6381,6 +6416,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     innerHtml = `
                       <div class="leaderboard-my-rank-error">
                         네트워크 오류로 내 순위를 불러올 수 없습니다.
+                      </div>
+                    `;
+                  } else if (rankResult.errorType === 'not_found') {
+                    // 리더보드에 기록이 없음: 안내 메시지
+                    innerHtml = `
+                      <div class="leaderboard-my-rank-empty">
+                        아직 리더보드에 기록이 없습니다.<br />
+                        게임을 플레이하고 저장하면 순위가 표시됩니다.
                       </div>
                     `;
                   } else {
