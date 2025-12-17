@@ -3,6 +3,21 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## 2025-01-18
+- **[seoulsurvival] 인앱 브라우저 안내 및 랭킹 로그인 UX 개선**
+  - 인앱 브라우저 감지 및 안내 배너 추가:
+    - `detectInAppBrowser()`: 카카오톡/인스타그램/페이스북/라인/위챗 등 인앱 브라우저 감지 (`navigator.userAgent` 기반)
+    - `showInAppBrowserWarningIfNeeded()`: 인앱 브라우저에서 접속 시 상단에 안내 배너 표시
+    - Google 로그인 제한 안내 문구 및 Chrome/Safari 등 기본 브라우저 사용 권장
+    - URL 복사 버튼: `navigator.clipboard.writeText()` + `document.execCommand('copy')` fallback으로 주소 복사 기능 제공
+    - 확인 버튼: 배너를 닫을 수 있는 기능 추가
+  - 랭킹 탭 "내 기록" 비로그인 UX 개선:
+    - 비로그인 상태를 `getMyRank()` 호출 전에 `getUser()`로 먼저 확인하여 즉시 로그인 버튼 표시
+    - 카드형 레이아웃 제거, 간단한 안내 문구("로그인 후에 내 순위를 볼 수 있습니다.") + Google 로그인 버튼만 표시
+    - "내 기록" 문구 중복 제거 (외곽 h3 제목만 유지)
+    - 로그인 버튼 클릭 시 설정 탭으로 이동하지 않고 `signInWithOAuth('google')` 직접 호출하여 바로 로그인 실행
+    - `forbidden` 에러 타입뿐만 아니라 모든 비로그인 상황에서 일관된 UX 제공
+
 ## 2025-12-17
 - **[seoulsurvival] 닉네임 입력 모달 안정화**
   - 닉네임 모달 중복 노출 문제 해결:
