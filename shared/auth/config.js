@@ -1,15 +1,15 @@
 // Social login (SSO) config
-// - This repo is currently deployed as static files, so client-side auth needs a public config.
-// - For Supabase: URL + anon key are safe to expose (they are public keys), but protect data via RLS on the server.
+// - Supabase URL / anon key는 Vite 환경 변수(VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)를 통해 주입한다.
+// - 개발/배포 환경 모두에서 .env(.local) 또는 CI secrets를 통해 값을 설정해야 한다.
+// - 빌드 되지 않은 정적 ESM 배포에서는 import.meta.env가 비어 있을 수 있으므로,
+//   이 파일은 기본적으로 "빈 설정"을 표현하고, isSupabaseConfigured()로 사용 가능 여부를 판별한다.
 //
-// TODO: Replace placeholders with your Supabase project values.
-// Example:
-// export const SUPABASE_URL = 'https://xxxx.supabase.co';
-// export const SUPABASE_ANON_KEY = 'eyJ...';
+// Vite dev / build 환경에서는 import.meta.env에 값이 주입된다.
+// 정적 ESM 환경(직접 호스팅)에서는 env가 비어 있어 SSO/리더보드가 비활성(게스트 모드)로 동작한다.
+const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
 
-export const SUPABASE_URL = 'https://nvxdwacqmiofpennukeo.supabase.co';
-export const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52eGR3YWNxbWlvZnBlbm51a2VvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4OTMwNDYsImV4cCI6MjA4MTQ2OTA0Nn0.v2UoOk7xdmascY10Oy8fT3kYTWm9gWKSC9C4wH4nwP4';
+export const SUPABASE_URL = env.VITE_SUPABASE_URL ?? '';
+export const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY ?? '';
 
 // Share auth state across hub + all subpath games on the same origin.
 export const AUTH_STORAGE_KEY = 'clicksurvivor-auth';
@@ -19,8 +19,8 @@ export function isSupabaseConfigured() {
     typeof SUPABASE_URL === 'string' &&
     typeof SUPABASE_ANON_KEY === 'string' &&
     SUPABASE_URL.startsWith('https://') &&
-    !SUPABASE_URL.includes('YOUR_SUPABASE_PROJECT') &&
-    !SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY')
+    SUPABASE_URL.length > 'https://'.length &&
+    SUPABASE_ANON_KEY.length > 0
   );
 }
 

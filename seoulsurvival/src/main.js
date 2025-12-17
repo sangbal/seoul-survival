@@ -8,6 +8,7 @@ import { safeClass, safeHTML, safeText } from './ui/domUtils.js';
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
 import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
 import { getUser, onAuthStateChange } from '../../shared/auth/core.js';
+import { isSupabaseConfigured } from '../../shared/auth/config.js';
 import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname, getMyRank } from '../../shared/leaderboard.js';
 
 // 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
@@ -6013,6 +6014,18 @@ document.addEventListener('DOMContentLoaded', () => {
     async function updateLeaderboardUI(force = false) {
       const container = document.getElementById('leaderboardContainer');
       if (!container) return;
+
+      // Supabase 키가 설정되지 않은 경우: 네트워크 호출을 스킵하고 안내만 표시
+      if (!isSupabaseConfigured()) {
+        container.innerHTML = `
+          <div class="leaderboard-error">
+            <div>리더보드 설정이 아직 완료되지 않았어요. 나중에 다시 확인해 주세요.</div>
+          </div>
+        `;
+        __leaderboardLoading = false;
+        __leaderboardLastUpdate = Date.now();
+        return;
+      }
       
       // 이미 로딩 중이면 스킵 (force일 때는 강제 실행)
       if (__leaderboardLoading && !force) {

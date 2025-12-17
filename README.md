@@ -85,9 +85,12 @@ Supabase SQL Editor에서 아래 SQL을 1회 실행하세요:
 
 ### Supabase 키 준비(필수)
 1) Supabase 대시보드에서 프로젝트 생성
-2) **Settings → API**에서 아래 2개를 복사해 `shared/auth/config.js`에 입력
-   - **Project URL**: `https://xxxx.supabase.co`
-   - **anon public key**: `eyJ...`
+2) **Settings → API**에서 아래 2개를 복사해 로컬 `.env.local` (또는 `.env`) 에 입력
+   - `VITE_SUPABASE_URL=https://xxxx.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY=eyJ...`
+
+> `shared/auth/config.js`는 이제 Vite 환경 변수(`import.meta.env.VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`)를 통해 값을 읽어옵니다.
+> 로컬에서는 `.env.local`(git 미추적)로, CI/배포에서는 GitHub Secrets/환경 변수로 값을 주입하는 방식을 권장합니다.
 
 ### Google 로그인 활성화(권장)
 1) Supabase: **Authentication → Providers → Google** 활성화
@@ -162,7 +165,26 @@ Supabase SQL Editor에서 아래 SQL을 1회 실행하세요:
 
 ## 🚀 GitHub Pages 배포
 
-프로젝트 루트의 `deploy.bat` 또는 `deploy.ps1`를 사용합니다.
+### 1) GitHub Actions (권장)
+
+이 레포에는 `main` 브랜치 push 시 자동으로 빌드/배포하는 워크플로우가 포함돼 있습니다.
+
+- 워크플로우 파일: `.github/workflows/deploy.yml`
+- 동작 방식:
+  1. `main` 브랜치에 push → Actions에서 `Deploy to GitHub Pages` 워크플로우 실행
+  2. `npm ci` → `npm run build` → `dist/`를 `gh-pages` 브랜치로 배포
+  3. `clicksurvivor.com`에 대한 `CNAME`을 함께 설정 (`cname: clicksurvivor.com`)
+- 준비 사항:
+  - 레포 Settings → Secrets and variables → Actions 에서 아래 2개를 등록
+    - `VITE_SUPABASE_URL`
+    - `VITE_SUPABASE_ANON_KEY`
+  - Settings → Pages:
+    - Source: `Deploy from a branch`
+    - Branch: `gh-pages` / `/ (root)`
+
+### 2) 수동 배포 스크립트 (로컬에서 git push까지)
+
+프로젝트 루트의 `deploy.bat` 또는 `deploy.ps1`를 사용하면, 로컬 변경사항을 커밋하고 원격에 푸시할 수 있습니다.
 
 ```bash
 deploy.bat

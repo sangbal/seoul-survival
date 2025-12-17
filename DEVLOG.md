@@ -45,6 +45,13 @@
   - IntersectionObserver 기반으로 랭킹 패널이 실제 화면에 보이는 동안에만 리더보드 폴링 수행(PC), 모바일은 하단 네비 + active 탭 기준 유지.
   - 상단 헤더와 5개 패널의 좌우 폭을 `.app` 컨테이너 기준으로 통일하고, 랭킹 카드의 타이포/섹션 스타일을 다른 탭과 일치시키는 방향으로 정리.
 
+- **[공통/배포] Supabase 키 주입 방식 정리 + 리더보드 키 미설정 UX 개선**
+  - `shared/auth/config.js`를 Vite env 기반(`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`)으로 변경하고, 키가 없을 경우 SSO/리더보드가 비활성(게스트 모드)로 동작하도록 정리.
+  - Auth UI(`shared/auth/ui.js`)에서 키 미설정 시 "SSO 설정 필요" 대신 "게스트 모드(로그인 준비 중)" 문구를 노출하고, 로그인 시도 토스트도 유저 친화적으로 변경.
+  - 리더보드 UI(`seoulsurvival/src/main.js`)는 Supabase 미설정이면 네트워크 호출을 스킵하고 "리더보드 설정이 아직 완료되지 않았어요" 안내만 표시해 무한 로딩을 방지.
+  - README의 Supabase 설정 섹션을 `.env.local` 예시(`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) 기반으로 업데이트.
+  - GitHub Actions 워크플로우(`.github/workflows/deploy.yml`)를 추가/보강해, CI에서 env를 Secrets로 주입하고 `npm run build` 결과(`dist`)를 `gh-pages` 브랜치로 배포하도록 구성 (`permissions.contents: write`, `publish_branch: gh-pages`, `cname: clicksurvivor.com` 설정).
+
 ## 2025-01-17
 - **[hub] 허브 홈페이지 UI/UX 개선**
   - 로고 이미지 적용: `logo.png`를 메인 로고로 사용 (기존 텍스트 "C" 제거)

@@ -36,11 +36,12 @@ export async function initAuthUI(opts) {
     }
     if (statusLabel) {
       if (!isAuthEnabled()) {
+        // 키가 설정되지 않은 경우: 개발자용 경고 대신 유저에게는 "게스트 모드"만 안내
         statusLabel.textContent =
           scope === 'hub'
-            ? 'SSO 설정 필요 (shared/auth/config.js)'
-            : 'SSO 설정 필요: shared/auth/config.js';
-        statusLabel.style.color = 'rgba(251, 191, 36, .95)';
+            ? 'Guest mode (로그인 준비 중)'
+            : '게스트 모드 (로그인 준비 중)';
+        statusLabel.style.color = 'rgba(148, 163, 184, .95)';
       } else if (name) {
         statusLabel.textContent = scope === 'hub' ? 'Signed in' : '로그인됨';
         statusLabel.style.color = 'rgba(52, 211, 153, .95)';
@@ -91,7 +92,7 @@ export async function initAuthUI(opts) {
 
   async function doLogin(provider) {
     if (!isAuthEnabled()) {
-      t(scope === 'hub' ? 'SSO 설정이 필요합니다' : 'SSO 설정 필요');
+      t(scope === 'hub' ? '현재는 게스트 모드입니다. 로그인 기능은 준비 중입니다.' : '현재는 게스트 모드입니다. 로그인 기능은 준비 중입니다.');
       return;
     }
     t(scope === 'hub' ? 'Redirecting…' : '이동 중…');
