@@ -35,7 +35,7 @@
       --headerH: 64px;
     }
     *{ box-sizing:border-box; }
-    html{ scroll-behavior: smooth; }
+    html{ scroll-behavior: smooth; overflow-x: hidden; }
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
@@ -45,6 +45,7 @@
         radial-gradient(900px 520px at 85% 0%, rgba(94,234,212,.14), transparent 55%),
         radial-gradient(720px 520px at 65% 30%, rgba(167,139,250,.10), transparent 55%),
         var(--bg);
+      overflow-x: hidden;
     }
     a{ color:inherit; text-decoration:none; }
 
@@ -58,9 +59,12 @@
       background: linear-gradient(180deg, rgba(7,11,20,.94), rgba(7,11,20,.72));
       border-bottom: 1px solid rgba(148,163,184,.18);
       backdrop-filter: blur(10px);
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
-    .topbar-inner{ max-width: 1080px; margin: 0 auto; width: 100%; display:flex; align-items:center; justify-content:space-between; gap: 14px; }
-    .brand{ display:flex; align-items:center; gap: 12px; min-width: 200px; }
+    .topbar-inner{ max-width: 1080px; margin: 0 auto; width: 100%; display:flex; align-items:center; justify-content:space-between; gap: 14px; box-sizing: border-box; }
+    .brand{ display:flex; align-items:center; gap: 12px; min-width: 0; flex: 0 1 auto; }
     .logo{
       width: 38px; height: 38px; border-radius: 12px;
       background: rgba(7,11,20,.45);
@@ -70,9 +74,9 @@
       user-select: none;
       overflow: hidden;
     }
-    .brandtxt{ display:flex; flex-direction:column; gap: 2px; }
-    .brandname{ font-size: 16px; font-weight: 900; letter-spacing: .2px; line-height: 1; }
-    .brandtag{ font-size: 12px; color: var(--muted); line-height: 1; }
+    .brandtxt{ display:flex; flex-direction:column; gap: 2px; min-width: 0; }
+    .brandname{ font-size: 16px; font-weight: 900; letter-spacing: .2px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brandtag{ font-size: 12px; color: var(--muted); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     nav{ display:flex; align-items:center; gap: 12px; }
     .navlink{
       font-size: 13px; color: var(--muted);
@@ -80,7 +84,195 @@
       border-radius: 999px;
     }
     .navlink:hover{ color: var(--text); background: rgba(148,163,184,.10); }
-    .actions{ display:flex; align-items:center; gap: 10px; }
+    .actions{ display:flex; align-items:center; gap: 10px; flex-shrink: 0; }
+    /* 햄버거 메뉴 버튼 */
+    .hamburger-btn{
+      display: none;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border: 1px solid rgba(148,163,184,.25);
+      background: rgba(15,23,42,.55);
+      border-radius: 999px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 4px;
+      transition: all .15s ease;
+    }
+    .hamburger-btn:hover{
+      background: rgba(15,23,42,.75);
+      border-color: rgba(148,163,184,.35);
+    }
+    .hamburger-btn span{
+      display: block;
+      width: 18px;
+      height: 2px;
+      background: var(--text);
+      border-radius: 2px;
+      transition: all .2s ease;
+    }
+    .hamburger-btn.active span:nth-child(1){
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+    .hamburger-btn.active span:nth-child(2){
+      opacity: 0;
+    }
+    .hamburger-btn.active span:nth-child(3){
+      transform: rotate(-45deg) translate(5px, -5px);
+    }
+    /* 드로어 메뉴 */
+    .drawer-overlay{
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      z-index: 40;
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+    .drawer-overlay.show{
+      display: block;
+      opacity: 1;
+    }
+    .drawer{
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 280px;
+      max-width: 85vw;
+      height: 100vh;
+      background: var(--panel);
+      border-left: 1px solid rgba(148,163,184,.18);
+      z-index: 50;
+      transition: right .3s ease;
+      overflow-y: auto;
+      box-shadow: -4px 0 20px rgba(0,0,0,.3);
+    }
+    .drawer.open{
+      right: 0;
+    }
+    .drawer-header{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px;
+      border-bottom: 1px solid rgba(148,163,184,.18);
+      height: var(--headerH);
+      box-sizing: border-box;
+    }
+    .drawer-title{
+      font-size: 16px;
+      font-weight: 950;
+      letter-spacing: .2px;
+    }
+    .drawer-close{
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: 1px solid rgba(148,163,184,.25);
+      background: rgba(15,23,42,.55);
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      font-size: 18px;
+      transition: all .15s ease;
+    }
+    .drawer-close:hover{
+      background: rgba(15,23,42,.75);
+      border-color: rgba(148,163,184,.35);
+    }
+    .drawer-content{
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .drawer-nav{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .drawer-nav-link{
+      display: block;
+      padding: 12px 14px;
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 900;
+      transition: all .15s ease;
+      text-decoration: none;
+    }
+    .drawer-nav-link:hover{
+      color: var(--text);
+      background: rgba(148,163,184,.10);
+    }
+    .drawer-actions{
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .drawer-actions-group{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .drawer-actions-label{
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 4px;
+    }
+    .drawer-select{
+      width: 100%;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,.25);
+      background: rgba(15,23,42,.55);
+      color: var(--text);
+      padding: 0 14px;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .drawer-btn{
+      width: 100%;
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,.25);
+      background: rgba(15,23,42,.55);
+      color: var(--text);
+      font-weight: 900;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .drawer-btn:hover{
+      background: rgba(15,23,42,.75);
+      border-color: rgba(148,163,184,.35);
+    }
+    .drawer-userchip{
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(94,234,212,.25);
+      background: rgba(94,234,212,.12);
+      color: rgba(94,234,212,.95);
+      font-weight: 900;
+      font-size: 13px;
+      width: 100%;
+      justify-content: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .select{
       height: 38px;
       border-radius: 999px;
@@ -150,7 +342,7 @@
       background-size: cover;
       background-position: center;
       filter: saturate(1.05) contrast(1.05);
-      transform: scale(1.02);
+      transform: scale(1.01);
     }
     .hero-inner{
       position: relative;
@@ -409,6 +601,29 @@
       transform: translateX(-50%) translateY(-2px);
     }
 
+    /* 모바일: 햄버거 메뉴 활성화 */
+    @media (max-width: 768px){
+      .topbar-inner nav,
+      .topbar-inner .actions{
+        display: none;
+      }
+      .hamburger-btn{
+        display: flex;
+      }
+      .brand{
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .brandname{
+        font-size: 14px;
+      }
+      .brandtag{
+        font-size: 11px;
+      }
+      body.drawer-open{
+        overflow: hidden;
+      }
+    }
     @media (min-width: 760px){
       .hero{ min-height: 520px; }
       .hero-inner{ padding: 28px 26px 26px; }
@@ -417,8 +632,8 @@
       .shot img{ height: 210px; }
     }
   </style>
-  <script type="module" crossorigin src="/assets/main-Bpa0CtpY.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/authBoot-BtAmBQKW.js">
+  <script type="module" crossorigin src="/assets/main-DbGT9TOT.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/authBoot-BgTFcePJ.js">
 </head>
 <body>
   <header class="topbar">
@@ -447,8 +662,48 @@
         <button class="ghostbtn" id="authLoginBtn" aria-disabled="false" data-i18n="hub.header.login" hidden>로그인</button>
         <button class="ghostbtn" id="authLogoutBtn" hidden>Logout</button>
       </div>
+
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="메뉴 열기" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </header>
+
+  <!-- 드로어 오버레이 -->
+  <div class="drawer-overlay" id="drawerOverlay" aria-hidden="true"></div>
+
+  <!-- 드로어 메뉴 -->
+  <aside class="drawer" id="drawer" aria-label="메뉴" aria-hidden="true">
+    <div class="drawer-header">
+      <div class="drawer-title" data-i18n="hub.drawer.title">메뉴</div>
+      <button class="drawer-close" id="drawerClose" aria-label="메뉴 닫기">×</button>
+    </div>
+    <div class="drawer-content">
+      <nav class="drawer-nav" aria-label="허브 내비게이션">
+        <a class="drawer-nav-link" href="#about" data-i18n="hub.header.about">소개</a>
+        <a class="drawer-nav-link" href="#account" data-i18n="hub.header.account">계정</a>
+      </nav>
+
+      <div class="drawer-actions">
+        <div class="drawer-actions-group">
+          <div class="drawer-actions-label" data-i18n="hub.drawer.language">언어</div>
+          <select class="drawer-select" id="drawerLangSelect" aria-label="Language">
+            <option value="ko">한국어 (KO)</option>
+            <option value="en">English (EN)</option>
+          </select>
+        </div>
+
+        <div class="drawer-actions-group">
+          <div class="drawer-actions-label" data-i18n="hub.drawer.account">계정</div>
+          <span class="drawer-userchip" id="drawerAuthUserLabel" hidden>Guest</span>
+          <button class="drawer-btn" id="drawerAuthLoginBtn" data-i18n="hub.header.login" hidden>로그인</button>
+          <button class="drawer-btn" id="drawerAuthLogoutBtn" hidden>Logout</button>
+        </div>
+      </div>
+    </div>
+  </aside>
 
   <main class="wrap" id="top">
     <section class="hero" aria-label="Featured game">
