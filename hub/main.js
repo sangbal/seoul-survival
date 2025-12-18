@@ -1,6 +1,7 @@
 import { applyLang, getInitialLang } from './i18n.js';
 
 const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
 
 function showToast(msg) {
   const toast = $('#toast');
@@ -27,12 +28,155 @@ function initLangSelect() {
     const lang = String(e.target.value || '').toLowerCase();
     const applied = applyLang(lang);
     showToast(applied === 'ko' ? '언어: 한국어' : 'Language: English');
+    // 드로어의 언어 선택도 동기화
+    const drawerSelect = $('#drawerLangSelect');
+    if (drawerSelect) drawerSelect.value = lang;
   });
+}
+
+function initDrawerLangSelect() {
+  const drawerSelect = $('#drawerLangSelect');
+  if (!drawerSelect) return;
+  drawerSelect.addEventListener('change', (e) => {
+    const lang = String(e.target.value || '').toLowerCase();
+    const applied = applyLang(lang);
+    showToast(applied === 'ko' ? '언어: 한국어' : 'Language: English');
+    // 헤더의 언어 선택도 동기화
+    const headerSelect = $('#langSelect');
+    if (headerSelect) headerSelect.value = lang;
+  });
+}
+
+function initDrawer() {
+  const hamburgerBtn = $('#hamburgerBtn');
+  const drawer = $('#drawer');
+  const drawerOverlay = $('#drawerOverlay');
+  const drawerClose = $('#drawerClose');
+  const drawerNavLinks = $$('.drawer-nav-link');
+
+  if (!hamburgerBtn || !drawer || !drawerOverlay) return;
+
+  function openDrawer() {
+    drawer.classList.add('open');
+    drawerOverlay.classList.add('show');
+    hamburgerBtn.classList.add('active');
+    hamburgerBtn.setAttribute('aria-expanded', 'true');
+    drawer.setAttribute('aria-hidden', 'false');
+    drawerOverlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('drawer-open');
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    drawerOverlay.classList.remove('show');
+    hamburgerBtn.classList.remove('active');
+    hamburgerBtn.setAttribute('aria-expanded', 'false');
+    drawer.setAttribute('aria-hidden', 'true');
+    drawerOverlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('drawer-open');
+  }
+
+  hamburgerBtn.addEventListener('click', () => {
+    if (drawer.classList.contains('open')) {
+      closeDrawer();
+    } else {
+      openDrawer();
+    }
+  });
+
+  drawerClose.addEventListener('click', closeDrawer);
+  drawerOverlay.addEventListener('click', closeDrawer);
+
+  // 드로어 내부 링크 클릭 시 드로어 닫기
+  drawerNavLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      closeDrawer();
+    });
+  });
+
+  // ESC 키로 드로어 닫기
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer.classList.contains('open')) {
+      closeDrawer();
+    }
+  });
+}
+
+// 드로어의 로그인 버튼 동기화 (shared/authBoot.js에서 처리된 후)
+function syncDrawerAuthUI() {
+  const headerUserLabel = $('#authUserLabel');
+  const headerLoginBtn = $('#authLoginBtn');
+  const headerLogoutBtn = $('#authLogoutBtn');
+  const drawerUserLabel = $('#drawerAuthUserLabel');
+  const drawerLoginBtn = $('#drawerAuthLoginBtn');
+  const drawerLogoutBtn = $('#drawerAuthLogoutBtn');
+
+  // 드로어 버튼에 헤더 버튼과 동일한 이벤트 리스너 연결
+  if (drawerLoginBtn && headerLoginBtn) {
+    drawerLoginBtn.addEventListener('click', () => {
+      headerLoginBtn.click();
+    });
+  }
+
+  if (drawerLogoutBtn && headerLogoutBtn) {
+    drawerLogoutBtn.addEventListener('click', () => {
+      headerLogoutBtn.click();
+    });
+  }
+
+  // 로그인 상태 변경 시 드로어 UI도 동기화
+  const observer = new MutationObserver(() => {
+    if (headerUserLabel) {
+      const isVisible = !headerUserLabel.hasAttribute('hidden');
+      if (drawerUserLabel) {
+        if (isVisible) {
+          drawerUserLabel.textContent = headerUserLabel.textContent;
+          drawerUserLabel.removeAttribute('hidden');
+        } else {
+          drawerUserLabel.setAttribute('hidden', '');
+        }
+      }
+    }
+    if (headerLoginBtn) {
+      const isVisible = !headerLoginBtn.hasAttribute('hidden');
+      if (drawerLoginBtn) {
+        if (isVisible) {
+          drawerLoginBtn.removeAttribute('hidden');
+        } else {
+          drawerLoginBtn.setAttribute('hidden', '');
+        }
+      }
+    }
+    if (headerLogoutBtn) {
+      const isVisible = !headerLogoutBtn.hasAttribute('hidden');
+      if (drawerLogoutBtn) {
+        if (isVisible) {
+          drawerLogoutBtn.removeAttribute('hidden');
+        } else {
+          drawerLogoutBtn.setAttribute('hidden', '');
+        }
+      }
+    }
+  });
+
+  if (headerUserLabel) observer.observe(headerUserLabel, { attributes: true, attributeFilter: ['hidden'] });
+  if (headerLoginBtn) observer.observe(headerLoginBtn, { attributes: true, attributeFilter: ['hidden'] });
+  if (headerLogoutBtn) observer.observe(headerLogoutBtn, { attributes: true, attributeFilter: ['hidden'] });
 }
 
 applyLang(getInitialLang());
 initVersion();
-initLoginBtn();
 initLangSelect();
+initDrawerLangSelect();
+initDrawer();
+
+// authBoot.js 로드 후 드로어 UI 동기화
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(syncDrawerAuthUI, 100);
+  });
+} else {
+  setTimeout(syncDrawerAuthUI, 100);
+}
 
 

@@ -3,6 +3,21 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## 2025-12-19
+- **[hub] 모바일 가로 스크롤 제거 및 햄버거 메뉴 구현**
+  - 가로 overflow 원인 제거:
+    - `.topbar`에 `width: 100%`, `max-width: 100%`, `box-sizing: border-box` 추가하여 viewport를 넘지 않도록 수정
+    - `.brand`의 `min-width: 200px`를 제거하고 `min-width: 0`, `flex: 0 1 auto`로 변경하여 좁은 화면에서 축소 가능하도록 수정
+    - `.brandname`, `.brandtag`에 `white-space: nowrap`, `overflow: hidden`, `text-overflow: ellipsis` 추가하여 텍스트 오버플로우 방지
+    - `.hero::before`의 `transform: scale(1.02)`를 `scale(1.01)`로 줄여 약간의 overflow 방지
+    - `html`, `body`에 `overflow-x: hidden` 안전장치 추가
+  - 모바일 햄버거 메뉴 구현:
+    - `max-width: 768px` 브레이크포인트에서 헤더의 `nav`와 `.actions` 숨김, 햄버거 버튼 표시
+    - 드로어 메뉴: 우측에서 slide-in/out 애니메이션, overlay 클릭/ESC 키로 닫기, body 스크롤 잠금 처리
+    - 드로어 내부: 네비게이션 링크, 언어 선택, 계정 관련 버튼을 세로로 정리
+    - 드로어와 헤더의 언어 선택/로그인 버튼 동기화: `hub/main.js`에서 MutationObserver로 상태 동기화, `shared/authBoot.js`에서 드로어 버튼도 처리
+    - 접근성: `aria-label`, `aria-expanded`, `aria-hidden` 속성 추가
+
 ## 2025-12-18
 - **[seoulsurvival] 인앱 브라우저 안내 및 랭킹 로그인 UX 개선**
   - 인앱 브라우저 감지 및 안내 배너 추가:

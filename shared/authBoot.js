@@ -24,15 +24,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   const statusLabel = $('#authStatusLabel');
   const providerButtons = Array.from(document.querySelectorAll('[data-auth-provider]'));
 
-  if (!loginBtn && providerButtons.length === 0) return;
+  // 드로어 메뉴의 버튼도 찾기 (허브 페이지용)
+  const drawerLoginBtn = $('#drawerAuthLoginBtn');
+  const drawerLogoutBtn = $('#drawerAuthLogoutBtn');
+  const drawerUserLabel = $('#drawerAuthUserLabel');
+
+  if (!loginBtn && !drawerLoginBtn && providerButtons.length === 0) return;
 
   await initAuthUI({
     scope: detectScope(),
     providerButtons,
     defaultProvider: 'google',
-    loginBtn,
-    logoutBtn,
-    userLabel,
+    loginBtn: loginBtn || drawerLoginBtn,
+    logoutBtn: logoutBtn || drawerLogoutBtn,
+    userLabel: userLabel || drawerUserLabel,
     statusLabel,
     toast,
   });
