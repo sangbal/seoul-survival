@@ -917,9 +917,19 @@
         <div class="footer-meta">
           <span class="version">v<span id="version">1.0.0</span></span>
         </div>
-        <div class="footer-dev-info">
-          Dev: http://localhost:5173/ (hub), http://localhost:5173/seoulsurvival/ (game)
-        </div>
+        <script type="module">
+          // 프로덕션에서는 개발용 문구를 DOM에서 완전히 제거
+          if (import.meta.env.DEV) {
+            const devInfo = document.querySelector('.footer-dev-info');
+            if (devInfo) {
+              devInfo.textContent = `Dev: ${location.origin} (hub), ${location.origin}/seoulsurvival/ (game)`;
+              devInfo.style.display = 'block';
+            }
+          } else {
+            const devInfo = document.querySelector('.footer-dev-info');
+            if (devInfo) devInfo.remove();
+          }
+        </script>
       </div>
     </footer>
   </main>

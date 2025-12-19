@@ -25,6 +25,8 @@ export default defineConfig(({ mode }) => {
           main: resolve(__dirname, 'index.html'),
           seoulsurvival: resolve(__dirname, 'seoulsurvival/index.html'),
           account: resolve(__dirname, 'account/index.html'),
+          terms: resolve(__dirname, 'terms.html'),
+          privacy: resolve(__dirname, 'privacy.html'),
         },
       },
     },

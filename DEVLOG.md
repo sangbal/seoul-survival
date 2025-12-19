@@ -3,6 +3,14 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## 2025-12-19 (프로덕션 마무리)
+- **[hub] 프로덕션 품질 마무리**
+  - 404 해결: `terms.html` / `privacy.html`을 `vite.config.js`의 `rollupOptions.input`에 추가하여 멀티페이지 빌드에 포함
+  - 프로덕션 문구 제거: `footer-dev-info`의 "Dev: localhost..." 문구를 `import.meta.env.DEV` 조건부 렌더링으로 처리 (프로덕션에서는 DOM에서 완전 제거)
+  - Auth UI 접근성 개선: 로그인/로그아웃 버튼에 `aria-hidden` 및 `tabindex` 속성 추가하여 숨김 상태에서 스크린리더/탭 포커스 완전 제외
+  - 적용 위치: `shared/auth/ui.js` (헤더 버튼), `hub/main.js` (드로어 버튼 동기화)
+  - 검증: 빌드 산출물에서 terms.html/privacy.html 생성 확인, 프로덕션 문구 0개 확인, 접근성 속성 적용 확인
+
 ## 2025-12-19 (최종)
 - **[hub] 계정관리 페이지 분리 (/account/)**
   - Cloudflare Pages 폴더형 URL 구조로 계정관리 페이지 분리

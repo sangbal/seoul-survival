@@ -40,6 +40,7 @@ export async function initAuthUI(opts) {
     if (userLabel) {
       userLabel.textContent = name ? name : (scope === 'hub' ? 'Guest' : '게스트');
       userLabel.hidden = false;
+      userLabel.setAttribute('aria-hidden', 'false');
     }
     if (statusLabel) {
       if (!isAuthEnabled()) {
@@ -58,9 +59,19 @@ export async function initAuthUI(opts) {
       }
     }
 
-    // 로그인 상태에 따라 버튼 표시/숨김
-    if (loginBtn) loginBtn.hidden = !!name;
-    if (logoutBtn) logoutBtn.hidden = !name;
+    // 로그인 상태에 따라 버튼 표시/숨김 및 접근성 제어
+    if (loginBtn) {
+      const isLoggedIn = !!name;
+      loginBtn.hidden = isLoggedIn;
+      loginBtn.setAttribute('aria-hidden', isLoggedIn ? 'true' : 'false');
+      loginBtn.setAttribute('tabindex', isLoggedIn ? '-1' : '0');
+    }
+    if (logoutBtn) {
+      const isLoggedIn = !!name;
+      logoutBtn.hidden = !isLoggedIn;
+      logoutBtn.setAttribute('aria-hidden', !isLoggedIn ? 'true' : 'false');
+      logoutBtn.setAttribute('tabindex', !isLoggedIn ? '-1' : '0');
+    }
     
     // providerButtons 컨테이너 표시/숨김 (로그인 시 숨김)
     // 인라인 스타일이 있으므로 style.display를 직접 설정

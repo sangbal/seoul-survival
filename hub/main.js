@@ -175,8 +175,12 @@ function syncDrawerAuthUI() {
         if (drawerLoginBtn) {
           if (isVisible) {
             drawerLoginBtn.removeAttribute('hidden');
+            drawerLoginBtn.setAttribute('aria-hidden', 'false');
+            drawerLoginBtn.setAttribute('tabindex', '0');
           } else {
             drawerLoginBtn.setAttribute('hidden', '');
+            drawerLoginBtn.setAttribute('aria-hidden', 'true');
+            drawerLoginBtn.setAttribute('tabindex', '-1');
           }
         }
       }
@@ -185,8 +189,12 @@ function syncDrawerAuthUI() {
         if (drawerLogoutBtn) {
           if (isVisible) {
             drawerLogoutBtn.removeAttribute('hidden');
+            drawerLogoutBtn.setAttribute('aria-hidden', 'false');
+            drawerLogoutBtn.setAttribute('tabindex', '0');
           } else {
             drawerLogoutBtn.setAttribute('hidden', '');
+            drawerLogoutBtn.setAttribute('aria-hidden', 'true');
+            drawerLogoutBtn.setAttribute('tabindex', '-1');
           }
         }
       }
