@@ -59,15 +59,18 @@
 - **공통(Leaderboard)**: `shared/leaderboard.js`
   - 리더보드 업데이트/조회 함수 제공
   - Supabase `leaderboard` 테이블 사용 (테이블/RLS는 `supabase/leaderboard.sql`로 관리)
-  - 리더보드 데이터: 닉네임, 총 자산, 플레이타임
-  - 업데이트: 게임 저장 시 30초마다 자동 업데이트 (닉네임이 있을 때만)
+  - 리더보드 데이터: 닉네임, 총 자산, 플레이타임, 타워 개수(프레스티지)
+  - 업데이트: 게임 저장 시 30초마다 자동 업데이트 (닉네임이 있을 때만, 첫 타워 구매 후 중단)
   - 조회: **랭킹 탭**에서만 업데이트 (로딩 상태 관리, 1분 간격 폴링, 타임아웃 처리, IntersectionObserver 기반 가시성 체크)
+  - 순위 정렬: 타워 개수 우선 → 자산 순 (타워 개수가 같으면 자산 많은 순)
+  - 스키마: `supabase/leaderboard.sql`에 `tower_count` 컬럼 및 복합 인덱스 포함, `get_my_rank` RPC 함수로 순위 조회
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
   - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.
 - **게임 코어(대부분)**: `seoulsurvival/src/main.js`
-  - 상태 변수(현금/보유/업그레이드/직급/이벤트/로그 등)와 메인 루프를 포함.
+  - 상태 변수(현금/보유/업그레이드/직급/이벤트/로그/서울타워 개수 등)와 메인 루프를 포함.
   - UI 업데이트, 저장/로드, 이벤트, 순차 해금, 업그레이드 해금/구매 처리 등 핵심 로직이 여기 집중.
+  - 프레스티지 시스템: 서울타워(`towers`) 상태 변수, 구매 시 엔딩 모달, 리더보드 업데이트 중단 플래그(`shouldUpdateLeaderboard`)
 - **유틸/모듈 분리**
   - `seoulsurvival/src/economy/pricing.js`: 금융/부동산 **구매/판매 비용** 계산(등비 합)
   - `seoulsurvival/src/systems/market.js`: 시장 이벤트 스케줄/배수 계산(모듈형)
@@ -96,14 +99,23 @@
 ## 핵심 데이터/테이블 위치
 - **직급(승진)**: `seoulsurvival/src/main.js`의 `CAREER_LEVELS`
 - **업그레이드**: `seoulsurvival/src/main.js`의 `UPGRADES`
+- **서울타워**: `seoulsurvival/src/main.js`의 `towers` 변수
 - **기본 수익 테이블**
   - 금융: `FINANCIAL_INCOME`
   - 부동산: `BASE_RENT`
 - **가격(기본가/지수 성장)**:
   - 모듈: `seoulsurvival/src/economy/pricing.js`
   - 레거시(중복): `seoulsurvival/src/main.js` 내부에도 구매/판매 계산 함수가 존재
+  - 가격 성장률: `DEFAULT_GROWTH = 1.05` (등비 수열)
+  - 판매 환급률: `SELL_RATE = 1.0` (100% 환급)
+  - 프레스티지: `BASE_COSTS.tower` (1조원, 고정, 판매 불가)
 - **순차 해금**:
   - `isProductUnlocked(...)`, `checkNewUnlocks(...)` in `seoulsurvival/src/main.js`
+  - 서울타워 해금 조건: CEO(`careerLevel >= 9`) + 빌딩 1개 이상
+- **프레스티지 시스템**:
+  - 서울타워: 최종 엔드게임 콘텐츠, 구매 시 엔딩 모달 표시
+  - 리더보드 통합: 타워 개수는 리더보드에 이모지(🗼)로 표시, 순위 정렬에 우선 반영
+  - 게임 상태: 타워 구매 후 `shouldUpdateLeaderboard = false`로 설정하여 자산 변화가 리더보드에 반영되지 않음
 
 ## UI 구조 메모(자주 수정되는 곳)
 - 노동 탭(`workTab`)

@@ -1,6 +1,6 @@
 // 가격/판매 계산 로직
 // - 수량 구매/판매 시 누적합을 정확히 계산
-// - 판매 가격은 "현재가의 80%" 정책 적용
+// - 판매 가격은 "현재가의 100%" 정책 적용 (현실성/재미)
 
 export const FINANCIAL_COSTS = {
   deposit: 50_000,
@@ -18,8 +18,8 @@ export const PROPERTY_COSTS = {
   building: 3_000_000_000,
 };
 
-const DEFAULT_GROWTH = 1.10; // 밸런싱: 1.15 → 1.10으로 완화
-const SELL_RATE = 0.8;
+const DEFAULT_GROWTH = 1.05; // 밸런싱: 1.10 → 1.05로 완화
+const SELL_RATE = 1.0; // 100% 환급 (현실성/재미)
 
 function sumGeometricCost(baseCost, startIndex, quantity, growth = DEFAULT_GROWTH) {
   let total = 0;
@@ -69,10 +69,10 @@ export function getPropertySellPrice(type, count, quantity = 1) {
 // (레거시) 단계별 가격 증가율 시스템: 현재 main.js에서는 사용하지 않지만
 // 추후 난이도 곡선 변경 시 활용할 수 있도록 남겨둠.
 export function getPriceMultiplierByTier(count) {
-  if (count < 5) return 1.10;
-  if (count < 15) return 1.15;
-  if (count < 30) return 1.20;
-  return 1.25;
+  if (count < 5) return 1.05;
+  if (count < 15) return 1.10;
+  if (count < 30) return 1.15;
+  return 1.20;
 }
 
 

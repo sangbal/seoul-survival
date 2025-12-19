@@ -60,8 +60,9 @@ export async function isNicknameTaken(nickname) {
  * @param {string} nickname - Player nickname
  * @param {number} totalAssets - Total assets value
  * @param {number} playTimeMs - Total play time in milliseconds
+ * @param {number} towerCount - Number of towers (prestige count, default: 0)
  */
-export async function updateLeaderboard(nickname, totalAssets, playTimeMs) {
+export async function updateLeaderboard(nickname, totalAssets, playTimeMs, towerCount = 0) {
   try {
     const user = await getUser();
     if (!user) {
@@ -80,6 +81,7 @@ export async function updateLeaderboard(nickname, totalAssets, playTimeMs) {
         nickname: nickname || '익명',
         total_assets: totalAssets,
         play_time_ms: playTimeMs,
+        tower_count: towerCount,
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'user_id,game_slug'
@@ -124,12 +126,15 @@ export async function getLeaderboard(limit = 10, sortBy = 'assets') {
     
     let query = supabase
       .from('leaderboard')
-      .select('nickname, total_assets, play_time_ms, updated_at')
+      .select('nickname, total_assets, play_time_ms, tower_count, updated_at')
       .eq('game_slug', GAME_SLUG)
       .limit(limit);
 
     if (sortBy === 'assets') {
-      query = query.order('total_assets', { ascending: false });
+      // Prestige ranking: tower_count first, then total_assets
+      query = query
+        .order('tower_count', { ascending: false })
+        .order('total_assets', { ascending: false });
     } else if (sortBy === 'playtime') {
       query = query.order('play_time_ms', { ascending: false });
     }
@@ -268,7 +273,8 @@ export async function getMyRank(nickname, sortBy = 'assets') {
         rank: row.rank,
         nickname: row.nickname,
         total_assets: row.total_assets,
-        play_time_ms: row.play_time_ms
+        play_time_ms: row.play_time_ms,
+        tower_count: row.tower_count || 0
       }
     };
   } catch (error) {

@@ -3,6 +3,30 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## 2025-12-20 (프레스티지 시스템 구현)
+- **[seoulsurvival] 프레스티지 시스템: 서울타워 구현**
+  - 엔드게임 콘텐츠 추가: 서울타워(🗼) 상품 추가, 가격 1조원, CEO 달성 + 빌딩 1개 이상 보유 시 해금
+  - 구매 로직: `buySeoulTower()` 함수 구현, 구매 시 현금 차감 및 `towers` 상태 변수 증가
+  - 엔딩 시퀀스: 타워 구매 시 엔딩 모달 표시, 일기장에 기록 추가
+  - 리더보드 통합: 타워 구매 시 리더보드에 타워 개수 업데이트, 이후 자산 변화는 리더보드에 반영되지 않음 (`shouldUpdateLeaderboard` 플래그)
+  - UI 업데이트: 헤더에 타워 배지 추가, 투자 섹션에 서울타워 카드 추가, 해금/구매 가능 상태 표시
+  - 게임 상태 저장: `towers` 변수를 저장/로드에 포함, 게임 리셋 시 초기화
+- **[seoulsurvival] 밸런싱 조정**
+  - 판매 환급률: 80% → 100% (`SELL_RATE = 1.0`) 변경, 현실성/재미 향상
+  - 가격 성장률: 1.10 → 1.05 (`DEFAULT_GROWTH = 1.05`) 변경, 구매 난이도 완화
+  - 적용 위치: `seoulsurvival/src/main.js`의 `getFinancialSellPrice`, `getPropertySellPrice`, `getFinancialCost`, `getPropertyCost`, `getPriceMultiplier` 함수
+- **[공통/리더보드] 프레스티지 순위 시스템 구현**
+  - 데이터베이스 스키마 확장: `supabase/leaderboard.sql`에 `tower_count` 컬럼 추가, 복합 인덱스 생성 (`tower_count DESC, total_assets DESC`)
+  - RPC 함수 추가: `get_my_rank` 함수에 `tower_count` 반환 및 타워 개수 우선 정렬 로직 포함
+  - 리더보드 모듈 업데이트: `shared/leaderboard.js`의 `updateLeaderboard`, `getLeaderboard`, `getMyRank` 함수에 `tower_count` 지원 추가
+  - 순위 정렬 로직: 타워 개수 우선 → 자산 순 (타워 개수가 같으면 자산 많은 순)
+  - 마이그레이션 스크립트: `supabase/leaderboard-migration-tower-count.sql` 생성, 기존 함수 삭제 후 재생성 로직 포함
+- **[seoulsurvival] 버그 수정 및 QA**
+  - `elBuyTower` 중복 선언 오류 수정: 중복 선언 제거
+  - 타워 가격 계산 버그 수정: 고정 가격(1조원)으로 변경, 등비 수열 계산 제거
+  - 타워 판매 방지: `updateButton` 함수에서 타워는 판매 버튼 표시 안 함
+  - 리더보드 오류 해결: Supabase 스키마 업데이트 완료, `tower_count` 컬럼 및 RPC 함수 정상 동작 확인
+
 ## 2025-12-19 (프로덕션 마무리)
 - **[hub] 프로덕션 품질 마무리**
   - 404 해결: `terms.html` / `privacy.html`을 `vite.config.js`의 `rollupOptions.input`에 추가하여 멀티페이지 빌드에 포함

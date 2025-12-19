@@ -2313,6 +2313,7 @@
         <div class="chip stat-tooltip" id="financialChip" title=""><span>💰 금융</span><b id="financial">0</b><span class="muted">개</span></div>
         <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
         <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당</span><b id="rps">0</b></div>
+        <div class="chip" id="towerBadge" style="display: none; background: linear-gradient(135deg, rgba(94, 234, 212, 0.15), rgba(94, 234, 212, 0.05)); border: 1px solid rgba(94, 234, 212, 0.3); box-shadow: 0 0 12px rgba(94, 234, 212, 0.2);"><span style="font-size: 16px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">🗼</span><b id="towerCountHeader">0</b></div>
       </div>
     </header>
 
@@ -2489,6 +2490,17 @@
                 <span class="desc">현재가: <b id="buildingCurrentPrice">30억</b>원</span>
               </div>
               <button id="buyBuilding" class="btn">구입</button>
+            </div>
+
+            <div class="row building-item" id="towerItem">
+              <div class="meta">
+                <span class="title">🗼 서울타워</span>
+                <span class="desc">• 프레스티지 상품 (수익 없음)</span>
+                <span class="desc">• <b id="towerCountDisplay">0</b>개 보유</span>
+                <span class="desc">• 리더보드에 기록됨: 🗼x<b id="towerCountBadge">0</b></span>
+                <span class="desc">현재가: <b id="towerCurrentPrice">1조</b>원</span>
+              </div>
+              <button id="buyTower" class="btn">구입</button>
             </div>
           </div>
         </div>
