@@ -829,7 +829,8 @@ document.addEventListener('DOMContentLoaded', () => {
       officetel: 350000000, // 오피스텔: 3.5억원
       apartment: 800000000, // 아파트: 8억원
       shop: 1200000000,     // 상가: 12억원
-      building: 3000000000  // 빌딩: 30억원
+      building: 3000000000, // 빌딩: 30억원
+      tower: 1000000000000  // 서울타워: 1조원 (프레스티지, 수익 없음)
     };
     
     // 금융상품 가격 계산 함수
@@ -839,20 +840,20 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let i = 0; i < quantity; i++) {
         const currentIndex = count + i;
         // 첫 번째 아이템(index=0)은 기본 가격, 그 이후부터 배수 적용
-        let cost = baseCost * Math.pow(1.10, currentIndex); // 밸런싱: 1.15 → 1.10으로 완화
+        let cost = baseCost * Math.pow(1.05, currentIndex); // 밸런싱: 1.10 → 1.05로 완화
         totalCost += cost;
       }
       return Math.floor(totalCost);
     }
     
-    // 금융상품 판매 가격 계산 함수 (현재가의 80%)
+    // 금융상품 판매 가격 계산 함수 (현재가의 100%)
     function getFinancialSellPrice(type, count, quantity = 1) {
       if (count <= 0) return 0;
       let totalSellPrice = 0;
       for (let i = 0; i < quantity; i++) {
         if (count - i <= 0) break;
         const buyPrice = getFinancialCost(type, count - i - 1, 1);
-        totalSellPrice += Math.floor(buyPrice * 0.8);
+        totalSellPrice += Math.floor(buyPrice * 1.0); // 100% 환급 (현실성/재미)
       }
       return totalSellPrice;
     }
@@ -860,24 +861,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // 부동산 가격 계산 함수
     function getPropertyCost(type, count, quantity = 1) {
       const baseCost = BASE_COSTS[type];
+      if (!baseCost) return 0;
+      
+      // 서울타워는 고정 가격 (가격 성장 없음)
+      if (type === 'tower') {
+        return baseCost * quantity;
+      }
+      
       let totalCost = 0;
       for (let i = 0; i < quantity; i++) {
         const currentIndex = count + i;
         // 첫 번째 아이템(index=0)은 기본 가격, 그 이후부터 배수 적용
-        let cost = baseCost * Math.pow(1.10, currentIndex); // 밸런싱: 1.15 → 1.10으로 완화
+        let cost = baseCost * Math.pow(1.05, currentIndex); // 밸런싱: 1.10 → 1.05로 완화
         totalCost += cost;
       }
       return Math.floor(totalCost);
     }
     
-    // 부동산 판매 가격 계산 함수 (현재가의 80%)
+    // 부동산 판매 가격 계산 함수 (현재가의 100%)
     function getPropertySellPrice(type, count, quantity = 1) {
+      // 서울타워는 판매 불가
+      if (type === 'tower') return 0;
+      
       if (count <= 0) return 0;
       let totalSellPrice = 0;
       for (let i = 0; i < quantity; i++) {
         if (count - i <= 0) break;
         const buyPrice = getPropertyCost(type, count - i - 1, 1);
-        totalSellPrice += Math.floor(buyPrice * 0.8);
+        totalSellPrice += Math.floor(buyPrice * 1.0); // 100% 환급 (현실성/재미)
       }
       return totalSellPrice;
     }
@@ -1739,6 +1750,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let apartments = 0;   // 아파트
     let shops = 0;        // 상가
     let buildings = 0;    // 빌딩
+    let towers = 0;       // 서울타워 (프레스티지)
     
     // 해금 상태 추적 (버그 수정: 중복 해금 알림 방지)
     const unlockedProducts = {
@@ -1749,7 +1761,8 @@ document.addEventListener('DOMContentLoaded', () => {
       officetel: false,
       apartment: false,
       shop: false,
-      building: false
+      building: false,
+      tower: false
     };
     
     // 금융상품별 기본 수익률 (초당) - 밸런싱: 투자 수익률 10배 상향
@@ -1827,16 +1840,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalLaborIncome = 0;   // 총 노동 수익
     const CAREER_LEVELS = [
       { name: "알바", multiplier: 1, requiredIncome: 0, requiredClicks: 0, bgImage: workBg01 },                    // 1만원/클릭 (연봉 2000만)
-      // 누적 클릭 기준 승진 간격 조정: 최종(CEO) 10,000 클릭에 도달하도록 전체적으로 간격을 벌림
-      { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 150, bgImage: workBg02 },        // 1.5만원/클릭 (연봉 3000만)
-      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 400, bgImage: workBg03 },          // 2만원/클릭 (연봉 4000만)
-      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 900, bgImage: workBg04 },        // 2.5만원/클릭 (연봉 5000만)
-      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 1650, bgImage: workBg05 },          // 3만원/클릭 (연봉 6000만)
-      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 2650, bgImage: workBg06 },        // 3.5만원/클릭 (연봉 7000만)
-      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 3900, bgImage: workBg07 },          // 4만원/클릭 (연봉 8000만)
-      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 5450, bgImage: workBg08 },         // 5만원/클릭 (연봉 1억)
-      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 7450, bgImage: workBg09 },       // 10만원/클릭 (연봉 2억)
-      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 10000, bgImage: workBg10 }         // 12만원/클릭 (밸런싱: 20 → 12)
+      // 누적 클릭 기준 승진 간격 조정: 최종(CEO) 15,000 클릭에 도달하도록 전체적으로 간격을 벌림
+      { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 100, bgImage: workBg02 },        // 1.5만원/클릭 (연봉 3000만)
+      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 300, bgImage: workBg03 },          // 2만원/클릭 (연봉 4000만)
+      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 800, bgImage: workBg04 },        // 2.5만원/클릭 (연봉 5000만)
+      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 1500, bgImage: workBg05 },          // 3만원/클릭 (연봉 6000만)
+      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 2500, bgImage: workBg06 },        // 3.5만원/클릭 (연봉 7000만)
+      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 4000, bgImage: workBg07 },          // 4만원/클릭 (연봉 8000만)
+      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 6000, bgImage: workBg08 },         // 5만원/클릭 (연봉 1억)
+      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 9000, bgImage: workBg09 },       // 10만원/클릭 (연봉 2억)
+      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 15000, bgImage: workBg10 }         // 12만원/클릭 (밸런싱: 20 → 12)
     ];
     
     // 가격은 이제 동적으로 계산됨 (getPropertyCost 함수 사용)
@@ -2107,6 +2120,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const elBuildingCount = document.getElementById('buildingCount');
     const elRentPerBuilding = document.getElementById('rentPerBuilding');
     const elBuyBuilding = document.getElementById('buyBuilding');
+    
+    const elTowerCountDisplay = document.getElementById('towerCountDisplay');
+    const elTowerCountBadge = document.getElementById('towerCountBadge');
+    const elTowerCurrentPrice = document.getElementById('towerCurrentPrice');
+    const elBuyTower = document.getElementById('buyTower');
 
     // 커리어 관련
     const elCurrentCareer = document.getElementById('currentCareer');
@@ -2195,8 +2213,15 @@ document.addEventListener('DOMContentLoaded', () => {
             `오늘은 체크 하나를 더했다. (${name || '업적'})`,
             `작게나마 성취. ${name || '업적'}라니, 나도 꽤 한다.`,
             `기록해둔다: ${name || '업적'}.\n${desc ? desc : ''}`.trim(),
-            `“${name || '업적'}” 달성.\n${desc ? `메모: ${desc}` : ''}`.trim(),
+            `"${name || '업적'}" 달성.\n${desc ? `메모: ${desc}` : ''}`.trim(),
             `별거 아닌 듯한데, 이런 게 쌓여서 사람이 된다. (${name || '업적'})`,
+            `또 하나의 마일스톤. ${name || '업적'}.\n${desc ? desc : ''}`.trim(),
+            `작은 성취도 성취다. ${name || '업적'}.\n${desc ? desc : ''}`.trim(),
+            `하루하루가 쌓인다. 오늘은 ${name || '업적'}.\n${desc ? desc : ''}`.trim(),
+            `기록에 하나 더. ${name || '업적'}.\n${desc ? desc : ''}`.trim(),
+            `뿌듯함이 조금씩. ${name || '업적'} 달성.\n${desc ? desc : ''}`.trim(),
+            `이런 게 인생이지. ${name || '업적'}.\n${desc ? desc : ''}`.trim(),
+            `작은 발걸음이 모여 길이 된다. ${name || '업적'}.\n${desc ? desc : ''}`.trim(),
           ]);
         }
 
@@ -2213,6 +2238,13 @@ document.addEventListener('DOMContentLoaded', () => {
             `승진했다. 책임도 같이 딸려온다는데… 일단 축하부터.\n${extraText}`.trim(),
             `그래, 나도 올라갈 줄 안다. ${career || '승진'}.\n${extraText}`.trim(),
             `커피가 조금 더 쓰게 느껴진다. ${career || '승진'}의 맛.\n${extraText}`.trim(),
+            `한 단계 올라섰다. ${career || '승진'}.\n${extraText}`.trim(),
+            `노력이 보상받는 순간. ${career || '승진'}.\n${extraText}`.trim(),
+            `새로운 시작. ${career || '승진'}.\n${extraText}`.trim(),
+            `더 높은 곳에서 보는 풍경이 다르다. ${career || '승진'}.\n${extraText}`.trim(),
+            `자리도 바뀌고 마음도 바뀐다. ${career || '승진'}.\n${extraText}`.trim(),
+            `이제야 진짜 시작인가. ${career || '승진'}.\n${extraText}`.trim(),
+            `무게감이 느껴진다. ${career || '승진'}의 무게.\n${extraText}`.trim(),
           ]);
         }
 
@@ -2225,42 +2257,110 @@ document.addEventListener('DOMContentLoaded', () => {
             '적금': [
               `자동이체 버튼이 눈에 들어왔다.\n${body}`,
               `천천히 쌓는 쪽으로 방향을 틀었다.\n${body}`,
-              `오늘은 ‘루틴’이 열렸다.\n${body}`,
+              `오늘은 '루틴'이 열렸다.\n${body}`,
+              `꾸준함의 길이 열렸다.\n${body}`,
+              `작은 투자의 문이 열렸다.\n${body}`,
+              `시간이 내 편이 되는 선택지.\n${body}`,
+              `루틴 투자의 시작.\n${body}`,
+              `매일의 습관이 가능해졌다.\n${body}`,
+              `인내심의 투자가 열렸다.\n${body}`,
+              `작은 것들이 모이는 길.\n${body}`,
             ],
             '국내주식': [
               `이제 차트랑 뉴스랑 싸울 차례다.\n${body}`,
               `심장이 약하면 못 할 선택지… 열렸다.\n${body}`,
               `변동성의 문이 열렸다.\n${body}`,
+              `국장의 세계로 입문.\n${body}`,
+              `차트의 파도를 탈 수 있다.\n${body}`,
+              `투자자의 길이 열렸다.\n${body}`,
+              `변동성에 도전할 수 있다.\n${body}`,
+              `국장의 심장박동을 느낄 수 있다.\n${body}`,
+              `위험과 기회의 문.\n${body}`,
+              `국장 투자의 시작.\n${body}`,
             ],
             '미국주식': [
               `시차를 버티는 돈이 열렸다.\n${body}`,
               `달러 냄새가 난다.\n${body}`,
               `밤샘의 선택지… 드디어.\n${body}`,
+              `글로벌 투자의 문이 열렸다.\n${body}`,
+              `세계 시장에 발을 담글 수 있다.\n${body}`,
+              `미장의 파도를 탈 수 있다.\n${body}`,
+              `달러의 무게를 느낄 수 있다.\n${body}`,
+              `시차의 스트레스를 견딜 수 있다.\n${body}`,
+              `환율의 변동을 경험할 수 있다.\n${body}`,
+              `미장 투자의 시작.\n${body}`,
             ],
             '코인': [
               `롤러코스터 입장권이 생겼다.\n${body}`,
               `FOMO가 문을 두드린다.\n${body}`,
               `폭등/폭락의 세계가 열렸다.\n${body}`,
+              `변동성의 극치를 경험할 수 있다.\n${body}`,
+              `멘탈이 시험받는 투자.\n${body}`,
+              `코인판의 무게를 견딜 수 있다.\n${body}`,
+              `FOMO와 공포 사이의 선택.\n${body}`,
+              `디지털 자산의 세계.\n${body}`,
+              `심장이 먼저 반응하는 투자.\n${body}`,
+              `롤러코스터의 정점에 설 수 있다.\n${body}`,
             ],
             '빌라': [
-              `첫 ‘집’이라는 단어가 현실이 됐다.\n${body}`,
+              `첫 '집'이라는 단어가 현실이 됐다.\n${body}`,
               `작아도 내 편이 하나 생긴 기분.\n${body}`,
+              `부동산 투자의 첫걸음.\n${body}`,
+              `집이라는 단어가 현실이 됐다.\n${body}`,
+              `내 공간을 가질 수 있다.\n${body}`,
+              `작은 집도 집이다.\n${body}`,
+              `부동산의 세계로 입문.\n${body}`,
+              `첫 집의 무게감을 느낄 수 있다.\n${body}`,
+              `내 이름으로 등기할 수 있다.\n${body}`,
+              `부동산 투자의 시작.\n${body}`,
             ],
             '오피스텔': [
               `출근 동선이 머리에 그려졌다.\n${body}`,
               `현실적인 선택지가 열렸다.\n${body}`,
+              `실용적인 투자가 가능해졌다.\n${body}`,
+              `생활의 편의를 살 수 있다.\n${body}`,
+              `도시 생활의 현실을 경험할 수 있다.\n${body}`,
+              `작은 공간, 큰 만족의 선택.\n${body}`,
+              `실용주의의 투자.\n${body}`,
+              `생활의 질을 올릴 수 있다.\n${body}`,
+              `현실적인 부동산 투자.\n${body}`,
+              `도시 생활의 편의를 살 수 있다.\n${body}`,
             ],
             '아파트': [
               `꿈이 조금 현실 쪽으로 다가왔다.\n${body}`,
               `안정의 상징이 열렸다.\n${body}`,
+              `한국인의 꿈을 살 수 있다.\n${body}`,
+              `부동산 투자의 정점.\n${body}`,
+              `아파트의 무게감을 느낄 수 있다.\n${body}`,
+              `꿈이 현실이 되는 순간.\n${body}`,
+              `안정적인 투자가 가능해졌다.\n${body}`,
+              `부동산의 대표주자를 살 수 있다.\n${body}`,
+              `가치가 보장되는 선택.\n${body}`,
+              `한국 사회의 상징을 살 수 있다.\n${body}`,
             ],
             '상가': [
               `유동인구라는 단어가 갑자기 무겁다.\n${body}`,
               `장사 잘되길… 진심으로.\n${body}`,
+              `상권의 힘을 믿을 수 있다.\n${body}`,
+              `유동인구가 내 수익이 될 수 있다.\n${body}`,
+              `상권 투자의 묘미를 느낄 수 있다.\n${body}`,
+              `임대 수익의 달콤함을 경험할 수 있다.\n${body}`,
+              `상가의 가치를 알아볼 수 있다.\n${body}`,
+              `상권의 파도를 탈 수 있다.\n${body}`,
+              `임차인의 성공이 내 성공이 될 수 있다.\n${body}`,
+              `상가 투자의 리스크를 감수할 수 있다.\n${body}`,
             ],
             '빌딩': [
               `스카이라인에 욕심이 생겼다.\n${body}`,
-              `이제 진짜 ‘엔드게임’ 냄새.\n${body}`,
+              `이제 진짜 '엔드게임' 냄새.\n${body}`,
+              `부동산 투자의 정점.\n${body}`,
+              `스카이라인의 주인이 될 수 있다.\n${body}`,
+              `도시의 한 조각을 소유할 수 있다.\n${body}`,
+              `빌딩의 무게감을 느낄 수 있다.\n${body}`,
+              `부동산 투자의 완성.\n${body}`,
+              `도시의 심장부를 살 수 있다.\n${body}`,
+              `스카이라인에 내 이름을 올릴 수 있다.\n${body}`,
+              `부동산 투자의 궁극.\n${body}`,
             ],
           };
           if (name && unlockByProduct[name]) {
@@ -2271,6 +2371,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `다음 장으로 넘어갈 수 있게 됐다.\n${body}`,
             `아직 초반인데도, 벌써 선택지가 늘었다.\n${body}`,
             `드디어. ${body}`,
+            `새로운 가능성이 열렸다.\n${body}`,
+            `선택지가 하나 더 생겼다.\n${body}`,
+            `다음 단계로 나아갈 수 있다.\n${body}`,
+            `기회의 문이 열렸다.\n${body}`,
+            `새로운 길이 보인다.\n${body}`,
+            `진행의 길이 열렸다.\n${body}`,
           ]);
         }
 
@@ -2282,6 +2388,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `현실 체크. 돈이 없다.\n${body}`,
             `오늘은 참는다. 아직은 무리.\n${body}`,
             `계산기만 두드리고 끝.\n${body}`,
+            `통장 잔고가 거짓말을 한다.\n${body}`,
+            `돈이 부족하다는 건 늘 아프다.\n${body}`,
+            `다시 모아야 한다. 조금 더.\n${body}`,
+            `욕심을 접어야 할 때.\n${body}`,
+            `현실이 무겁다.\n${body}`,
+            `내일을 기다려야 한다.\n${body}`,
           ]);
         }
         if (s.startsWith('✅') && s.includes('구입했습니다')) {
@@ -2293,52 +2405,142 @@ document.addEventListener('DOMContentLoaded', () => {
             '예금': [
               `일단은 안전한 데에 묶어두자.\n${body}`,
               `불안할 땐 예금이 답이다.\n${body}`,
-              `통장에 ‘쿠션’을 하나 깔았다.\n${body}`,
+              `통장에 '쿠션'을 하나 깔았다.\n${body}`,
+              `안전함이 최고의 수익률.\n${body}`,
+              `무엇보다도 평온함.\n${body}`,
+              `돈이 잠들어 있는 게 나쁘지 않다.\n${body}`,
+              `은행이 내 편이 되는 순간.\n${body}`,
+              `위험은 내일로 미뤄두자.\n${body}`,
+              `조용히 쌓이는 게 좋다.\n${body}`,
+              `불안할 때는 이게 최선.\n${body}`,
+              `돈이 안전하게 지켜지는 느낌.\n${body}`,
+              `위험 없는 선택.\n${body}`,
             ],
             '적금': [
               `루틴을 샀다. 매일이 쌓이면 언젠가.\n${body}`,
               `천천히, 꾸준히. 적금은 배신을 덜 한다.\n${body}`,
               `버티기 모드 ON.\n${body}`,
+              `작은 것들이 모여 큰 것이 된다.\n${body}`,
+              `매일의 습관이 미래를 만든다.\n${body}`,
+              `꾸준함이 무기다.\n${body}`,
+              `서두르지 않고 천천히.\n${body}`,
+              `시간이 내 편이 되는 느낌.\n${body}`,
+              `작은 투자가 큰 결과를 만든다.\n${body}`,
+              `루틴의 힘을 믿는다.\n${body}`,
+              `매일 조금씩, 그게 전부다.\n${body}`,
+              `인내심이 필요한 투자.\n${body}`,
             ],
             '국내주식': [
               `차트가 나를 보더니 웃는 것 같았다.\n${body}`,
               `기대 반, 긴장 반.\n${body}`,
               `뉴스 알람을 켜야 할 것 같다.\n${body}`,
+              `변동성의 바다에 뛰어든다.\n${body}`,
+              `심장이 뛰는 투자.\n${body}`,
+              `국장의 파도를 타본다.\n${body}`,
+              `위험과 기회가 공존한다.\n${body}`,
+              `차트 한 줄에 모든 게 달렸다.\n${body}`,
+              `투자자의 길을 걷는다.\n${body}`,
+              `시장의 심장박동을 느낀다.\n${body}`,
+              `변동성에 내 심장도 같이 흔들린다.\n${body}`,
+              `국장의 무게를 견뎌본다.\n${body}`,
             ],
             '미국주식': [
               `달러 환율부터 떠올랐다.\n${body}`,
               `밤에 울리는 알림을 각오했다.\n${body}`,
               `세계로 한 걸음.\n${body}`,
+              `시차를 극복하는 투자.\n${body}`,
+              `미장의 파도를 타본다.\n${body}`,
+              `달러의 무게를 느낀다.\n${body}`,
+              `세계 시장에 발을 담근다.\n${body}`,
+              `밤샘의 대가를 치른다.\n${body}`,
+              `환율이 내 수익을 좌우한다.\n${body}`,
+              `글로벌 투자자의 길.\n${body}`,
+              `시차 때문에 잠을 설친다.\n${body}`,
+              `미장의 리듬에 맞춘다.\n${body}`,
             ],
             '코인': [
               `심장 단단히 붙잡고 탔다.\n${body}`,
               `오늘은 FOMO가 이겼다.\n${body}`,
               `롤러코스터에 표를 끊었다.\n${body}`,
+              `폭등과 폭락 사이에서 줄타기.\n${body}`,
+              `멘탈이 시험받는 투자.\n${body}`,
+              `변동성의 극치를 경험한다.\n${body}`,
+              `코인판의 무게를 견뎌본다.\n${body}`,
+              `FOMO와 공포 사이에서.\n${body}`,
+              `디지털 자산의 세계.\n${body}`,
+              `심장이 먼저 반응한다.\n${body}`,
+              `롤러코스터의 정점에 서 있다.\n${body}`,
+              `위험을 감수하는 선택.\n${body}`,
             ],
             '빌라': [
               `작아도 시작은 시작이다.\n${body}`,
               `첫 집 느낌… 마음이 조금 놓였다.\n${body}`,
               `벽지 냄새를 상상했다.\n${body}`,
+              `첫 부동산. 작지만 소중하다.\n${body}`,
+              `집이라는 단어가 현실이 됐다.\n${body}`,
+              `내 공간이 생겼다.\n${body}`,
+              `작은 집도 집이다.\n${body}`,
+              `부동산 투자의 첫걸음.\n${body}`,
+              `작은 시작이 큰 결과를 만든다.\n${body}`,
+              `첫 집의 무게감.\n${body}`,
+              `내 이름으로 등기되는 순간.\n${body}`,
+              `부동산의 세계에 입문했다.\n${body}`,
             ],
             '오피스텔': [
               `현실적인 선택을 했다.\n${body}`,
               `출근길이 짧아지는 상상을 했다.\n${body}`,
               `관리비 생각은 내일 하자.\n${body}`,
+              `실용적인 투자.\n${body}`,
+              `출근 동선이 머리에 그려진다.\n${body}`,
+              `현실과 이상의 절충.\n${body}`,
+              `생활의 편의를 샀다.\n${body}`,
+              `도시 생활의 현실.\n${body}`,
+              `작은 공간, 큰 만족.\n${body}`,
+              `실용주의의 승리.\n${body}`,
+              `생활의 질이 올라간다.\n${body}`,
+              `현실적인 부동산 투자.\n${body}`,
             ],
             '아파트': [
               `꿈이 조금 더 선명해졌다.\n${body}`,
               `안정의 상징을 손에 쥐었다.\n${body}`,
               `괜히 뿌듯하다.\n${body}`,
+              `한국인의 꿈을 샀다.\n${body}`,
+              `안정의 상징을 손에 쥐었다.\n${body}`,
+              `부동산 투자의 정점.\n${body}`,
+              `아파트의 무게감.\n${body}`,
+              `꿈이 현실이 되는 순간.\n${body}`,
+              `안정적인 투자.\n${body}`,
+              `부동산의 대표주자.\n${body}`,
+              `가치가 보장되는 선택.\n${body}`,
+              `한국 사회의 상징.\n${body}`,
             ],
             '상가': [
               `유동인구가 돈이 되는 세계.\n${body}`,
               `임차인 운이 따라주길.\n${body}`,
               `간판 불빛을 상상했다.\n${body}`,
+              `상권의 힘을 믿는다.\n${body}`,
+              `유동인구가 내 수익이다.\n${body}`,
+              `상권 투자의 묘미.\n${body}`,
+              `임대 수익의 달콤함.\n${body}`,
+              `상가의 가치를 알아본다.\n${body}`,
+              `유동인구가 곧 돈이다.\n${body}`,
+              `상권의 파도를 타본다.\n${body}`,
+              `임차인의 성공이 내 성공.\n${body}`,
+              `상가 투자의 리스크.\n${body}`,
             ],
             '빌딩': [
               `스카이라인을 한 조각 샀다.\n${body}`,
               `이건… 진짜 끝판왕 느낌이다.\n${body}`,
               `도시가 내 편인 것 같았다.\n${body}`,
+              `부동산 투자의 정점.\n${body}`,
+              `스카이라인의 주인.\n${body}`,
+              `도시의 한 조각을 소유한다.\n${body}`,
+              `빌딩의 무게감.\n${body}`,
+              `부동산 투자의 완성.\n${body}`,
+              `도시의 심장부를 샀다.\n${body}`,
+              `스카이라인에 내 이름이.\n${body}`,
+              `부동산 투자의 궁극.\n${body}`,
+              `도시의 한 부분이 내 것이다.\n${body}`,
             ],
           };
 
@@ -2352,6 +2554,11 @@ document.addEventListener('DOMContentLoaded', () => {
             `이건 소비가 아니라 투자라고… 스스로에게 말했다.\n${body}`,
             `한 발 더 나아갔다.\n${body}`,
             `손이 먼저 움직였다.\n${body}`,
+            `투자의 길을 걷는다.\n${body}`,
+            `미래를 위한 선택.\n${body}`,
+            `돈이 돈을 버는 구조.\n${body}`,
+            `자산을 늘리는 순간.\n${body}`,
+            `투자자의 마음가짐.\n${body}`,
           ]);
         }
         if (s.startsWith('💰') && s.includes('판매했습니다')) {
@@ -2363,44 +2570,121 @@ document.addEventListener('DOMContentLoaded', () => {
               `손이 떨리기 전에 내렸다.\n${body}`,
               `욕심을 접었다. 오늘은 이쯤.\n${body}`,
               `살아남는 게 먼저다.\n${body}`,
+              `FOMO를 이겨냈다.\n${body}`,
+              `멘탈을 지키기 위해 내렸다.\n${body}`,
+              `롤러코스터에서 내렸다.\n${body}`,
+              `변동성에서 벗어났다.\n${body}`,
+              `손절의 아픔을 견뎌낸다.\n${body}`,
+              `코인판에서 살아남았다.\n${body}`,
+              `위험에서 벗어났다.\n${body}`,
             ],
             '국내주식': [
               `수익이든 손절이든, 결론은 냈다.\n${body}`,
               `차트와 잠깐 이별.\n${body}`,
               `정리하고 숨 돌린다.\n${body}`,
+              `국장의 파도에서 벗어났다.\n${body}`,
+              `차트의 무게에서 해방.\n${body}`,
+              `투자 포지션을 정리했다.\n${body}`,
+              `변동성에서 벗어났다.\n${body}`,
+              `국장의 스트레스에서 해방.\n${body}`,
+              `정리하고 다음 기회를 본다.\n${body}`,
+              `차트와의 관계를 정리했다.\n${body}`,
             ],
             '미국주식': [
               `시차도 같이 정리했다.\n${body}`,
               `달러 생각은 잠시 접는다.\n${body}`,
               `잠깐 쉬어가기로 했다.\n${body}`,
+              `미장의 밤샘에서 벗어났다.\n${body}`,
+              `시차의 스트레스에서 해방.\n${body}`,
+              `달러의 무게에서 벗어났다.\n${body}`,
+              `미장 투자를 정리했다.\n${body}`,
+              `글로벌 투자에서 잠시 휴식.\n${body}`,
+              `환율 걱정을 접었다.\n${body}`,
+              `미장의 리듬에서 벗어났다.\n${body}`,
             ],
             '예금': [
               `안전벨트를 풀었다.\n${body}`,
               `현금이 필요했다.\n${body}`,
+              `안전함에서 벗어났다.\n${body}`,
+              `예금의 안정성을 포기했다.\n${body}`,
+              `현금화의 선택.\n${body}`,
+              `안전한 곳에서 돈을 꺼냈다.\n${body}`,
+              `예금의 편안함을 잃었다.\n${body}`,
+              `현금이 필요해 정리했다.\n${body}`,
+              `안전한 투자에서 벗어났다.\n${body}`,
+              `예금의 쿠션을 제거했다.\n${body}`,
             ],
             '적금': [
               `꾸준함을 잠깐 멈췄다.\n${body}`,
               `루틴을 깼다. 사정이 있었다.\n${body}`,
+              `적금의 루틴을 중단했다.\n${body}`,
+              `꾸준함을 포기했다.\n${body}`,
+              `루틴의 힘을 잃었다.\n${body}`,
+              `적금의 안정성을 포기.\n${body}`,
+              `매일의 습관을 깼다.\n${body}`,
+              `적금의 꾸준함을 중단.\n${body}`,
+              `루틴 투자에서 벗어났다.\n${body}`,
+              `적금의 시간을 포기했다.\n${body}`,
             ],
             '빌라': [
               `정든 것과 이별.\n${body}`,
               `현실적으로 정리했다.\n${body}`,
+              `첫 집과 작별.\n${body}`,
+              `부동산 투자를 정리했다.\n${body}`,
+              `작은 집을 내려놨다.\n${body}`,
+              `첫 부동산과 이별.\n${body}`,
+              `집의 무게에서 벗어났다.\n${body}`,
+              `부동산의 첫걸음을 정리.\n${body}`,
+              `작은 집을 포기했다.\n${body}`,
+              `첫 집의 추억을 정리.\n${body}`,
             ],
             '오피스텔': [
               `동선은 이제 안녕.\n${body}`,
               `정리하고 다음으로.\n${body}`,
+              `실용적인 투자를 정리.\n${body}`,
+              `출근 동선의 편의를 포기.\n${body}`,
+              `현실적인 선택을 정리.\n${body}`,
+              `오피스텔의 실용성을 포기.\n${body}`,
+              `생활의 편의를 잃었다.\n${body}`,
+              `도시 생활의 현실을 정리.\n${body}`,
+              `작은 공간을 내려놨다.\n${body}`,
+              `현실적인 투자를 정리.\n${body}`,
             ],
             '아파트': [
               `꿈을 잠시 내려놓았다.\n${body}`,
               `정리했다. 마음이 좀 쓰다.\n${body}`,
+              `한국인의 꿈을 포기.\n${body}`,
+              `안정의 상징을 내려놨다.\n${body}`,
+              `부동산 투자를 정리.\n${body}`,
+              `아파트의 무게에서 벗어났다.\n${body}`,
+              `꿈이 현실에서 멀어졌다.\n${body}`,
+              `안정적인 투자를 포기.\n${body}`,
+              `부동산의 대표주자를 정리.\n${body}`,
+              `가치 보장을 포기했다.\n${body}`,
             ],
             '상가': [
               `임차인 걱정이 덜었다.\n${body}`,
               `상권이란 게 참…\n${body}`,
+              `유동인구의 기회를 포기.\n${body}`,
+              `상권 투자를 정리했다.\n${body}`,
+              `임대 수익의 달콤함을 포기.\n${body}`,
+              `상가의 가치를 내려놨다.\n${body}`,
+              `유동인구의 수익을 포기.\n${body}`,
+              `상권의 파도에서 벗어났다.\n${body}`,
+              `임차인의 성공을 포기.\n${body}`,
+              `상가 투자의 리스크를 정리.\n${body}`,
             ],
             '빌딩': [
               `도시 한 조각을 내려놨다.\n${body}`,
               `정리했다. 다시 올라가면 된다.\n${body}`,
+              `부동산 투자의 정점을 포기.\n${body}`,
+              `스카이라인의 주인을 내려놨다.\n${body}`,
+              `도시의 한 조각을 포기.\n${body}`,
+              `빌딩의 무게에서 벗어났다.\n${body}`,
+              `부동산 투자의 완성을 정리.\n${body}`,
+              `도시의 심장부를 포기.\n${body}`,
+              `스카이라인에서 내 이름을 지웠다.\n${body}`,
+              `부동산 투자의 궁극을 정리.\n${body}`,
             ],
           };
           if (name && sellByProduct[name]) {
@@ -2411,6 +2695,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `가끔은 줄여야 산다.\n${body}`,
             `현금이 필요했다. 그래서 팔았다.\n${body}`,
             `미련은 접어두고 정리.\n${body}`,
+            `투자 포지션을 정리했다.\n${body}`,
+            `현금화의 선택.\n${body}`,
+            `자산을 정리하는 순간.\n${body}`,
+            `투자에서 벗어났다.\n${body}`,
+            `정리하고 다음 기회를 본다.\n${body}`,
+            `미련 없이 정리했다.\n${body}`,
           ]);
         }
         if (s.startsWith('❌')) {
@@ -2420,6 +2710,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `계획은 늘 계획대로 안 된다.\n${body}`,
             `한 번 더. 다음엔 될 거다.\n${body}`,
             `벽에 부딪혔다.\n${body}`,
+            `실패는 또 다른 시작.\n${body}`,
+            `좌절은 잠시뿐.\n${body}`,
+            `다시 일어서야 한다.\n${body}`,
+            `실패도 경험이다.\n${body}`,
+            `다음 기회를 기다린다.\n${body}`,
+            `실패에서 배운다.\n${body}`,
           ]);
         }
 
@@ -2456,55 +2752,146 @@ document.addEventListener('DOMContentLoaded', () => {
             '예금': [
               `예금 쪽은 흔들려도 티가 덜 난다. 그게 장점이자 단점.\n${body}`,
               `안정은 조용히 돈을 번다. 오늘도 예금은 예금했다.\n${body}`,
+              `예금은 변하지 않는다. 그게 장점.\n${body}`,
+              `안정적인 투자는 조용하다.\n${body}`,
+              `예금의 평온함이 느껴진다.\n${body}`,
+              `변동성 없는 투자의 편안함.\n${body}`,
+              `예금은 늘 그 자리다.\n${body}`,
+              `안전함의 가치를 느낀다.\n${body}`,
+              `예금의 조용한 수익.\n${body}`,
+              `변동 없는 투자의 평온.\n${body}`,
             ],
             '적금': [
               `루틴이 흔들리는 날이 있다. 그래도 적금은 적금.\n${body}`,
               `꾸준함의 세계에도 이벤트는 온다.\n${body}`,
+              `적금의 루틴이 흔들린다.\n${body}`,
+              `꾸준함에도 변화가 있다.\n${body}`,
+              `적금의 안정성이 시험받는다.\n${body}`,
+              `루틴 투자의 변동.\n${body}`,
+              `매일의 습관이 흔들린다.\n${body}`,
+              `적금의 꾸준함이 시험받는다.\n${body}`,
+              `시간이 만드는 투자의 변화.\n${body}`,
+              `적금의 루틴이 바뀐다.\n${body}`,
             ],
             '국내주식': [
               `차트가 또 날 시험한다.\n${body}`,
               `뉴스 한 줄에 심장이 먼저 반응했다.\n${body}`,
               `국장답게… 오늘도 변동성.\n${body}`,
+              `국장의 파도가 높아진다.\n${body}`,
+              `차트의 심장박동이 빨라진다.\n${body}`,
+              `국장의 변동성이 극대화된다.\n${body}`,
+              `뉴스 한 줄이 모든 걸 바꾼다.\n${body}`,
+              `국장의 무게가 느껴진다.\n${body}`,
+              `차트의 파도를 타야 한다.\n${body}`,
+              `국장 투자의 리스크가 커진다.\n${body}`,
             ],
             '미국주식': [
               `시차가 오늘따라 더 길게 느껴진다.\n${body}`,
               `달러랑 감정은 분리… 하자.\n${body}`,
               `미장 이벤트는 밤에 더 크게 들린다.\n${body}`,
+              `미장의 파도가 높아진다.\n${body}`,
+              `시차의 스트레스가 커진다.\n${body}`,
+              `달러의 무게가 느껴진다.\n${body}`,
+              `미장의 리듬이 바뀐다.\n${body}`,
+              `환율의 변동이 심해진다.\n${body}`,
+              `밤샘의 대가가 커진다.\n${body}`,
+              `글로벌 투자의 무게.\n${body}`,
             ],
             '코인': [
               `멘탈이 먼저 흔들린다. 코인은 늘 그렇다.\n${body}`,
               `롤러코스터가 출발했다.\n${body}`,
               `FOMO랑 손절 사이에서 줄타기.\n${body}`,
+              `코인판의 파도가 거세진다.\n${body}`,
+              `변동성의 극치를 경험한다.\n${body}`,
+              `멘탈이 시험받는 순간.\n${body}`,
+              `FOMO와 공포 사이에서.\n${body}`,
+              `롤러코스터의 정점에 서 있다.\n${body}`,
+              `코인판의 무게가 느껴진다.\n${body}`,
+              `위험을 감수하는 투자의 극치.\n${body}`,
             ],
             '빌라': [
               `동네 분위기가 바뀌면 빌라도 숨을 쉰다.\n${body}`,
               `작은 집도 결국은 시장을 탄다.\n${body}`,
+              `부동산 시장의 파도가 느껴진다.\n${body}`,
+              `작은 집도 시장의 영향을 받는다.\n${body}`,
+              `부동산 투자의 변동성.\n${body}`,
+              `동네 분위기의 변화.\n${body}`,
+              `작은 집의 가치가 흔들린다.\n${body}`,
+              `부동산 시장의 리듬.\n${body}`,
+              `첫 집의 무게감이 느껴진다.\n${body}`,
+              `부동산 투자의 리스크.\n${body}`,
             ],
             '오피스텔': [
               `현실의 수요가 움직이는 소리가 난다.\n${body}`,
               `출근 동선이 바뀌면 월세도 같이 흔들린다.\n${body}`,
+              `실용적인 투자도 시장의 영향을 받는다.\n${body}`,
+              `생활의 편의가 시장에 좌우된다.\n${body}`,
+              `도시 생활의 현실이 바뀐다.\n${body}`,
+              `오피스텔의 가치가 흔들린다.\n${body}`,
+              `현실적인 투자의 변동성.\n${body}`,
+              `생활의 질이 시장에 좌우된다.\n${body}`,
+              `실용주의 투자의 리스크.\n${body}`,
+              `도시 생활의 현실이 느껴진다.\n${body}`,
             ],
             '아파트': [
-              `아파트는 ‘상징’이라더니, 이벤트도 상징처럼 크게 온다.\n${body}`,
+              `아파트는 '상징'이라더니, 이벤트도 상징처럼 크게 온다.\n${body}`,
               `꿈이 흔들릴 때가 있다.\n${body}`,
+              `한국인의 꿈이 시장에 좌우된다.\n${body}`,
+              `안정의 상징이 흔들린다.\n${body}`,
+              `부동산 투자의 정점이 시험받는다.\n${body}`,
+              `아파트의 무게감이 느껴진다.\n${body}`,
+              `꿈이 현실에서 멀어질 수 있다.\n${body}`,
+              `안정적인 투자도 변동한다.\n${body}`,
+              `부동산의 대표주자가 흔들린다.\n${body}`,
+              `가치 보장이 시장에 좌우된다.\n${body}`,
             ],
             '상가': [
               `유동인구라는 말이 오늘은 무겁다.\n${body}`,
               `장사라는 건 결국 파도 타기.\n${body}`,
+              `상권의 힘이 시장에 좌우된다.\n${body}`,
+              `유동인구의 수익이 변동한다.\n${body}`,
+              `상권 투자의 묘미와 리스크.\n${body}`,
+              `임대 수익의 달콤함과 쓴맛.\n${body}`,
+              `상가의 가치가 흔들린다.\n${body}`,
+              `상권의 파도가 거세진다.\n${body}`,
+              `임차인의 성공이 시장에 좌우된다.\n${body}`,
+              `상가 투자의 리스크가 커진다.\n${body}`,
             ],
             '빌딩': [
               `도시가 요동치면 빌딩도 요동친다.\n${body}`,
               `스카이라인의 공기가 달라졌다.\n${body}`,
+              `부동산 투자의 정점이 시험받는다.\n${body}`,
+              `스카이라인의 주인이 시장에 좌우된다.\n${body}`,
+              `도시의 한 조각이 흔들린다.\n${body}`,
+              `빌딩의 무게감이 느껴진다.\n${body}`,
+              `부동산 투자의 완성이 시장에 좌우된다.\n${body}`,
+              `도시의 심장부가 요동친다.\n${body}`,
+              `스카이라인의 이름이 흔들린다.\n${body}`,
+              `부동산 투자의 궁극이 시험받는다.\n${body}`,
             ],
             '노동': [
               `업무 흐름이 바뀌면 내 하루도 바뀐다.\n${body}`,
               `오늘은 손이 더 바빠질 것 같다.\n${body}`,
+              `일의 리듬이 바뀐다.\n${body}`,
+              `업무의 흐름이 시장에 좌우된다.\n${body}`,
+              `노동의 가치가 변동한다.\n${body}`,
+              `일의 무게감이 느껴진다.\n${body}`,
+              `업무의 스트레스가 커진다.\n${body}`,
+              `노동의 리듬이 시장에 좌우된다.\n${body}`,
+              `일의 가치가 흔들린다.\n${body}`,
+              `업무의 변동성이 느껴진다.\n${body}`,
             ],
             '시장': [
               `시장이 시끄럽다.\n${body}`,
               `뉴스가 난리다.\n${body}`,
               `분위기가 확 바뀌었다.\n${body}`,
               `감정은 접고, 상황만 기록.\n${body}`,
+              `시장의 파도가 거세진다.\n${body}`,
+              `뉴스 한 줄이 모든 걸 바꾼다.\n${body}`,
+              `시장의 무게감이 느껴진다.\n${body}`,
+              `변동성의 극치를 경험한다.\n${body}`,
+              `시장의 리듬이 바뀐다.\n${body}`,
+              `투자의 리스크가 커진다.\n${body}`,
             ]
           };
 
@@ -2518,22 +2905,52 @@ document.addEventListener('DOMContentLoaded', () => {
             '코인': [
               `심장이 겨우 진정됐다. (${name ? name : '이벤트 종료'})`,
               `코인 장은 끝날 때까지 끝난 게 아니다. 오늘은 일단 끝.\n${name ? name : ''}`.trim(),
+              `롤러코스터가 멈췄다. 잠시만.\n${name ? name : ''}`.trim(),
+              `FOMO의 파도가 잠잠해졌다.\n${name ? name : ''}`.trim(),
+              `변동성의 폭풍이 지나갔다.\n${name ? name : ''}`.trim(),
+              `멘탈이 겨우 회복됐다.\n${name ? name : ''}`.trim(),
+              `코인판의 소란이 잠잠해졌다.\n${name ? name : ''}`.trim(),
+              `위험의 파도가 잠잠해졌다.\n${name ? name : ''}`.trim(),
             ],
             '국내주식': [
               `차트가 잠깐 조용해졌다.\n${name ? name : ''}`.trim(),
               `국장 소란 종료. 숨 한 번.\n${name ? name : ''}`.trim(),
+              `뉴스의 파도가 잠잠해졌다.\n${name ? name : ''}`.trim(),
+              `차트의 심장박동이 안정됐다.\n${name ? name : ''}`.trim(),
+              `국장의 변동성이 잠잠해졌다.\n${name ? name : ''}`.trim(),
+              `투자자의 심장이 진정됐다.\n${name ? name : ''}`.trim(),
+              `국장의 무게에서 벗어났다.\n${name ? name : ''}`.trim(),
+              `차트의 파도가 잠잠해졌다.\n${name ? name : ''}`.trim(),
             ],
             '미국주식': [
               `밤이 지나갔다.\n${name ? name : ''}`.trim(),
               `미장 이벤트 종료. 알림도 잠잠.\n${name ? name : ''}`.trim(),
+              `시차의 스트레스가 사라졌다.\n${name ? name : ''}`.trim(),
+              `달러의 무게에서 벗어났다.\n${name ? name : ''}`.trim(),
+              `미장의 파도가 잠잠해졌다.\n${name ? name : ''}`.trim(),
+              `밤샘의 대가가 끝났다.\n${name ? name : ''}`.trim(),
+              `환율의 변동이 잠잠해졌다.\n${name ? name : ''}`.trim(),
+              `글로벌 투자의 무게에서 벗어났다.\n${name ? name : ''}`.trim(),
             ],
             '부동산': [
               `동네가 다시 평소 얼굴을 찾았다.\n${name ? name : ''}`.trim(),
+              `부동산 시장이 안정됐다.\n${name ? name : ''}`.trim(),
+              `동네 분위기가 평소로 돌아왔다.\n${name ? name : ''}`.trim(),
+              `부동산 투자의 변동성이 잠잠해졌다.\n${name ? name : ''}`.trim(),
+              `집의 무게에서 벗어났다.\n${name ? name : ''}`.trim(),
+              `부동산 시장의 파도가 잠잠해졌다.\n${name ? name : ''}`.trim(),
+              `부동산 투자의 리스크가 줄어들었다.\n${name ? name : ''}`.trim(),
+              `동네가 평소의 모습을 찾았다.\n${name ? name : ''}`.trim(),
             ],
             '시장': [
               `소란이 잠잠해졌다.`,
               `폭풍 지나가고 고요.`,
               `이제 평소대로.`,
+              `시장의 파도가 잠잠해졌다.`,
+              `뉴스의 소란이 끝났다.`,
+              `변동성이 안정됐다.`,
+              `투자의 리스크가 줄어들었다.`,
+              `시장의 무게에서 벗어났다.`,
             ],
           };
 
@@ -2555,27 +2972,55 @@ document.addEventListener('DOMContentLoaded', () => {
             '코인': [
               `메모(코인): 멘탈 관리가 수익률이다.\n${body}`,
               `코인 메모.\n${name ? `(${name})\n` : ''}${body}`.trim(),
+              `코인 투자 노트: 변동성을 견뎌야 한다.\n${body}`,
+              `코인 기록: FOMO를 이겨내야 한다.\n${body}`,
+              `코인 메모: 롤러코스터의 정점에서 내려야 한다.\n${body}`,
+              `코인 투자 기록: 위험을 감수하는 선택.\n${body}`,
             ],
             '국내주식': [
               `메모(국장): 뉴스 한 줄에 흔들리지 말 것.\n${body}`,
               `국장 메모.\n${name ? `(${name})\n` : ''}${body}`.trim(),
+              `국장 투자 노트: 차트의 파도를 타야 한다.\n${body}`,
+              `국장 기록: 변동성을 견뎌야 한다.\n${body}`,
+              `국장 메모: 투자자의 심장이 시험받는다.\n${body}`,
+              `국장 투자 기록: 국장의 무게를 견뎌야 한다.\n${body}`,
             ],
             '미국주식': [
               `메모(미장): 시차 + 환율 = 체력.\n${body}`,
               `미장 메모.\n${name ? `(${name})\n` : ''}${body}`.trim(),
+              `미장 투자 노트: 밤샘의 대가를 치러야 한다.\n${body}`,
+              `미장 기록: 달러의 무게를 견뎌야 한다.\n${body}`,
+              `미장 메모: 시차의 스트레스를 견뎌야 한다.\n${body}`,
+              `미장 투자 기록: 글로벌 투자의 무게.\n${body}`,
             ],
             '예금': [
               `메모(예금): 조용히 이기는 쪽.\n${body}`,
+              `예금 투자 노트: 안정이 최고의 수익률.\n${body}`,
+              `예금 기록: 변동성 없는 투자의 편안함.\n${body}`,
+              `예금 메모: 안전함의 가치.\n${body}`,
+              `예금 투자 기록: 조용한 수익.\n${body}`,
             ],
             '적금': [
               `메모(적금): 루틴이 무기.\n${body}`,
+              `적금 투자 노트: 꾸준함이 무기다.\n${body}`,
+              `적금 기록: 매일의 습관이 미래를 만든다.\n${body}`,
+              `적금 메모: 시간이 내 편이 되는 투자.\n${body}`,
+              `적금 투자 기록: 인내심이 필요한 투자.\n${body}`,
             ],
             '부동산': [
               `메모(부동산): 공실은 악몽, 임차인은 복.\n${body}`,
               `동네 메모.\n${name ? `(${name})\n` : ''}${body}`.trim(),
+              `부동산 투자 노트: 집의 무게감을 견뎌야 한다.\n${body}`,
+              `부동산 기록: 시장의 파도를 타야 한다.\n${body}`,
+              `부동산 메모: 부동산 투자의 리스크.\n${body}`,
+              `부동산 투자 기록: 동네 분위기의 변화.\n${body}`,
             ],
             '노동': [
               `메모(노동): 버티는 사람이 이긴다.\n${body}`,
+              `노동 노트: 일의 무게감을 견뎌야 한다.\n${body}`,
+              `노동 기록: 업무의 리듬이 시장에 좌우된다.\n${body}`,
+              `노동 메모: 일의 가치가 변동한다.\n${body}`,
+              `노동 투자 기록: 업무의 스트레스를 견뎌야 한다.\n${body}`,
             ],
           };
 
@@ -2587,6 +3032,9 @@ document.addEventListener('DOMContentLoaded', () => {
             `메모.\n${body}`,
             `적어둔다.\n${body}`,
             `까먹기 전에 기록.\n${body}`,
+            `투자 노트에 기록.\n${body}`,
+            `기억해둘 것.\n${body}`,
+            `나중을 위해 기록.\n${body}`,
           ]);
         }
 
@@ -2615,53 +3063,134 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const byProduct = {
             '노동': [
-              `일을 ‘덜 힘들게’ 만드는 방법이 생겼다.\n${name ? name : body}`,
+              `일을 '덜 힘들게' 만드는 방법이 생겼다.\n${name ? name : body}`,
               `업무 스킬이 하나 늘었다.\n${name ? name : body}`,
               `손끝이 더 빨라질 준비.\n${name ? name : body}`,
+              `일하는 방식이 개선될 것 같다.\n${name ? name : body}`,
+              `업무 효율이 올라갈 것 같다.\n${name ? name : body}`,
+              `노동의 질이 향상될 것 같다.\n${name ? name : body}`,
+              `일하는 능력이 강화됐다.\n${name ? name : body}`,
+              `업무 스킬의 진화.\n${name ? name : body}`,
             ],
             '예금': [
               `예금이 더 조용히 벌어다 주겠지.\n${name ? name : body}`,
               `안정 쪽에 옵션이 하나 추가됐다.\n${name ? name : body}`,
+              `예금의 수익률이 올라갈 것 같다.\n${name ? name : body}`,
+              `안정적인 투자가 더 강해진다.\n${name ? name : body}`,
+              `예금의 가치가 상승할 것 같다.\n${name ? name : body}`,
+              `안전한 투자의 힘이 커진다.\n${name ? name : body}`,
+              `예금의 편안함이 더해진다.\n${name ? name : body}`,
+              `안정적인 투자의 진화.\n${name ? name : body}`,
             ],
             '적금': [
               `루틴 강화 카드가 열렸다.\n${name ? name : body}`,
               `꾸준함을 돕는 장치가 생겼다.\n${name ? name : body}`,
+              `적금의 루틴이 강화됐다.\n${name ? name : body}`,
+              `꾸준함의 힘이 커진다.\n${name ? name : body}`,
+              `매일의 습관이 더 강해진다.\n${name ? name : body}`,
+              `적금의 시간 가치가 올라간다.\n${name ? name : body}`,
+              `루틴 투자의 힘이 커진다.\n${name ? name : body}`,
+              `꾸준함의 진화.\n${name ? name : body}`,
             ],
             '국내주식': [
               `차트 싸움에 새 무기가 생겼다.\n${name ? name : body}`,
               `국장 대응력이 올라갈 것 같다.\n${name ? name : body}`,
+              `국장 투자의 힘이 커진다.\n${name ? name : body}`,
+              `차트의 파도를 더 잘 탈 수 있다.\n${name ? name : body}`,
+              `국장의 변동성에 대응할 수 있다.\n${name ? name : body}`,
+              `투자자의 능력이 강화됐다.\n${name ? name : body}`,
+              `국장 투자의 진화.\n${name ? name : body}`,
+              `차트 싸움의 무기가 강화됐다.\n${name ? name : body}`,
             ],
             '미국주식': [
               `시차를 버틸 장비가 하나 생겼다.\n${name ? name : body}`,
               `달러 쪽 옵션이 열린다.\n${name ? name : body}`,
+              `미장 투자의 힘이 커진다.\n${name ? name : body}`,
+              `시차의 스트레스를 견딜 수 있다.\n${name ? name : body}`,
+              `달러의 무게를 더 잘 견딜 수 있다.\n${name ? name : body}`,
+              `글로벌 투자의 능력이 강화됐다.\n${name ? name : body}`,
+              `미장 투자의 진화.\n${name ? name : body}`,
+              `밤샘의 대가를 더 잘 견딜 수 있다.\n${name ? name : body}`,
             ],
             '코인': [
               `코인판에서 버틸 도구가 생겼다.\n${name ? name : body}`,
               `멘탈을 지키는 업그레이드…였으면.\n${name ? name : body}`,
+              `코인 투자의 힘이 커진다.\n${name ? name : body}`,
+              `변동성을 더 잘 견딜 수 있다.\n${name ? name : body}`,
+              `FOMO를 더 잘 이겨낼 수 있다.\n${name ? name : body}`,
+              `롤러코스터를 더 잘 탈 수 있다.\n${name ? name : body}`,
+              `코인 투자의 진화.\n${name ? name : body}`,
+              `멘탈 관리의 도구가 생겼다.\n${name ? name : body}`,
             ],
             '빌라': [
               `빌라 운영이 조금은 편해질지도.\n${name ? name : body}`,
+              `첫 집의 가치가 올라간다.\n${name ? name : body}`,
+              `부동산 투자의 첫걸음이 강화됐다.\n${name ? name : body}`,
+              `작은 집의 수익이 올라간다.\n${name ? name : body}`,
+              `부동산 투자의 기초가 강화됐다.\n${name ? name : body}`,
+              `첫 집의 무게감이 줄어든다.\n${name ? name : body}`,
+              `부동산 투자의 진화.\n${name ? name : body}`,
+              `작은 집의 가치가 상승한다.\n${name ? name : body}`,
             ],
             '오피스텔': [
               `오피스텔 쪽이 한 단계 나아간다.\n${name ? name : body}`,
+              `실용적인 투자가 강화됐다.\n${name ? name : body}`,
+              `생활의 편의가 더해진다.\n${name ? name : body}`,
+              `도시 생활의 질이 올라간다.\n${name ? name : body}`,
+              `현실적인 투자의 힘이 커진다.\n${name ? name : body}`,
+              `오피스텔의 가치가 상승한다.\n${name ? name : body}`,
+              `실용주의 투자의 진화.\n${name ? name : body}`,
+              `생활의 편의가 강화됐다.\n${name ? name : body}`,
             ],
             '아파트': [
               `아파트는 디테일에서 돈이 난다.\n${name ? name : body}`,
+              `한국인의 꿈이 더 가까워진다.\n${name ? name : body}`,
+              `안정의 상징이 강화됐다.\n${name ? name : body}`,
+              `부동산 투자의 정점이 올라간다.\n${name ? name : body}`,
+              `아파트의 가치가 상승한다.\n${name ? name : body}`,
+              `안정적인 투자의 힘이 커진다.\n${name ? name : body}`,
+              `부동산 투자의 진화.\n${name ? name : body}`,
+              `꿈이 현실에 더 가까워진다.\n${name ? name : body}`,
             ],
             '상가': [
               `상가는 세팅이 반이다.\n${name ? name : body}`,
+              `상권 투자의 힘이 커진다.\n${name ? name : body}`,
+              `유동인구의 수익이 올라간다.\n${name ? name : body}`,
+              `임대 수익의 달콤함이 커진다.\n${name ? name : body}`,
+              `상가의 가치가 상승한다.\n${name ? name : body}`,
+              `상권 투자의 진화.\n${name ? name : body}`,
+              `임차인의 성공이 내 성공이 된다.\n${name ? name : body}`,
+              `상권의 힘이 강화됐다.\n${name ? name : body}`,
             ],
             '빌딩': [
               `빌딩은 관리가 곧 수익이다.\n${name ? name : body}`,
+              `부동산 투자의 궁극이 강화됐다.\n${name ? name : body}`,
+              `스카이라인의 주인이 강해진다.\n${name ? name : body}`,
+              `도시의 한 조각이 더 가치있어진다.\n${name ? name : body}`,
+              `빌딩의 무게감이 줄어든다.\n${name ? name : body}`,
+              `부동산 투자의 완성이 올라간다.\n${name ? name : body}`,
+              `스카이라인의 가치가 상승한다.\n${name ? name : body}`,
+              `부동산 투자의 진화.\n${name ? name : body}`,
             ],
             '부동산': [
               `부동산 운영에 옵션이 하나 추가됐다.\n${name ? name : body}`,
-              `월세를 ‘조금 더’ 만들 방법.\n${name ? name : body}`,
+              `월세를 '조금 더' 만들 방법.\n${name ? name : body}`,
+              `부동산 투자의 힘이 커진다.\n${name ? name : body}`,
+              `집의 가치가 올라간다.\n${name ? name : body}`,
+              `부동산 시장의 파도를 더 잘 탈 수 있다.\n${name ? name : body}`,
+              `부동산 투자의 리스크가 줄어든다.\n${name ? name : body}`,
+              `부동산 투자의 진화.\n${name ? name : body}`,
+              `집의 무게감이 줄어든다.\n${name ? name : body}`,
             ],
             '기본': [
               `새로운 방법이 보였다.\n${name ? name : body}`,
               `선택지가 늘었다.\n${name ? name : body}`,
               `이제부터가 시작일지도.\n${name ? name : body}`,
+              `기회의 문이 열렸다.\n${name ? name : body}`,
+              `새로운 가능성이 생겼다.\n${name ? name : body}`,
+              `진화의 순간.\n${name ? name : body}`,
+              `능력이 강화됐다.\n${name ? name : body}`,
+              `다음 단계로 나아갈 수 있다.\n${name ? name : body}`,
             ]
           };
 
@@ -2699,50 +3228,131 @@ document.addEventListener('DOMContentLoaded', () => {
               `일하는 방식이 바뀌었다.\n${core}`,
               `업무 스킬을 장착했다.\n${core}`,
               `손이 더 빨라질 거다. 아마도.\n${core}`,
+              `일하는 능력이 강화됐다.\n${core}`,
+              `업무 효율이 올라갔다.\n${core}`,
+              `노동의 질이 향상됐다.\n${core}`,
+              `일하는 방식의 진화.\n${core}`,
+              `업무 스킬의 강화.\n${core}`,
             ],
             '예금': [
               `예금은 조용히 강해진다.\n${core}`,
               `안정 쪽을 더 단단히 했다.\n${core}`,
+              `예금의 수익률이 올라갔다.\n${core}`,
+              `안정적인 투자가 강화됐다.\n${core}`,
+              `예금의 가치가 상승했다.\n${core}`,
+              `안전한 투자의 힘이 커졌다.\n${core}`,
+              `예금의 편안함이 더해졌다.\n${core}`,
+              `안정적인 투자의 진화.\n${core}`,
             ],
             '적금': [
               `루틴을 업그레이드했다.\n${core}`,
               `꾸준함에 부스터 하나.\n${core}`,
+              `적금의 루틴이 강화됐다.\n${core}`,
+              `꾸준함의 힘이 커졌다.\n${core}`,
+              `매일의 습관이 더 강해졌다.\n${core}`,
+              `적금의 시간 가치가 올라갔다.\n${core}`,
+              `루틴 투자의 힘이 커졌다.\n${core}`,
+              `꾸준함의 진화.\n${core}`,
             ],
             '국내주식': [
               `차트 싸움에 장비를 추가했다.\n${core}`,
               `국장 대응력 상승.\n${core}`,
+              `국장 투자의 힘이 커졌다.\n${core}`,
+              `차트의 파도를 더 잘 탈 수 있다.\n${core}`,
+              `국장의 변동성에 대응할 수 있다.\n${core}`,
+              `투자자의 능력이 강화됐다.\n${core}`,
+              `국장 투자의 진화.\n${core}`,
+              `차트 싸움의 무기가 강화됐다.\n${core}`,
             ],
             '미국주식': [
               `시차를 버틸 장비 장착.\n${core}`,
               `달러 쪽을 조금 더 믿어보기로.\n${core}`,
+              `미장 투자의 힘이 커졌다.\n${core}`,
+              `시차의 스트레스를 견딜 수 있다.\n${core}`,
+              `달러의 무게를 더 잘 견딜 수 있다.\n${core}`,
+              `글로벌 투자의 능력이 강화됐다.\n${core}`,
+              `미장 투자의 진화.\n${core}`,
+              `밤샘의 대가를 더 잘 견딜 수 있다.\n${core}`,
             ],
             '코인': [
               `코인판에서 살아남을 장비.\n${core}`,
               `멘탈 보호 장치…였으면.\n${core}`,
+              `코인 투자의 힘이 커졌다.\n${core}`,
+              `변동성을 더 잘 견딜 수 있다.\n${core}`,
+              `FOMO를 더 잘 이겨낼 수 있다.\n${core}`,
+              `롤러코스터를 더 잘 탈 수 있다.\n${core}`,
+              `코인 투자의 진화.\n${core}`,
+              `멘탈 관리의 도구가 생겼다.\n${core}`,
             ],
             '빌라': [
               `빌라 운영을 손봤다.\n${core}`,
+              `첫 집의 가치가 올라갔다.\n${core}`,
+              `부동산 투자의 첫걸음이 강화됐다.\n${core}`,
+              `작은 집의 수익이 올라갔다.\n${core}`,
+              `부동산 투자의 기초가 강화됐다.\n${core}`,
+              `첫 집의 무게감이 줄어들었다.\n${core}`,
+              `부동산 투자의 진화.\n${core}`,
+              `작은 집의 가치가 상승했다.\n${core}`,
             ],
             '오피스텔': [
               `오피스텔 쪽을 업그레이드했다.\n${core}`,
+              `실용적인 투자가 강화됐다.\n${core}`,
+              `생활의 편의가 더해졌다.\n${core}`,
+              `도시 생활의 질이 올라갔다.\n${core}`,
+              `현실적인 투자의 힘이 커졌다.\n${core}`,
+              `오피스텔의 가치가 상승했다.\n${core}`,
+              `실용주의 투자의 진화.\n${core}`,
+              `생활의 편의가 강화됐다.\n${core}`,
             ],
             '아파트': [
               `아파트는 디테일.\n${core}`,
+              `한국인의 꿈이 더 가까워졌다.\n${core}`,
+              `안정의 상징이 강화됐다.\n${core}`,
+              `부동산 투자의 정점이 올라갔다.\n${core}`,
+              `아파트의 가치가 상승했다.\n${core}`,
+              `안정적인 투자의 힘이 커졌다.\n${core}`,
+              `부동산 투자의 진화.\n${core}`,
+              `꿈이 현실에 더 가까워졌다.\n${core}`,
             ],
             '상가': [
               `상가는 세팅이 반이다.\n${core}`,
+              `상권 투자의 힘이 커졌다.\n${core}`,
+              `유동인구의 수익이 올라갔다.\n${core}`,
+              `임대 수익의 달콤함이 커졌다.\n${core}`,
+              `상가의 가치가 상승했다.\n${core}`,
+              `상권 투자의 진화.\n${core}`,
+              `임차인의 성공이 내 성공이 된다.\n${core}`,
+              `상권의 힘이 강화됐다.\n${core}`,
             ],
             '빌딩': [
               `빌딩은 관리가 수익이다.\n${core}`,
+              `부동산 투자의 궁극이 강화됐다.\n${core}`,
+              `스카이라인의 주인이 강해졌다.\n${core}`,
+              `도시의 한 조각이 더 가치있어졌다.\n${core}`,
+              `빌딩의 무게감이 줄어들었다.\n${core}`,
+              `부동산 투자의 완성이 올라갔다.\n${core}`,
+              `스카이라인의 가치가 상승했다.\n${core}`,
+              `부동산 투자의 진화.\n${core}`,
             ],
             '부동산': [
               `월세 쪽을 손봤다.\n${core}`,
               `부동산 운영이 한 단계 올라갔다.\n${core}`,
+              `부동산 투자의 힘이 커졌다.\n${core}`,
+              `집의 가치가 올라갔다.\n${core}`,
+              `부동산 시장의 파도를 더 잘 탈 수 있다.\n${core}`,
+              `부동산 투자의 리스크가 줄어들었다.\n${core}`,
+              `부동산 투자의 진화.\n${core}`,
+              `집의 무게감이 줄어들었다.\n${core}`,
             ],
             '기본': [
               `필요한 걸 갖췄다.\n${body}`,
               `업그레이드 완료. 조금은 편해지겠지.\n${body}`,
               `나 자신에게 투자.\n${body}`,
+              `능력이 강화됐다.\n${body}`,
+              `진화의 순간.\n${body}`,
+              `기회를 잡았다.\n${body}`,
+              `다음 단계로 나아갔다.\n${body}`,
+              `투자의 힘이 커졌다.\n${body}`,
             ]
           };
 
@@ -2754,6 +3364,11 @@ document.addEventListener('DOMContentLoaded', () => {
             `찜찜한 기분이 남았다.\n${body}`,
             `뭔가 삐끗한 느낌.\n${body}`,
             `일단 기록만 남긴다.\n${body}`,
+            `뭔가 이상한 느낌.\n${body}`,
+            `불안한 기분이 든다.\n${body}`,
+            `주의가 필요할 것 같다.\n${body}`,
+            `뭔가 잘못된 것 같다.\n${body}`,
+            `경고의 신호가 느껴진다.\n${body}`,
           ]);
         }
 
@@ -2764,6 +3379,12 @@ document.addEventListener('DOMContentLoaded', () => {
           `그냥 적어둔다.\n${base}`,
           `오늘의 기록.\n${base}`,
           `아무튼, ${base}`,
+          `일단 기록.\n${base}`,
+          `메모해둔다.\n${base}`,
+          `기억해둘 것.\n${base}`,
+          `나중을 위해 기록.\n${base}`,
+          `적어두는 게 좋겠다.\n${base}`,
+          `기록에 남긴다.\n${base}`,
         ]);
       }
 
@@ -2807,7 +3428,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'officetel': () => villas >= 1, // 빌라 1개 필요
         'apartment': () => officetels >= 1, // 오피스텔 1개 필요
         'shop': () => apartments >= 1, // 아파트 1개 필요
-        'building': () => shops >= 1 // 상가 1개 필요
+        'building': () => shops >= 1, // 상가 1개 필요
+        'tower': () => careerLevel >= 9 && buildings >= 1 // CEO 달성 + 빌딩 1개 이상
       };
       
       return unlockConditions[productName] ? unlockConditions[productName]() : false;
@@ -2823,7 +3445,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'villa': { next: 'officetel', msg: '🔓 오피스텔이 해금되었습니다!' },
         'officetel': { next: 'apartment', msg: '🔓 아파트가 해금되었습니다!' },
         'apartment': { next: 'shop', msg: '🔓 상가가 해금되었습니다!' },
-        'shop': { next: 'building', msg: '🔓 빌딩이 해금되었습니다!' }
+        'shop': { next: 'building', msg: '🔓 빌딩이 해금되었습니다!' },
+        'building': { next: 'tower', msg: '🔓 서울타워가 해금되었습니다!' }
       };
       
       const unlock = unlockMessages[productName];
@@ -2845,11 +3468,12 @@ document.addEventListener('DOMContentLoaded', () => {
         'officetel': officetels,
         'apartment': apartments,
         'shop': shops,
-        'building': buildings
+        'building': buildings,
+        'tower': towers
       };
       
-      // 이미 보유하고 있으면 해금 로그를 출력하지 않음
-      if (productCounts[unlock.next] > 0) {
+      // 이미 보유하고 있으면 해금 로그를 출력하지 않음 (타워는 수량 상품이지만 체크)
+      if (productCounts[unlock.next] !== undefined && productCounts[unlock.next] > 0) {
         unlockedProducts[unlock.next] = true; // 해금 상태만 기록
         return;
       }
@@ -3429,6 +4053,15 @@ document.addEventListener('DOMContentLoaded', () => {
       elBuyBuilding.classList.toggle('affordable', buildingCanBuy);
       elBuyBuilding.classList.toggle('unaffordable', isBuy && !buildingCanBuy);
       
+      // 서울타워 버튼 상태 (구매만 가능, 판매 불가)
+      if (elBuyTower) {
+        const towerCost = BASE_COSTS.tower;
+        const towerCanBuy = isBuy && cash >= towerCost && isProductUnlocked('tower');
+        elBuyTower.classList.toggle('affordable', towerCanBuy);
+        elBuyTower.classList.toggle('unaffordable', isBuy && (!towerCanBuy || !isProductUnlocked('tower')));
+        elBuyTower.disabled = purchaseMode === 'sell' || !isProductUnlocked('tower');
+      }
+      
       // 업그레이드 버튼 상태 업데이트 (제거됨 - 새 시스템 사용)
     }
     
@@ -3462,6 +4095,15 @@ document.addEventListener('DOMContentLoaded', () => {
       aptItem.classList.toggle('affordable', isBuy && cash >= getPropertyCost('apartment', apartments, qty));
       shopItem.classList.toggle('affordable', isBuy && cash >= getPropertyCost('shop', shops, qty));
       buildingItem.classList.toggle('affordable', isBuy && cash >= getPropertyCost('building', buildings, qty));
+      
+      // 서울타워 아이템 상태 (구매만 가능, 판매 불가)
+      const towerItem = document.getElementById('towerItem');
+      if (towerItem) {
+        const towerCost = BASE_COSTS.tower;
+        const towerCanBuy = isBuy && cash >= towerCost && isProductUnlocked('tower');
+        towerItem.classList.toggle('affordable', towerCanBuy);
+        towerItem.classList.toggle('unaffordable', isBuy && (!towerCanBuy || !isProductUnlocked('tower')));
+      }
     }
     
     // 업그레이드 그리드 상태 업데이트 함수
@@ -3498,6 +4140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         apartments: apartments,
         shops: shops,
         buildings: buildings,
+        towers: towers,
         // 부동산 누적 생산량
         villasLifetime: villasLifetime,
         officetelsLifetime: officetelsLifetime,
@@ -3719,6 +4362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         apartments = data.apartments || 0;
         shops = data.shops || 0;
         buildings = data.buildings || 0;
+        towers = data.towers || 0;
         
         // 부동산 누적 생산량 복원
         villasLifetime = data.villasLifetime || 0;
@@ -4062,6 +4706,18 @@ document.addEventListener('DOMContentLoaded', () => {
         propertyChip.setAttribute('title', tooltip);
       }
       
+      // 타워 배지 표시/숨김
+      const towerBadge = document.getElementById('towerBadge');
+      const towerCountHeader = document.getElementById('towerCountHeader');
+      if (towerBadge && towerCountHeader) {
+        if (towers > 0) {
+          towerBadge.style.display = 'flex';
+          towerCountHeader.textContent = towers;
+        } else {
+          towerBadge.style.display = 'none';
+        }
+      }
+      
       // 초당 수익 및 툴팁
       const rpsValue = getRps();
       safeText(elRps, formatHeaderCash(rpsValue));
@@ -4271,6 +4927,14 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('buildingLifetimeDisplay').textContent = formatCashDisplayFixed1(buildingsLifetime);
       elBuildingCurrentPrice.textContent = formatPropertyPrice(buildingCost);
       
+      // 서울타워 (프레스티지, 수익 없음)
+      if (elTowerCountDisplay) elTowerCountDisplay.textContent = towers;
+      if (elTowerCountBadge) elTowerCountBadge.textContent = towers;
+      if (elTowerCurrentPrice) {
+        const towerCost = BASE_COSTS.tower;
+        elTowerCurrentPrice.textContent = formatPropertyPrice(towerCost);
+      }
+      
       // 디버깅: 부동산 카운트 확인
       console.log('Property counts:', { villas, officetels, apartments, shops, buildings });
       
@@ -4428,7 +5092,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'officetel': '빌라 1채 필요',
         'apartment': '오피스텔 1채 필요',
         'shop': '아파트 1채 필요',
-        'building': '상가 1채 필요'
+        'building': '상가 1채 필요',
+        'tower': 'CEO 달성 및 빌딩 1개 이상 필요'
       };
       
       // 금융상품 잠금 상태
@@ -4527,6 +5192,18 @@ document.addEventListener('DOMContentLoaded', () => {
           buildingItem.setAttribute('data-unlock-hint', unlockHints['building']);
         } else {
           buildingItem.removeAttribute('data-unlock-hint');
+        }
+      }
+      
+      // 서울타워 잠금 상태
+      const towerItem = document.getElementById('towerItem');
+      if (towerItem) {
+        const isLocked = !isProductUnlocked('tower');
+        towerItem.classList.toggle('locked', isLocked);
+        if (isLocked) {
+          towerItem.setAttribute('data-unlock-hint', unlockHints['tower']);
+        } else {
+          towerItem.removeAttribute('data-unlock-hint');
         }
       }
     }
@@ -5208,6 +5885,92 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       updateUI();
     });
+
+    // 서울타워 구매 (프레스티지)
+    if (elBuyTower) {
+      elBuyTower.addEventListener('click', async () => {
+        if (!isProductUnlocked('tower')) {
+          addLog('❌ 서울타워는 CEO 달성 및 빌딩 1개 이상 보유 시 해금됩니다.');
+          return;
+        }
+        
+        const towerCost = BASE_COSTS.tower;
+        if (cash < towerCost) {
+          addLog(`💸 자금이 부족합니다. (필요: ${formatKoreanNumber(towerCost)}원)`);
+          return;
+        }
+        
+        // 구매 처리
+        cash -= towerCost;
+        towers += 1;
+        
+        // 타워 구매 시점의 자산 계산 (리더보드 업데이트용)
+        const totalAssetsAtPurchase = cash + calculateTotalAssetValue();
+        const currentSessionTime = Date.now() - sessionStartTime;
+        const totalPlayTimeMs = totalPlayTime + currentSessionTime;
+        
+        // 리더보드 업데이트 (타워 구매 시점 자산으로 고정)
+        if (playerNickname) {
+          try {
+            await updateLeaderboard(
+              playerNickname,
+              totalAssetsAtPurchase,
+              totalPlayTimeMs,
+              towers
+            );
+            console.log('리더보드: 서울타워 구매 시점 자산으로 업데이트 완료');
+          } catch (error) {
+            console.error('리더보드 업데이트 실패:', error);
+          }
+        }
+        
+        // 일기장 기록
+        addLog(`🗼 서울타워 완성.\n서울의 정상에 도달했다.\n이제야 진짜 시작인가?`);
+        
+        // 엔딩 모달 표시
+        showEndingModal(towers);
+        
+        // 파티클 애니메이션
+        if (settings.particles) {
+          createFallingBuilding('🗼', 1);
+        }
+        
+        updateUI();
+        saveGame();
+      });
+    }
+    
+    // 엔딩 모달 표시 함수
+    function showEndingModal(towerCount) {
+      const message = `🗼 서울타워 완성 🗼\n\n` +
+        `알바에서 시작해 CEO까지.\n` +
+        `예금에서 시작해 서울타워까지.\n\n` +
+        `서울 한복판에 당신의 이름이 새겨졌다.\n\n` +
+        `"이제야 진짜 시작인가?"\n\n` +
+        `리더보드에 기록되었습니다: 🗼x${towerCount}`;
+      
+      openInfoModal('🎉 엔딩', message, '🗼');
+      
+      // 모달 확인 버튼 클릭 시 새 게임 시작 옵션 제공
+      const originalOnClick = elModalPrimary.onclick;
+      elModalPrimary.onclick = () => {
+        closeModal();
+        // 확인 다이얼로그로 새 게임 시작 여부 확인
+        openConfirmModal(
+          '🔄 새 게임 시작',
+          '서울타워를 완성했습니다!\n\n새 게임을 시작하시겠습니까?\n(현재 진행은 초기화됩니다)',
+          () => {
+            resetGame();
+            addLog('🗼 새로운 시작. 다시 한 번.');
+          },
+          {
+            icon: '🗼',
+            primaryLabel: '새 게임 시작',
+            secondaryLabel: '나중에'
+          }
+        );
+      };
+    }
 
     // ======= 업그레이드 효과 적용 함수 =======
     // 구형 applyUpgradeEffect 및 업그레이드 시스템 제거됨 - 새로운 Cookie Clicker 스타일 시스템 사용
@@ -6280,10 +7043,14 @@ document.addEventListener('DOMContentLoaded', () => {
             rankTd.className = 'col-rank';
             rankTd.textContent = String(index + 1);
 
-            // 닉네임 셀
+            // 닉네임 셀 (타워 이모지 포함)
             const nickTd = document.createElement('td');
             nickTd.className = 'col-nickname';
-            nickTd.textContent = entry.nickname || '익명';
+            const towerCount = entry.tower_count || 0;
+            const displayName = towerCount > 0
+              ? `${entry.nickname || '익명'} 🗼${towerCount > 1 ? `x${towerCount}` : ''}`
+              : (entry.nickname || '익명');
+            nickTd.textContent = displayName;
 
             // 자산 셀
             const assetsTd = document.createElement('td');
@@ -6342,6 +7109,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (myEntry) {
               // Top10 안에 있을 때: 이미 계산된 myEntry 사용
               const playTimeText = formatPlaytimeMs(myEntry.play_time_ms || 0);
+              const towerCount = myEntry.tower_count || 0;
+              const displayName = towerCount > 0
+                ? `${myEntry.nickname || playerNickname || '익명'} 🗼${towerCount > 1 ? `x${towerCount}` : ''}`
+                : (myEntry.nickname || playerNickname || '익명');
               myRankContent.innerHTML = `
                 <div class="my-rank-card">
                   <div class="my-rank-header">
@@ -6349,7 +7120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="my-rank-rank-badge">${myEntry.rank}위</span>
                   </div>
                   <div class="my-rank-main">
-                    <div class="my-rank-name">${myEntry.nickname || playerNickname || '익명'}</div>
+                    <div class="my-rank-name">${displayName}</div>
                     <div class="my-rank-assets">💰 ${formatStatsNumber(myEntry.total_assets || 0)}</div>
                   </div>
                   <div class="my-rank-meta">
@@ -6455,6 +7226,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                   const me = rankResult.data;
                   const playTimeText = formatPlaytimeMs(me.play_time_ms || 0);
+                  const towerCount = me.tower_count || 0;
+                  const displayName = towerCount > 0
+                    ? `${me.nickname || playerNickname || '익명'} 🗼${towerCount > 1 ? `x${towerCount}` : ''}`
+                    : (me.nickname || playerNickname || '익명');
                   myRankContent.innerHTML = `
                     <div class="my-rank-card">
                       <div class="my-rank-header">
@@ -6462,7 +7237,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="my-rank-rank-badge">${me.rank}위</span>
                       </div>
                       <div class="my-rank-main">
-                        <div class="my-rank-name">${me.nickname || playerNickname || '익명'}</div>
+                        <div class="my-rank-name">${displayName}</div>
                         <div class="my-rank-assets">💰 ${formatStatsNumber(me.total_assets || 0)}</div>
                       </div>
                       <div class="my-rank-meta">
@@ -6497,12 +7272,18 @@ document.addEventListener('DOMContentLoaded', () => {
     async function updateLeaderboardEntry() {
       if (!playerNickname) return; // 닉네임이 없으면 업데이트 안 함
       
+      // 타워가 1개 이상이면 자동 업데이트 중단 (타워 구매 시점 자산으로 고정)
+      if (towers > 0) {
+        console.log('리더보드: 타워 달성 후 자동 업데이트 중단');
+        return;
+      }
+      
       try {
         const totalAssets = cash + calculateTotalAssetValue();
         const currentSessionTime = Date.now() - sessionStartTime;
         const totalPlayTimeMs = totalPlayTime + currentSessionTime;
         
-        await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs);
+        await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs, towers);
       } catch (error) {
         console.error('리더보드 업데이트 실패:', error);
       }
