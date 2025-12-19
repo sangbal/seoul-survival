@@ -15,24 +15,55 @@
   <meta name="twitter:description" content="허브 — Seoul Survival. (준비 중) 계정 하나로 저장·업적·랭킹을 연결합니다." />
   <meta name="twitter:image" content="https://clicksurvivor.com/seoulsurvival/assets/images/settings_gameinfo_bg.webp" />
 
-  <link rel="icon" type="image/png" href="/assets/logo-CaUs9YDr.png" />
-  <link rel="apple-touch-icon" href="/assets/logo-CaUs9YDr.png" />
+  <link rel="icon" type="image/png" href="./assets/logo-CaUs9YDr.png" />
+  <link rel="apple-touch-icon" href="./assets/logo-CaUs9YDr.png" />
   <title>ClickSurvivor</title>
 
   <style>
     :root{
+      /* color */
       --bg:#070b14;
-      --panel:#0f172a;
-      --panel2:#0b1220;
+      --surface: rgba(15,23,42,.55);
+      --surface-2: rgba(11,18,32,.62);
       --text:#e5e7eb;
       --muted:#94a3b8;
-      --accent:#5eead4;
-      --primary:#60a5fa;
-      --danger:#fb7185;
-      --border: rgba(148,163,184,.22);
-      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --border: rgba(148,163,184,.18);
+      --accent:#60a5fa; /* single primary accent */
+      --accent-2:#5eead4; /* only if truly needed */
+      --danger:#ef4444;
+
+      /* shape / elevation */
       --radius: 18px;
+      --shadow: 0 14px 48px rgba(0,0,0,.40);
+
+      /* spacing scale */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 48px;
+      --space-9: 64px;
+
+      /* typography scale */
+      --font-xs: 12px;
+      --font-sm: 13px;
+      --font-md: 14px;
+      --font-lg: 16px;
+      --font-xl: 18px;
+      --font-2xl: clamp(28px, 3.4vw, 44px);
+      --weight-bold: 800;
+      --weight-black: 900;
+
+      /* layout */
       --headerH: 64px;
+
+      /* legacy aliases (keep existing usage stable) */
+      --panel: var(--surface);
+      --panel2: var(--surface-2);
+      --primary: var(--accent);
     }
     *{ box-sizing:border-box; }
     html{ scroll-behavior: smooth; overflow-x: hidden; }
@@ -41,13 +72,26 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
       color:var(--text);
       background:
-        radial-gradient(900px 560px at 20% -10%, rgba(96,165,250,.22), transparent 60%),
-        radial-gradient(900px 520px at 85% 0%, rgba(94,234,212,.14), transparent 55%),
+        radial-gradient(900px 560px at 20% -10%, rgba(96,165,250,.18), transparent 60%),
         radial-gradient(720px 520px at 65% 30%, rgba(167,139,250,.10), transparent 55%),
         var(--bg);
       overflow-x: hidden;
+      line-height: 1.5;
     }
     a{ color:inherit; text-decoration:none; }
+    ::selection{ background: rgba(96,165,250,.28); }
+
+    /* a11y / focus */
+    :where(a, button, input, select, textarea, summary):focus-visible{
+      outline: 2px solid rgba(96,165,250,.95);
+      outline-offset: 3px;
+    }
+    :where(button, [role="button"], a).disabled,
+    :where(button, [role="button"], a)[aria-disabled="true"]{
+      opacity: .55;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
 
     /* layout */
     .wrap{ max-width: 1080px; margin: 0 auto; padding: 0 18px 70px; }
@@ -77,19 +121,19 @@
     .brandtxt{ display:flex; flex-direction:column; gap: 2px; min-width: 0; }
     .brandname{ font-size: 16px; font-weight: 900; letter-spacing: .2px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .brandtag{ font-size: 12px; color: var(--muted); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    nav{ display:flex; align-items:center; gap: 12px; }
+    nav{ display:none; align-items:center; gap: 12px; }
     .navlink{
       font-size: 13px; color: var(--muted);
       padding: 8px 10px;
       border-radius: 999px;
     }
     .navlink:hover{ color: var(--text); background: rgba(148,163,184,.10); }
-    .actions{ display:flex; align-items:center; gap: 10px; flex-shrink: 0; }
-    /* 햄버거 메뉴 버튼 */
+    .actions{ display:none; align-items:center; gap: 10px; flex-shrink: 0; }
+    /* 햄버거 메뉴 버튼 - 모든 뷰포트에서 기본 표시 */
     .hamburger-btn{
-      display: none;
-      width: 38px;
-      height: 38px;
+      display: flex;
+      width: 44px;
+      height: 44px;
       padding: 0;
       border: 1px solid rgba(148,163,184,.25);
       background: rgba(15,23,42,.55);
@@ -143,8 +187,8 @@
       width: 280px;
       max-width: 85vw;
       height: 100vh;
-      background: var(--panel);
-      border-left: 1px solid rgba(148,163,184,.18);
+      background: var(--surface);
+      border-left: 1px solid var(--border);
       z-index: 50;
       transition: right .3s ease;
       overflow-y: auto;
@@ -158,7 +202,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 18px;
-      border-bottom: 1px solid rgba(148,163,184,.18);
+      border-bottom: 1px solid var(--border);
       height: var(--headerH);
       box-sizing: border-box;
     }
@@ -231,9 +275,9 @@
     }
     .drawer-select{
       width: 100%;
-      height: 42px;
+      height: 44px;
       border-radius: 12px;
-      border: 1px solid rgba(148,163,184,.25);
+      border: 1px solid var(--border);
       background: rgba(15,23,42,.55);
       color: var(--text);
       padding: 0 14px;
@@ -242,10 +286,10 @@
     }
     .drawer-btn{
       width: 100%;
-      height: 42px;
+      height: 44px;
       padding: 0 14px;
       border-radius: 12px;
-      border: 1px solid rgba(148,163,184,.25);
+      border: 1px solid var(--border);
       background: rgba(15,23,42,.55);
       color: var(--text);
       font-weight: 900;
@@ -262,9 +306,9 @@
       align-items: center;
       padding: 10px 14px;
       border-radius: 12px;
-      border: 1px solid rgba(94,234,212,.25);
-      background: rgba(94,234,212,.12);
-      color: rgba(94,234,212,.95);
+      border: 1px solid rgba(96,165,250,.22);
+      background: rgba(96,165,250,.10);
+      color: rgba(96,165,250,.95);
       font-weight: 900;
       font-size: 13px;
       width: 100%;
@@ -274,19 +318,19 @@
       white-space: nowrap;
     }
     .select{
-      height: 38px;
+      height: 44px;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.25);
+      border: 1px solid var(--border);
       background: rgba(15,23,42,.55);
       color: var(--text);
       padding: 0 12px;
       font-weight: 800;
     }
     .ghostbtn{
-      height: 38px;
+      height: 44px;
       padding: 0 14px;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.25);
+      border: 1px solid var(--border);
       background: rgba(15,23,42,.55);
       color: var(--text);
       font-weight: 900;
@@ -297,18 +341,16 @@
     .ghostbtn:hover{
       background: rgba(15,23,42,.75);
       border-color: rgba(148,163,184,.35);
-      transform: translateY(-1px);
     }
-    .ghostbtn[aria-disabled="true"]{ opacity: .65; cursor: not-allowed; }
     .userchip{
-      height: 38px;
+      height: 44px;
       display:inline-flex;
       align-items:center;
       padding: 0 14px;
       border-radius: 999px;
-      border: 1px solid rgba(94,234,212,.25);
-      background: rgba(94,234,212,.12);
-      color: rgba(94,234,212,.95);
+      border: 1px solid rgba(96,165,250,.22);
+      background: rgba(96,165,250,.10);
+      color: rgba(96,165,250,.95);
       font-weight: 900;
       font-size: 13px;
       max-width: 180px;
@@ -323,8 +365,8 @@
       margin-top: 12px;
       border-radius: calc(var(--radius) + 6px);
       overflow: hidden;
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(15,23,42,.40);
+      border: 1px solid var(--border);
+      background: var(--surface);
       box-shadow: var(--shadow);
       position: relative;
       min-height: 420px;
@@ -335,10 +377,9 @@
       content:"";
       position:absolute; inset: 0;
       background:
-        radial-gradient(700px 420px at 20% 20%, rgba(96,165,250,.18), transparent 60%),
-        radial-gradient(720px 520px at 85% 0%, rgba(94,234,212,.14), transparent 60%),
+        radial-gradient(720px 520px at 25% 15%, rgba(96,165,250,.18), transparent 60%),
         linear-gradient(180deg, rgba(7,11,20,.05), rgba(7,11,20,.82) 72%),
-        url("/assets/work_bg_01_alba_night-Db0rzBPq.png");
+        url("./assets/work_bg_01_alba_night-Db0rzBPq.png");
       background-size: cover;
       background-position: center;
       filter: saturate(1.05) contrast(1.05);
@@ -360,50 +401,52 @@
       width: fit-content;
       padding: 7px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.22);
-      background: rgba(7,11,20,.45);
+      border: 1px solid var(--border);
+      background: rgba(7,11,20,.52);
       color: rgba(229,231,235,.92);
       font-weight: 900;
       font-size: 12px;
       letter-spacing: .2px;
     }
-    .badge .dot{ width: 7px; height: 7px; border-radius: 99px; background: rgba(94,234,212,.9); box-shadow: 0 0 0 4px rgba(94,234,212,.12); }
-    .hero-title{ font-size: 30px; font-weight: 950; margin: 0; letter-spacing: -.3px; line-height: 1.2; }
-    .hero-sub{ margin: 8px 0 0; color: rgba(229,231,235,.88); font-size: 14px; line-height: 1.5; max-width: 62ch; }
-    .hero-note{ margin-top: 10px; color: rgba(148,163,184,.92); font-size: 12px; }
+    .badge .dot{ width: 7px; height: 7px; border-radius: 99px; background: rgba(96,165,250,.95); box-shadow: 0 0 0 4px rgba(96,165,250,.12); }
+    .hero-title{ font-size: var(--font-2xl); font-weight: 950; margin: 0; letter-spacing: -.3px; line-height: 1.15; }
+    .hero-sub{ margin: 8px 0 0; color: rgba(229,231,235,.88); font-size: var(--font-md); line-height: 1.55; max-width: 62ch; }
+    .hero-note{ margin-top: 10px; color: rgba(148,163,184,.92); font-size: var(--font-xs); }
     .ctaRow{ display:flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
     .btn{
       display:inline-flex; align-items:center; justify-content:center;
       gap: 10px;
-      padding: 12px 20px;
+      min-height: 44px;
+      padding: 12px 18px;
       border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(15,23,42,.64);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.03);
       font-weight: 950;
       font-size: 14px;
-      min-width: 150px;
+      min-width: 0;
       cursor: pointer;
       transition: all .15s ease;
     }
     .btn.primary{
-      background: linear-gradient(135deg, rgba(96,165,250,.95), rgba(94,234,212,.86));
-      color: #071018;
-      border: 0;
-      box-shadow: 0 4px 12px rgba(96,165,250,.25);
+      background: rgba(96,165,250,.92);
+      color: white;
+      border: 1px solid rgba(96,165,250,.35);
+      box-shadow: 0 10px 30px rgba(96,165,250,.18);
     }
     .btn:hover{ 
-      transform: translateY(-2px); 
-      box-shadow: 0 6px 16px rgba(0,0,0,.3);
+      background: rgba(255,255,255,.05);
+      border-color: rgba(148,163,184,.28);
     }
     .btn.primary:hover{
-      box-shadow: 0 6px 20px rgba(96,165,250,.35);
+      background: rgba(96,165,250,.98);
+      box-shadow: 0 12px 34px rgba(96,165,250,.22);
     }
-    .btn:active{ transform: translateY(0); }
+    .btn:active{ filter: brightness(.98); }
 
-    .sectionTitle{ margin: 32px 0 14px; font-size: 16px; font-weight: 950; letter-spacing: .2px; color: rgba(229,231,235,.95); }
+    .sectionTitle{ margin: var(--space-8) 0 var(--space-3); font-size: var(--font-lg); font-weight: 950; letter-spacing: .2px; color: rgba(229,231,235,.95); }
     .panel{
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(15,23,42,.45);
+      border: 1px solid var(--border);
+      background: var(--surface);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
@@ -420,8 +463,8 @@
     .shot{
       border-radius: 14px;
       overflow:hidden;
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(11,18,32,.55);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
     }
     .shot img{
       display:block;
@@ -429,21 +472,21 @@
       height: 220px;
       object-fit: cover;
     }
-    .shotcap{ padding: 10px 12px; font-size: 12px; color: rgba(148,163,184,.92); }
+    .shotcap{ padding: 10px 12px; font-size: 12px; line-height: 1.45; color: rgba(148,163,184,.92); }
 
     .callout{
       display:flex;
       gap: 14px;
       align-items:flex-start;
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(11,18,32,.55);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
       border-radius: 14px;
       padding: 18px;
       margin-bottom: 16px;
     }
     .callout .icon{
       width: 36px; height: 36px; border-radius: 12px;
-      background: rgba(96,165,250,.18);
+      background: rgba(96,165,250,.14);
       border: 1px solid rgba(96,165,250,.22);
       display:grid; place-items:center;
       font-weight: 950;
@@ -457,7 +500,7 @@
       padding-top: 10px;
       margin-top: 10px;
     }
-    summary{ cursor:pointer; font-weight: 900; }
+    summary{ cursor:pointer; font-weight: 900; padding: 6px 0; }
     details p{ margin: 8px 0 0; color: rgba(148,163,184,.95); font-size: 13px; line-height: 1.5; }
 
     footer{ 
@@ -533,6 +576,8 @@
       text-decoration: none;
       transition: color .15s ease;
       font-size: 12px;
+      display: inline-block;
+      padding: 6px 0;
     }
     .footer-links a:hover{
       color: rgba(229,231,235,.95);
@@ -585,7 +630,7 @@
       bottom: 18px;
       transform: translateX(-50%);
       background: rgba(7,11,20,.92);
-      border: 1px solid rgba(148,163,184,.22);
+      border: 1px solid var(--border);
       color: rgba(229,231,235,.95);
       border-radius: 999px;
       padding: 10px 14px;
@@ -601,15 +646,15 @@
       transform: translateX(-50%) translateY(-2px);
     }
 
-    /* 모바일: 햄버거 메뉴 활성화 */
+    /* 모든 뷰포트에서 드로어 기본 사용 */
+    body.drawer-open{
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+    /* 모바일: 브랜드 텍스트 크기 조정 */
     @media (max-width: 768px){
-      .topbar-inner nav,
-      .topbar-inner .actions{
-        display: none;
-      }
-      .hamburger-btn{
-        display: flex;
-      }
       .brand{
         flex: 1 1 auto;
         min-width: 0;
@@ -620,27 +665,25 @@
       .brandtag{
         font-size: 11px;
       }
-      body.drawer-open{
-        overflow: hidden;
-      }
     }
     @media (min-width: 760px){
       .hero{ min-height: 520px; }
       .hero-inner{ padding: 28px 26px 26px; }
-      .hero-title{ font-size: 40px; }
       .shotGrid{ grid-template-columns: repeat(3, 1fr); }
       .shot img{ height: 210px; }
     }
   </style>
-  <script type="module" crossorigin src="/assets/main-DbGT9TOT.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/authBoot-BgTFcePJ.js">
+  <script type="module" crossorigin src="https://esm.sh/@supabase/supabase-js@2.49.1"></script>
+  <script type="module" crossorigin src="./assets/authBoot-D-VMj2Bw.js"></script>
+  <script type="module" crossorigin src="./assets/main-BKKz4iXk.js"></script>
+  <script type="module" crossorigin src="https://esm.sh/@supabase/supabase-js@2.49.1"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="#top" aria-label="ClickSurvivor 홈으로">
         <div class="logo">
-          <img src="/assets/logo-CaUs9YDr.png" alt="ClickSurvivor" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;" />
+          <img src="./assets/logo-CaUs9YDr.png" alt="ClickSurvivor" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;" />
         </div>
         <div class="brandtxt">
           <div class="brandname">ClickSurvivor</div>
@@ -650,7 +693,7 @@
 
       <nav aria-label="허브 내비게이션">
         <a class="navlink" href="#about" data-i18n="hub.header.about">소개</a>
-        <a class="navlink" href="#account" data-i18n="hub.header.account">계정</a>
+        <a class="navlink" href="account/" data-i18n="hub.header.account">계정</a>
       </nav>
 
       <div class="actions">
@@ -663,7 +706,7 @@
         <button class="ghostbtn" id="authLogoutBtn" hidden>Logout</button>
       </div>
 
-      <button class="hamburger-btn" id="hamburgerBtn" aria-label="메뉴 열기" aria-expanded="false">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="drawer">
         <span></span>
         <span></span>
         <span></span>
@@ -683,7 +726,7 @@
     <div class="drawer-content">
       <nav class="drawer-nav" aria-label="허브 내비게이션">
         <a class="drawer-nav-link" href="#about" data-i18n="hub.header.about">소개</a>
-        <a class="drawer-nav-link" href="#account" data-i18n="hub.header.account">계정</a>
+        <a class="drawer-nav-link" href="account/" data-i18n="hub.header.account">계정</a>
       </nav>
 
       <div class="drawer-actions">
@@ -700,6 +743,7 @@
           <span class="drawer-userchip" id="drawerAuthUserLabel" hidden>Guest</span>
           <button class="drawer-btn" id="drawerAuthLoginBtn" data-i18n="hub.header.login" hidden>로그인</button>
           <button class="drawer-btn" id="drawerAuthLogoutBtn" hidden>Logout</button>
+          <a href="account/" class="drawer-btn" style="margin-top: 8px; text-align: center; text-decoration: none;" onclick="document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); document.body.classList.remove('drawer-open');">⚙️ 계정 관리</a>
         </div>
       </div>
     </div>
@@ -746,7 +790,7 @@
           <div class="shotGrid">
             <figure class="shot">
               <img
-                src="/assets/work_bg_01_alba_night-Db0rzBPq.png"
+                src="./assets/work_bg_01_alba_night-Db0rzBPq.png"
                 loading="lazy"
                 alt="Seoul Survival pixel night scene"
                 data-i18n-alt="hub.screenshots.alt1"
@@ -755,7 +799,7 @@
             </figure>
             <figure class="shot">
               <img
-                src="/assets/work_bg_05_gwajang_night-CcE0KsfB.png"
+                src="./assets/work_bg_05_gwajang_night-CcE0KsfB.png"
                 loading="lazy"
                 alt="Seoul Survival pixel night scene"
                 data-i18n-alt="hub.screenshots.alt2"
@@ -764,7 +808,7 @@
             </figure>
             <figure class="shot">
               <img
-                src="/assets/settings_gameinfo_bg-D2hEbKCP.webp"
+                src="./assets/settings_gameinfo_bg-D2hEbKCP.webp"
                 loading="lazy"
                 alt="Seoul Survival share image"
                 data-i18n-alt="hub.screenshots.alt3"
@@ -778,7 +822,9 @@
 
     <section id="account" aria-label="Account">
       <div class="sectionTitle" data-i18n="hub.account.title">계정 하나로 이어하기</div>
-      <div class="panel">
+      
+      <!-- 로그인 전 안내 -->
+      <div class="panel" id="accountGuestInfo">
         <div class="panel-inner">
           <div class="callout">
             <div class="icon">👤</div>
@@ -790,36 +836,43 @@
                 허브와 모든 게임에서 공통으로 동작하는 소셜 로그인으로 여러 기기에서 진행 상황을 동기화하세요.
               </div>
               <div class="muted" id="authStatusLabel" style="margin-top: 8px; font-size: 12px; font-weight: 900;">
-                SSO 설정 필요 (shared/auth/config.js)
-              </div>
-              <div id="authUserInfo" style="margin-top: 8px; display: none;">
-                <div style="font-weight: 900; margin-bottom: 4px;">
-                  <span id="authUserLabel">Guest</span>
-                </div>
-                <div class="muted" style="font-size: 12px;">
-                  로그인 상태: <span id="authStatusLabelLoggedIn">로그인됨</span>
-                </div>
+                게스트 모드입니다. 로그인하면 기기 간 이어하기/랭킹 참여가 가능합니다.
               </div>
               <div id="authProviderButtons" class="ctaRow" style="margin-top: 10px;">
                 <button class="btn" data-auth-provider="google" style="background: linear-gradient(135deg, rgba(96,165,250,.95), rgba(94,234,212,.86)); color: #071018; border: 0;">🔐 Google로 로그인</button>
               </div>
-              <div id="logoutButtonContainer" style="margin-top: 10px; display: none;">
-                <button class="btn" id="authLogoutBtn" style="background: rgba(251,113,133,.95); color: white; border: 0;">🚪 로그아웃</button>
-              </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div class="faq" aria-label="FAQ">
-            <details>
-              <summary data-i18n="hub.account.faq.q1">로그인하면 무엇을 할 수 있나요?</summary>
-              <p data-i18n="hub.account.faq.a1">클라우드 저장으로 여러 기기에서 진행 상황을 동기화할 수 있습니다. 탭을 닫을 때 자동으로 클라우드에 저장됩니다.</p>
-            </details>
-            <details>
-              <summary data-i18n="hub.account.faq.q2">로그인 전엔 저장이 안 되나요?</summary>
-              <p data-i18n="hub.account.faq.a2">브라우저에 로컬 저장은 5초마다 자동으로 됩니다. 로그인하면 클라우드 저장도 사용할 수 있어 기기 간 이어하기가 가능합니다.</p>
-            </details>
+      <!-- 로그인 후 안내 -->
+      <div class="panel" id="accountLoggedInInfo" style="display: none;">
+        <div class="panel-inner">
+          <div class="callout">
+            <div class="icon">✅</div>
+            <div>
+              <div style="font-weight: 950; margin-bottom: 4px;">
+                로그인됨
+              </div>
+              <div class="muted" style="margin-bottom: 12px; font-size: 13px;">
+                계정 관리 페이지에서 데이터 관리 및 계정 설정을 변경할 수 있습니다.
+              </div>
+              <a href="account/" class="btn primary" style="text-decoration: none;">⚙️ 계정 관리로 이동</a>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div class="faq" aria-label="FAQ">
+        <details>
+          <summary data-i18n="hub.account.faq.q1">로그인하면 무엇을 할 수 있나요?</summary>
+          <p data-i18n="hub.account.faq.a1">클라우드 저장으로 여러 기기에서 진행 상황을 동기화할 수 있습니다. 탭을 닫을 때 자동으로 클라우드에 저장됩니다.</p>
+        </details>
+        <details>
+          <summary data-i18n="hub.account.faq.q2">로그인 전엔 저장이 안 되나요?</summary>
+          <p data-i18n="hub.account.faq.a2">브라우저에 로컬 저장은 5초마다 자동으로 됩니다. 로그인하면 클라우드 저장도 사용할 수 있어 기기 간 이어하기가 가능합니다.</p>
+        </details>
       </div>
     </section>
 
@@ -827,7 +880,7 @@
       <div class="footer-content">
         <div class="footer-brand">
           <div class="footer-logo">
-            <img src="/assets/logo-CaUs9YDr.png" alt="ClickSurvivor" />
+            <img src="./assets/logo-CaUs9YDr.png" alt="ClickSurvivor" />
           </div>
           <div class="footer-brand-text">
             <div class="footer-brand-name">ClickSurvivor</div>
@@ -848,7 +901,7 @@
           <div class="footer-section">
             <div class="footer-section-title" data-i18n="hub.footer.support.title">지원</div>
             <div class="footer-links">
-              <a href="#account" data-i18n="hub.footer.support.account">계정 관리</a>
+              <a href="account/" data-i18n="hub.footer.support.account">계정 관리</a>
               <a href="#" onclick="return false;" data-i18n="hub.footer.contact">문의하기</a>
               <a href="#" onclick="return false;" data-i18n="hub.footer.support.faq">자주 묻는 질문</a>
             </div>
