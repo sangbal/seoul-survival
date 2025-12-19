@@ -15,15 +15,16 @@ export default defineConfig(({ mode }) => {
   );
 
   return {
-    // GitHub Pages + 커스텀 도메인 환경에서는 사이트 루트가 '/' 이므로 base는 '/'로 둔다.
-    // 게임 엔트리는 /seoulsurvival/ 경로로 별도 엔트리로 노출된다.
-    base: '/',
+    // 정적 호스팅(GitHub Pages/Cloudflare Pages)에서 멀티 페이지(/, /seoulsurvival/, /account/)가
+    // 서브 디렉터리에서도 자산 경로가 깨지지 않도록 상대 base를 사용한다.
+    base: './',
     envDir: __dirname,
     build: {
       rollupOptions: {
         input: {
           main: resolve(__dirname, 'index.html'),
           seoulsurvival: resolve(__dirname, 'seoulsurvival/index.html'),
+          account: resolve(__dirname, 'account/index.html'),
         },
       },
     },

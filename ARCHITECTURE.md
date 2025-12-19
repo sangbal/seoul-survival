@@ -16,11 +16,26 @@
 ## 상위 구조 개요
 - **허브/루트**: `index.html`
   - "게임 1개 집중" 넷플릭스 톤 허브 페이지.
-  - 히어로(도트 배경) + 앵커 섹션: `#about`, `#screenshots`, `#account`
+  - 히어로(도트 배경) + 앵커 섹션: `#about`, `#screenshots`, `#account` (로그인 CTA만, 상세는 `/account/`로 이동)
+- **계정관리 페이지**: `account/index.html`
+  - 폴더형 URL: `/account/` (Cloudflare Pages 호환)
+  - 계정관리 전용 UI: Account Overview/Preferences/Privacy & Data/Danger Zone
+  - 위험 버튼(내 데이터 삭제, 계정 삭제)은 이 페이지에만 존재
   - 허브 JS 엔트리: `hub/main.js`
   - 허브 i18n: `hub/i18n.js`, `hub/translations/{ko,en}.js`
   - 허브 언어 규칙: `?lang=ko|en` → LocalStorage(`clicksurvivor_lang`) → `navigator.language` fallback
   - 로고: `seoulsurvival/assets/images/logo.png` 이미지 사용
+  - 네비게이션: 모든 뷰포트에서 햄버거 메뉴를 기본 네비게이션으로 사용 (PC/모바일 통일)
+    - 헤더: 브랜드 + 햄버거 버튼만 표시 (nav와 actions는 기본 숨김)
+    - 드로어 메뉴: 링크(소개/계정), 언어 선택, 로그인/로그아웃 버튼, "계정 관리" 링크
+    - 포커스 관리: 드로어 열릴 때 첫 포커스 요소로 이동, 닫힐 때 햄버거 버튼으로 복귀
+  - 계정 관리: 메인 페이지(/)에는 로그인 CTA만, 상세는 `/account/` 페이지로 분리
+  - `/account/` 페이지: 섹션별 카드 구조
+    - Account Overview: 표시명/이메일/로그인 제공자/로그아웃
+    - Preferences: 언어 설정 (로그인 여부와 관계없이 표시)
+    - Privacy & Data: 내 데이터 삭제 (클라우드 세이브/랭킹 삭제, 계정 유지)
+    - Danger Zone: 계정 삭제(회원 탈퇴, 모든 데이터 삭제)
+    - 위험 버튼(내 데이터 삭제, 계정 삭제)은 `/account/` 페이지에만 존재, 드로어에는 "계정 관리" 링크만 제공
   - 푸터: 브랜딩, 구조화된 그리드 레이아웃(게임/지원/법적 고지), 반응형 디자인
   - 법적 문서: `terms.html` (이용약관), `privacy.html` (개인정보처리방침)
   - 참고: 허브에서 쓰는 도트/스크린샷 이미지는 현재 `seoulsurvival/assets/images/*`를 재사용(추후 허브 전용 assets로 분리 가능)
@@ -28,9 +43,11 @@
   - 허브/게임 공통 로그인 상태 공유(LocalStorage 키: `clicksurvivor-auth`)
   - Supabase Auth(OAuth) 기반, Google 로그인 지원 (GitHub 제거)
   - 공통 부트스트랩: `shared/authBoot.js` (허브/게임 페이지에서 모두 로드)
-  - UI 관리: `shared/auth/ui.js`의 `setUI()` 함수에서 로그인 상태에 따라 버튼 표시/숨김 처리
-  - 허브 UI: 계정 섹션, 헤더 버튼 (`authLoginBtn`, `authLogoutBtn`)
+  - UI 관리: `shared/auth/ui.js`의 `setUI()` 함수에서 로그인 상태에 따라 버튼 표시/숨김 처리 (단일 소스)
+  - 허브 UI: 계정 섹션(Account Overview/Preferences/Privacy & Data/Danger Zone), 헤더 버튼 (`authLoginBtn`, `authLogoutBtn`), 드로어 메뉴
   - 게임 UI: 설정 탭 계정 섹션 (`authProviderButtons`, `logoutButtonContainer`)
+  - 데이터 삭제: `shared/auth/deleteUserData.js`에서 Supabase `game_saves`, `leaderboard` 테이블 데이터 삭제, 로컬 저장소 초기화 후 로그아웃
+  - 계정 삭제(회원 탈퇴): `shared/auth/deleteAccount.js`에서 Supabase Edge Function(`delete-account`) 호출, Edge Function에서 Service Role Key로 `admin.deleteUser()` 수행 (보안: Service Role Key는 절대 프론트엔드에 포함하지 않음)
 - **공통(Cloud Save)**: `shared/cloudSave.js`
   - 로그인 사용자만 Supabase `game_saves` 테이블에 JSON 세이브 업로드/다운로드
   - 테이블/RLS는 `supabase/game_saves.sql`로 관리(프로젝트별 1회 실행)

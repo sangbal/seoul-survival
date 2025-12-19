@@ -44,6 +44,25 @@ function initDrawerLangSelect() {
     // 헤더의 언어 선택도 동기화
     const headerSelect = $('#langSelect');
     if (headerSelect) headerSelect.value = lang;
+    // 계정 섹션의 언어 선택도 동기화
+    const accountLangSelect = $('#accountLangSelect');
+    if (accountLangSelect) accountLangSelect.value = lang;
+  });
+}
+
+function initAccountLangSelect() {
+  const accountLangSelect = $('#accountLangSelect');
+  if (!accountLangSelect) return;
+  accountLangSelect.addEventListener('change', (e) => {
+    const lang = String(e.target.value || '').toLowerCase();
+    const applied = applyLang(lang);
+    showToast(applied === 'ko' ? '언어: 한국어' : 'Language: English');
+    // 헤더의 언어 선택도 동기화
+    const headerSelect = $('#langSelect');
+    if (headerSelect) headerSelect.value = lang;
+    // 드로어의 언어 선택도 동기화
+    const drawerSelect = $('#drawerLangSelect');
+    if (drawerSelect) drawerSelect.value = lang;
   });
 }
 
@@ -64,6 +83,12 @@ function initDrawer() {
     drawer.setAttribute('aria-hidden', 'false');
     drawerOverlay.setAttribute('aria-hidden', 'false');
     document.body.classList.add('drawer-open');
+    
+    // 포커스 이동: 드로어의 첫 포커스 가능한 요소로
+    const firstFocusable = drawer.querySelector('a, button, select, [tabindex]:not([tabindex="-1"])');
+    if (firstFocusable) {
+      setTimeout(() => firstFocusable.focus(), 100);
+    }
   }
 
   function closeDrawer() {
@@ -74,6 +99,9 @@ function initDrawer() {
     drawer.setAttribute('aria-hidden', 'true');
     drawerOverlay.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('drawer-open');
+    
+    // 포커스 복귀: 햄버거 버튼으로
+    hamburgerBtn.focus();
   }
 
   hamburgerBtn.addEventListener('click', () => {
@@ -124,51 +152,74 @@ function syncDrawerAuthUI() {
     });
   }
 
-  // 로그인 상태 변경 시 드로어 UI도 동기화
-  const observer = new MutationObserver(() => {
-    if (headerUserLabel) {
-      const isVisible = !headerUserLabel.hasAttribute('hidden');
-      if (drawerUserLabel) {
-        if (isVisible) {
-          drawerUserLabel.textContent = headerUserLabel.textContent;
-          drawerUserLabel.removeAttribute('hidden');
-        } else {
-          drawerUserLabel.setAttribute('hidden', '');
+  // 로그인 상태 변경 시 드로어 UI도 동기화 (MutationObserver로 무한 루프 방지)
+  let isSyncing = false;
+  const syncDrawerUI = () => {
+    if (isSyncing) return; // 무한 루프 방지
+    isSyncing = true;
+    
+    try {
+      if (headerUserLabel) {
+        const isVisible = !headerUserLabel.hasAttribute('hidden');
+        if (drawerUserLabel) {
+          if (isVisible) {
+            drawerUserLabel.textContent = headerUserLabel.textContent;
+            drawerUserLabel.removeAttribute('hidden');
+          } else {
+            drawerUserLabel.setAttribute('hidden', '');
+          }
         }
       }
-    }
-    if (headerLoginBtn) {
-      const isVisible = !headerLoginBtn.hasAttribute('hidden');
-      if (drawerLoginBtn) {
-        if (isVisible) {
-          drawerLoginBtn.removeAttribute('hidden');
-        } else {
-          drawerLoginBtn.setAttribute('hidden', '');
+      if (headerLoginBtn) {
+        const isVisible = !headerLoginBtn.hasAttribute('hidden');
+        if (drawerLoginBtn) {
+          if (isVisible) {
+            drawerLoginBtn.removeAttribute('hidden');
+          } else {
+            drawerLoginBtn.setAttribute('hidden', '');
+          }
         }
       }
-    }
-    if (headerLogoutBtn) {
-      const isVisible = !headerLogoutBtn.hasAttribute('hidden');
-      if (drawerLogoutBtn) {
-        if (isVisible) {
-          drawerLogoutBtn.removeAttribute('hidden');
-        } else {
-          drawerLogoutBtn.setAttribute('hidden', '');
+      if (headerLogoutBtn) {
+        const isVisible = !headerLogoutBtn.hasAttribute('hidden');
+        if (drawerLogoutBtn) {
+          if (isVisible) {
+            drawerLogoutBtn.removeAttribute('hidden');
+          } else {
+            drawerLogoutBtn.setAttribute('hidden', '');
+          }
         }
       }
+    } finally {
+      isSyncing = false;
     }
-  });
+  };
 
-  if (headerUserLabel) observer.observe(headerUserLabel, { attributes: true, attributeFilter: ['hidden'] });
-  if (headerLoginBtn) observer.observe(headerLoginBtn, { attributes: true, attributeFilter: ['hidden'] });
-  if (headerLogoutBtn) observer.observe(headerLogoutBtn, { attributes: true, attributeFilter: ['hidden'] });
+  const observer = new MutationObserver(syncDrawerUI);
+
+  if (headerUserLabel) observer.observe(headerUserLabel, { attributes: true, attributeFilter: ['hidden'], childList: false, subtree: false });
+  if (headerLoginBtn) observer.observe(headerLoginBtn, { attributes: true, attributeFilter: ['hidden'], childList: false, subtree: false });
+  if (headerLogoutBtn) observer.observe(headerLogoutBtn, { attributes: true, attributeFilter: ['hidden'], childList: false, subtree: false });
+  
+  // 초기 동기화
+  syncDrawerUI();
 }
 
-applyLang(getInitialLang());
+const initialLang = getInitialLang();
+applyLang(initialLang);
 initVersion();
 initLangSelect();
 initDrawerLangSelect();
+initAccountLangSelect();
 initDrawer();
+
+// 언어 선택 초기값 동기화
+const headerSelect = $('#langSelect');
+const drawerSelect = $('#drawerLangSelect');
+const accountLangSelect = $('#accountLangSelect');
+if (headerSelect) headerSelect.value = initialLang;
+if (drawerSelect) drawerSelect.value = initialLang;
+if (accountLangSelect) accountLangSelect.value = initialLang;
 
 // authBoot.js 로드 후 드로어 UI 동기화
 if (document.readyState === 'loading') {

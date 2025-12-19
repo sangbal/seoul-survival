@@ -3,7 +3,92 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## 2025-12-19 (최종)
+- **[hub] 계정관리 페이지 분리 (/account/)**
+  - Cloudflare Pages 폴더형 URL 구조로 계정관리 페이지 분리
+  - `account/index.html` 생성: 헤더/드로어 구조 재사용, 계정관리 전용 UI (Account Overview/Preferences/Privacy & Data/Danger Zone)
+  - 메인 페이지(/) 정리: 계정관리 전체 UI 제거, 로그인 CTA + "계정 관리로 이동" 링크만 유지
+  - 위험 버튼(내 데이터 삭제, 계정 삭제)은 `/account/` 페이지에만 존재
+  - 네비 링크 변경: 모든 `#account` 앵커를 `account/` 경로로 변경 (상대 경로, 헤더/드로어/푸터)
+  - Vite 빌드 설정: `vite.config.js`에 `account/index.html` 추가하여 멀티 페이지 지원
+  - 공통 auth UI 로직 호환: `shared/auth/ui.js`의 `setUI()`가 메인/account 페이지 모두에서 동작하도록 null-safe 처리
+  - base 설정: 멀티 페이지(/, /seoulsurvival/, /account/) 자산 경로 안정화를 위해 `base: './'`로 전환
+
+## 2025-12-19 (허브 UI/UX 정돈)
+- **[hub] 전체 UI 리스킨: 토큰 기반으로 일관성/가독성 개선**
+  - `index.html`에 디자인 토큰 도입: 색상/간격/타이포 스케일을 CSS 변수로 정리
+  - 포인트 컬러를 1개(blue) 중심으로 통일, 과한 그라데이션/보조 포인트 노출을 축소
+  - 버튼/링크/셀렉트/햄버거/드로어 버튼의 터치 타겟을 44px 기준으로 정렬
+  - 접근성: `:focus-visible` 포커스 링 추가(키보드 탐색 시 시각적 피드백)
+  - 섹션 리듬 정리: section title 간격 스케일화, 카드/스크린샷 캡션 가독성 개선
+  - base('./') 전제에 맞게 허브 링크를 상대 경로로 정리 (`account/` 등)
+
+## 2025-12-19 (후반)
+- **[hub] 네비게이션 및 계정관리 UI 개선**
+  - PC에서도 햄버거 메뉴를 기본 네비게이션으로 사용 (모든 뷰포트에서 드로어 단일 진입점)
+  - 헤더의 nav와 actions를 기본 숨김 처리, 햄버거 버튼만 표시
+  - 드로어 포커스 관리 추가: 열릴 때 첫 포커스 요소로 이동, 닫힐 때 햄버거 버튼으로 복귀
+  - 계정관리 UI를 업계 우수 사례에 맞게 섹션별 카드 구조로 재구성:
+    - Account Overview: 표시명/이메일/로그인 제공자/로그아웃
+    - Preferences: 언어 설정 (로그인 여부와 관계없이 표시)
+    - Privacy & Data: 내 데이터 삭제 버튼 (클라우드 세이브/랭킹 삭제, 계정 유지)
+    - Danger Zone: 계정 삭제 버튼 (회원 탈퇴, 모든 데이터 삭제)
+  - "내 데이터 삭제"와 "계정 삭제" 기능의 문구를 명확히 분리하여 혼동 방지
+  - 계정 삭제 confirm 1단계에 삭제되는 항목 목록 명시
+  - 드로어에는 "계정 관리" 링크만 제공, 위험 버튼은 계정 섹션 내부에만 존재
+  - 언어 선택 동기화: 헤더/드로어/계정 섹션의 언어 선택이 모두 동기화됨
+
 ## 2025-12-19
+- **[hub] 계정 삭제(회원 탈퇴) 기능 구현**
+  - 보안 원칙 준수:
+    - Service Role Key는 절대 프론트엔드에 포함하지 않음
+    - 계정 삭제는 Supabase Edge Function에서만 수행 (`supabase/functions/delete-account/index.ts`)
+    - Edge Function은 JWT 검증 후 Service Role Key로 `admin.deleteUser()` 호출
+  - Edge Function 구현:
+    - 입력: Authorization Bearer 토큰으로 사용자 인증
+    - 로직: game_saves/leaderboard 삭제 → auth.users 삭제 (트랜잭션 처리)
+    - 응답: ALL_SUCCESS, DATA_DELETED_BUT_AUTH_DELETE_FAILED, AUTH_FAILED, NOT_CONFIGURED, UNKNOWN_ERROR
+    - 로깅: 민감 정보/키/토큰은 로그에 남기지 않음
+  - 프론트엔드 구현:
+    - `shared/auth/deleteAccount.js`: Edge Function 호출 함수 (30초 타임아웃)
+    - 계정 섹션(#account)에만 "계정 삭제(회원 탈퇴)" 버튼 추가 (드로어에는 없음)
+    - 2단계 confirm: 계정+데이터 삭제 경고, 삭제될 내용 명시
+    - 에러 처리: 각 상황별 명확한 메시지 (401/403/404/타임아웃/네트워크 오류)
+    - 삭제 성공 시: LocalStorage 정리 → 로그아웃 → 페이지 새로고침
+  - 리스크 설계 문서: `docs/account-deletion-risks.md`에 10개 리스크 항목 정리 (현상/원인/대응/사용자 안내/테스트 방법)
+
+- **[hub] 리스크 점검 및 보완 (계정 관리/회원 탈퇴 기능)**
+  - LocalStorage 삭제 범위 정확화:
+    - 실제 사용 키 확인: `clicksurvivor-auth` (인증), `clicksurvivor_lang` (언어), `seoulTycoonSaveV1` (게임 저장)
+    - 삭제 정책 변경: 계정/세이브 관련 키만 삭제, 언어 설정(`clicksurvivor_lang`)은 유지
+    - 명시적 키 목록 방식으로 변경하여 향후 확장 시 안전성 확보
+  - 에러 처리 및 사용자 안내 강화:
+    - 네트워크 오류/권한 오류(401/403)/토큰 만료 등 각 상황별 명확한 메시지 제공
+    - 삭제 실패 시 재시도 유도 및 권한 오류 시 로그아웃 제안
+    - 2단계 confirm 모달에 삭제될 데이터 목록 명시
+  - 위험 작업 버튼 위치 개선:
+    - 드로어 메뉴에서 "내 데이터 삭제" 버튼 제거, "계정 관리" 링크로 대체 (실수 방지)
+    - 실제 삭제 버튼은 계정 섹션(#account)에만 존재하도록 변경
+  - MutationObserver 동기화 최적화:
+    - 무한 루프 방지: `isSyncing` 플래그로 중복 호출 차단
+    - observer 옵션 최적화: `childList: false`, `subtree: false`로 불필요한 감지 방지
+  - 접근성 개선:
+    - 햄버거 버튼에 `aria-controls="drawer"` 추가
+    - iOS 스크롤 잠금 개선: `body.drawer-open`에 `position: fixed`, `width: 100%`, `height: 100%` 추가
+  - 프로덕션 문구 확인: footer의 개발자용 문구는 이미 `display: none` 처리되어 안전
+
+- **[hub] 계정 관리 보강 및 회원 탈퇴 기능 구현**
+  - 계정 관리 UI 보강:
+    - 로그인 상태일 때 이메일/표시명 노출 (`authUserEmail`, `authUserName`)
+    - 프로덕션 문구 정리: "SSO 설정 필요" → "게스트 모드입니다. 로그인하면 기기 간 이어하기/랭킹 참여가 가능합니다."
+    - 내 데이터 삭제 버튼 추가 (허브 계정 섹션 및 드로어 메뉴)
+  - 내 데이터 삭제 기능:
+    - `shared/auth/deleteUserData.js`: Supabase `game_saves`, `leaderboard` 테이블에서 사용자 데이터 삭제
+    - 2단계 confirm 모달로 실수 방지
+    - 삭제 성공 시 로컬 저장소 초기화 (`clicksurvivor-*`, `seoulsurvival-*` 키 삭제) 후 로그아웃 및 페이지 새로고침
+    - `shared/auth/ui.js`의 `handleDeleteData()` 함수로 통합 처리
+  - 단일 소스 원칙: `shared/auth/ui.js`의 `setUI()` 함수가 허브의 헤더/드로어/계정 섹션 UI를 모두 관리
+
 - **[hub] 모바일 가로 스크롤 제거 및 햄버거 메뉴 구현**
   - 가로 overflow 원인 제거:
     - `.topbar`에 `width: 100%`, `max-width: 100%`, `box-sizing: border-box` 추가하여 viewport를 넘지 않도록 수정
