@@ -10,6 +10,7 @@ import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
 import { getUser, onAuthStateChange, signInWithOAuth } from '../../shared/auth/core.js';
 import { isSupabaseConfigured } from '../../shared/auth/config.js';
 import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname, getMyRank } from '../../shared/leaderboard.js';
+import { t, applyI18nToDOM, setLang, getLang, getInitialLang } from './i18n/index.js';
 
 // 노동 직급별 배경 이미지 (Vite asset import로 번들링 시 경로 안정화)
 import workBg01 from '../assets/images/work_bg_01_alba_night.png';
@@ -108,6 +109,19 @@ function showInAppBrowserWarningIfNeeded() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // ======= i18n 초기화 =======
+    // 초기 언어 설정 (URL → localStorage → 브라우저 언어)
+    const initialLang = getInitialLang();
+    setLang(initialLang);
+    applyI18nToDOM();
+    
+    // 초기 UI 업데이트 (동적 텍스트 포함)
+    // updateUI()는 나중에 setInterval로 주기적으로 호출되지만,
+    // 초기 로드 시에도 한 번 호출하여 모든 텍스트가 올바르게 표시되도록 함
+    setTimeout(() => {
+      updateUI();
+      updateProductLockStates();
+    }, 100);
 
     // ======= fixed header 높이만큼 본문 상단 여백 자동 보정 =======
     // 모바일에서 헤더가 2줄로 늘어나면(.statbar 래핑) 본문 상단 요소(직급 등)가 헤더에 가려질 수 있어,
@@ -624,22 +638,15 @@ document.addEventListener('DOMContentLoaded', () => {
           : getPropertyCost(type, currentCount, qty);
         
         if (cash < cost) {
-          addLog(`💸 자금이 부족합니다. (필요: ${formatKoreanNumber(cost)}원)`);
+          addLog(t('msg.insufficientFunds', { amount: formatKoreanNumber(cost) }));
           return { success: false, newCount: currentCount };
         }
         
         cash -= cost;
         const newCount = currentCount + qty;
-        const unit = category === 'financial' ? '개' : '채';
-        const names = {
-          deposit: '예금', savings: '적금', bond: '국내주식',
-          usStock: '미국주식', crypto: '코인',
-          villa: '빌라', officetel: '오피스텔',
-          apartment: '아파트', shop: '상가', building: '빌딩'
-        };
-        
-        const productName = names[type] || type;
-        addLog(`✅ ${productName} ${qty}${unit}를 구입했습니다. (보유 ${newCount}${unit})`);
+        const unit = category === 'financial' ? t('ui.unit.count') : t('ui.unit.property');
+        const productName = getProductName(type);
+        addLog(t('msg.purchased', { product: productName, qty, unit, count: newCount }));
         
         // 구매 성공 시 떨어지는 애니메이션
         const buildingIcons = {
@@ -657,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (purchaseMode === 'sell') {
         // 판매 로직
         if (currentCount < qty) {
-          addLog(`❌ 판매할 수량이 부족합니다. (보유: ${currentCount})`);
+          addLog(t('msg.insufficientQuantity', { count: currentCount }));
           return { success: false, newCount: currentCount };
         }
         
@@ -667,16 +674,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         cash += sellPrice;
         const newCount = currentCount - qty;
-        const unit = category === 'financial' ? '개' : '채';
-        const names = {
-          deposit: '예금', savings: '적금', bond: '국내주식',
-          usStock: '미국주식', crypto: '코인',
-          villa: '빌라', officetel: '오피스텔',
-          apartment: '아파트', shop: '상가', building: '빌딩'
-        };
-        
-        const productName = names[type] || type;
-        addLog(`💰 ${productName} ${qty}${unit}를 판매했습니다. (+${formatKoreanNumber(sellPrice)}원, 보유 ${newCount}${unit})`);
+        const unit = category === 'financial' ? t('ui.unit.count') : t('ui.unit.property');
+        const productName = getProductName(type);
+        addLog(t('msg.sold', { product: productName, qty, unit, amount: formatKoreanNumber(sellPrice), count: newCount }));
         return { success: true, newCount };
       }
       
@@ -687,7 +687,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const fmt = new Intl.NumberFormat('ko-KR');
     
     // 한국식 숫자 표기 함수 (일반용)
+    // 영어 숫자 포맷 (K/M/B/T)
+    function formatEnglishNumber(num) {
+      if (num >= 1000000000000) {
+        const value = (num / 1000000000000).toFixed(1);
+        return parseFloat(value).toLocaleString('en-US') + 'T';
+      } else if (num >= 1000000000) {
+        const value = (num / 1000000000).toFixed(1);
+        return parseFloat(value).toLocaleString('en-US') + 'B';
+      } else if (num >= 1000000) {
+        const value = (num / 1000000).toFixed(1);
+        return parseFloat(value).toLocaleString('en-US') + 'M';
+      } else if (num >= 1000) {
+        const value = (num / 1000).toFixed(1);
+        return parseFloat(value).toLocaleString('en-US') + 'K';
+      } else {
+        return Math.floor(num).toString();
+      }
+    }
+
     function formatKoreanNumber(num) {
+      // 언어 자동 감지하여 적절한 포맷 사용
+      const currentLang = getLang();
+      if (currentLang === 'en') {
+        return formatEnglishNumber(num);
+      }
+      
       // 통계 섹션에서는 항상 짧은 숫자 형식 사용
       // 짧은 숫자 형식 (천의자리 콤마 포함)
       if (num >= 1000000000000) {
@@ -706,13 +731,55 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.floor(num).toString();
       }
     }
+
+    // 언어별 숫자 포맷 통합 함수 (별칭)
+    function formatNumberForLang(num, lang = null) {
+      if (lang) {
+        // 특정 언어 지정 시
+        if (lang === 'en') {
+          return formatEnglishNumber(num);
+        } else {
+          return formatKoreanNumber(num);
+        }
+      }
+      // 언어 미지정 시 formatKoreanNumber가 자동으로 언어 감지
+      return formatKoreanNumber(num);
+    }
     
+    // 영어 통계 포맷
+    function formatStatsNumberEnglish(num) {
+      if (!settings.shortNumbers) {
+        return Math.floor(num).toLocaleString('en-US') + ' KRW';
+      }
+
+      if (num >= 1000000000000) {
+        const value = num / 1000000000000;
+        return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + 'T';
+      } else if (num >= 1000000000) {
+        const value = num / 1000000000;
+        return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + 'B';
+      } else if (num >= 1000000) {
+        const value = num / 1000000;
+        return value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'M';
+      } else if (num >= 1000) {
+        const k = Math.floor(num / 1000);
+        return k.toLocaleString('en-US') + 'K';
+      } else {
+        return Math.floor(num).toLocaleString('en-US') + ' KRW';
+      }
+    }
+
     // 통계/축약 표기용 포맷 함수
     // - 짧은 숫자 OFF: 항상 전체 원 단위(천단위 콤마)
     // - 짧은 숫자 ON : 단위별 소수점 자릿수 고정(눈에 거슬리는 "생겼다/없어졌다" 현상 방지)
     //   * 만원: 0.0만원 (소수 1자리 고정)
     //   * 억/조: 0.00억 / 0.00조 (소수 2자리 고정)
     function formatStatsNumber(num) {
+      const currentLang = getLang();
+      if (currentLang === 'en') {
+        return formatStatsNumberEnglish(num);
+      }
+
       if (!settings.shortNumbers) {
         return Math.floor(num).toLocaleString('ko-KR') + '원';
       }
@@ -744,7 +811,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // - 만원: 정수만 표기, 천단위 콤마 (예: 1만원, 1,551만원)
     // - 만원 미만: 0만원으로 표기
     function formatLeaderboardAssets(num) {
+      const currentLang = getLang();
       const assetsValue = Math.floor(num || 0);
+      
+      if (currentLang === 'en') {
+        if (assetsValue >= 1000000000000) {
+          const value = Math.floor(assetsValue / 1000000000000);
+          return value.toLocaleString('en-US') + 'T';
+        } else if (assetsValue >= 1000000000) {
+          const value = Math.floor(assetsValue / 1000000000);
+          return value.toLocaleString('en-US') + 'B';
+        } else if (assetsValue >= 1000000) {
+          const value = Math.floor(assetsValue / 1000000);
+          return value.toLocaleString('en-US') + 'M';
+        } else if (assetsValue >= 1000) {
+          const value = Math.floor(assetsValue / 1000);
+          return value.toLocaleString('en-US') + 'K';
+        } else {
+          return '0';
+        }
+      }
       
       if (assetsValue >= 1000000000000) {
         // 조 단위: 정수만, 천단위 콤마 (예: 1조, 1,234조)
@@ -766,6 +852,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 금융상품용 포맷 (만원 단위까지 반올림, 천단위 콤마)
     function formatFinancialPrice(num) {
+      const currentLang = getLang();
+      
+      if (currentLang === 'en') {
+        if (num >= 1000000000) {
+          const b = Math.round(num / 1000000000);
+          return b.toLocaleString('en-US') + 'B';
+        } else if (num >= 1000000) {
+          const m = Math.round(num / 1000000);
+          return m.toLocaleString('en-US') + 'M';
+        } else if (num >= 1000) {
+          const k = Math.round(num / 1000);
+          return k.toLocaleString('en-US') + 'K';
+        } else {
+          return Math.floor(num).toLocaleString('en-US');
+        }
+      }
+      
       if (num >= 100000000) {
         // 1억 이상: 억 단위로 표시
         const eok = Math.round(num / 100000000);
@@ -785,6 +888,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 부동산용 포맷 (0.1억 단위까지 반올림, 천단위 콤마)
     function formatPropertyPrice(num) {
+      const currentLang = getLang();
+      
+      if (currentLang === 'en') {
+        if (num >= 1000000000) {
+          // 1B 이상: 0.1B 단위로 반올림
+          const b = Math.round(num / 100000000) / 10;
+          return b.toLocaleString('en-US') + 'B';
+        } else if (num >= 1000000) {
+          // 1M 이상: M 단위로 반올림
+          const m = Math.round(num / 1000000);
+          return m.toLocaleString('en-US') + 'M';
+        } else if (num >= 1000) {
+          const k = Math.round(num / 1000);
+          return k.toLocaleString('en-US') + 'K';
+        } else {
+          return Math.floor(num).toLocaleString('en-US');
+        }
+      }
+      
       if (num >= 100000000) {
         // 1억 이상: 0.1억 단위로 반올림
         const eok = Math.round(num / 10000000) / 10;
@@ -824,9 +946,34 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    function formatEnglishNumberFixed1(num) {
+      if (num >= 1000000000000) {
+        const value = num / 1000000000000;
+        return value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'T';
+      } else if (num >= 1000000000) {
+        const value = num / 1000000000;
+        return value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'B';
+      } else if (num >= 1000000) {
+        const value = num / 1000000;
+        return value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'M';
+      } else if (num >= 1000) {
+        const value = num / 1000;
+        return value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'K';
+      } else {
+        return Math.floor(num).toString();
+      }
+    }
+
     function formatCashDisplayFixed1(num) {
+      const currentLang = getLang();
       if (!settings.shortNumbers) {
+        if (currentLang === 'en') {
+          return Math.floor(num).toLocaleString('en-US') + ' KRW';
+        }
         return Math.floor(num).toLocaleString('ko-KR') + '원';
+      }
+      if (currentLang === 'en') {
+        return formatEnglishNumberFixed1(num) + ' KRW';
       }
       return formatKoreanNumberFixed1(num) + '원';
     }
@@ -1864,18 +2011,43 @@ document.addEventListener('DOMContentLoaded', () => {
     let careerLevel = 0;        // 현재 커리어 레벨
     let totalLaborIncome = 0;   // 총 노동 수익
     const CAREER_LEVELS = [
-      { name: "알바", multiplier: 1, requiredIncome: 0, requiredClicks: 0, bgImage: workBg01 },                    // 1만원/클릭 (연봉 2000만)
+      { nameKey: "career.alba", multiplier: 1, requiredIncome: 0, requiredClicks: 0, bgImage: workBg01 },                    // 1만원/클릭 (연봉 2000만)
       // 누적 클릭 기준 승진 간격 조정: 최종(CEO) 15,000 클릭에 도달하도록 전체적으로 간격을 벌림
-      { name: "계약직", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 100, bgImage: workBg02 },        // 1.5만원/클릭 (연봉 3000만)
-      { name: "사원", multiplier: 2, requiredIncome: 10000000, requiredClicks: 300, bgImage: workBg03 },          // 2만원/클릭 (연봉 4000만)
-      { name: "대리", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 800, bgImage: workBg04 },        // 2.5만원/클릭 (연봉 5000만)
-      { name: "과장", multiplier: 3, requiredIncome: 30000000, requiredClicks: 1500, bgImage: workBg05 },          // 3만원/클릭 (연봉 6000만)
-      { name: "차장", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 2500, bgImage: workBg06 },        // 3.5만원/클릭 (연봉 7000만)
-      { name: "부장", multiplier: 4, requiredIncome: 50000000, requiredClicks: 4000, bgImage: workBg07 },          // 4만원/클릭 (연봉 8000만)
-      { name: "상무", multiplier: 5, requiredIncome: 70000000, requiredClicks: 6000, bgImage: workBg08 },         // 5만원/클릭 (연봉 1억)
-      { name: "전무", multiplier: 10, requiredIncome: 120000000, requiredClicks: 9000, bgImage: workBg09 },       // 10만원/클릭 (연봉 2억)
-      { name: "CEO", multiplier: 12, requiredIncome: 250000000, requiredClicks: 15000, bgImage: workBg10 }         // 12만원/클릭 (밸런싱: 20 → 12)
+      { nameKey: "career.contract", multiplier: 1.5, requiredIncome: 5000000, requiredClicks: 100, bgImage: workBg02 },        // 1.5만원/클릭 (연봉 3000만)
+      { nameKey: "career.employee", multiplier: 2, requiredIncome: 10000000, requiredClicks: 300, bgImage: workBg03 },          // 2만원/클릭 (연봉 4000만)
+      { nameKey: "career.assistant", multiplier: 2.5, requiredIncome: 20000000, requiredClicks: 800, bgImage: workBg04 },        // 2.5만원/클릭 (연봉 5000만)
+      { nameKey: "career.manager", multiplier: 3, requiredIncome: 30000000, requiredClicks: 1500, bgImage: workBg05 },          // 3만원/클릭 (연봉 6000만)
+      { nameKey: "career.deputy", multiplier: 3.5, requiredIncome: 40000000, requiredClicks: 2500, bgImage: workBg06 },        // 3.5만원/클릭 (연봉 7000만)
+      { nameKey: "career.director", multiplier: 4, requiredIncome: 50000000, requiredClicks: 4000, bgImage: workBg07 },          // 4만원/클릭 (연봉 8000만)
+      { nameKey: "career.executive", multiplier: 5, requiredIncome: 70000000, requiredClicks: 6000, bgImage: workBg08 },         // 5만원/클릭 (연봉 1억)
+      { nameKey: "career.senior", multiplier: 10, requiredIncome: 120000000, requiredClicks: 9000, bgImage: workBg09 },       // 10만원/클릭 (연봉 2억)
+      { nameKey: "career.ceo", multiplier: 12, requiredIncome: 250000000, requiredClicks: 15000, bgImage: workBg10 }         // 12만원/클릭 (밸런싱: 20 → 12)
     ];
+    
+    // 직급 이름 가져오기 함수
+    function getCareerName(level) {
+      if (level < 0 || level >= CAREER_LEVELS.length) return '';
+      return t(CAREER_LEVELS[level].nameKey);
+    }
+    
+    // 상품 이름 가져오기 함수
+    function getProductName(type) {
+      const productKeys = {
+        deposit: 'product.deposit',
+        savings: 'product.savings',
+        bond: 'product.bond',
+        usStock: 'product.usStock',
+        crypto: 'product.crypto',
+        villa: 'property.villa',
+        officetel: 'property.officetel',
+        apartment: 'property.apartment',
+        shop: 'property.shop',
+        building: 'property.building',
+        tower: 'property.tower'
+      };
+      const key = productKeys[type];
+      return key ? t(key) : type;
+    }
     
     // 가격은 이제 동적으로 계산됨 (getPropertyCost 함수 사용)
     
@@ -2194,22 +2366,25 @@ document.addEventListener('DOMContentLoaded', () => {
         // (신) 헤더에 붙는 컴팩트 표기: yyyy.mm.dd(N일차)
         const elCompact = document.getElementById('diaryHeaderMeta');
         if (elCompact) {
-          elCompact.textContent = `${y}.${m}.${d}(${days}일차)`;
+          elCompact.textContent = `${y}.${m}.${d}(${t('ui.dayCount', { days })})`;
         }
 
         // (구) DOM이 남아있을 때만 업데이트 (호환)
         const elDate = document.getElementById('diaryMetaDate');
         const elDay = document.getElementById('diaryMetaDay');
-        if (elDate) elDate.textContent = `오늘: ${y}.${m}.${d}`;
-        if (elDay) elDay.textContent = `일차: ${days}일차`;
+        if (elDate) elDate.textContent = t('ui.today', { date: `${y}.${m}.${d}` });
+        if (elDay) elDay.textContent = t('ui.dayCount', { days });
       }
 
       function diaryize(raw) {
         const s = String(raw || '').trim();
 
         // 업그레이드 잔여 클릭 안내는 일기장에 기록하지 않음
+        // 업그레이드 잔여 클릭 안내는 일기장에 기록하지 않음 (다국어 지원)
         // 예: '🎯 다음 업그레이드 "📚 전문 교육"까지 25클릭 남음!'
-        if (/다음\s*업그레이드/.test(s) && /클릭\s*남/.test(s)) {
+        // 예: '🎯 25 clicks until next upgrade "📚 Professional Education"!'
+        const nextUpgradePattern = new RegExp(t('msg.nextUpgradeHint', { remaining: '\\d+', name: '.*' }).replace(/\{remaining\}/g, '\\d+').replace(/\{name\}/g, '.*'), 'i');
+        if (nextUpgradePattern.test(s) || /다음\s*업그레이드/.test(s) && /클릭\s*남/.test(s)) {
           return '';
         }
 
@@ -2230,9 +2405,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const soften = (t) => stripPrefix(t).replace(/\s+/g, ' ').trim();
 
         // 업적
-        if (s.startsWith('🏆 업적 달성:')) {
-          // "🏆 업적 달성: A - B"
-          const body = stripPrefix(s).replace(/^업적 달성:\s*/,'');
+        // 다국어 지원: "🏆 업적 달성:" 또는 "🏆 Achievement Unlocked:"
+        const achievementPrefix = t('msg.achievementUnlocked', { name: '', desc: '' }).split(':')[0] + ':';
+        if (s.startsWith('🏆') && (s.includes('업적 달성:') || s.includes('Achievement Unlocked:'))) {
+          // "🏆 업적 달성: A - B" 또는 "🏆 Achievement Unlocked: A - B"
+          const body = stripPrefix(s).replace(/^(업적 달성|Achievement Unlocked):\s*/i,'');
           const [name, desc] = body.split(/\s*-\s*/);
           return pick('achievement', [
             `오늘은 체크 하나를 더했다. (${name || '업적'})`,
@@ -2251,9 +2428,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 승진
-        if (s.startsWith('🎉') && s.includes('승진했습니다')) {
-          // "🎉 직급으로 승진했습니다! (클릭당 X원)"
-          const m = s.match(/🎉\s*(.+?)으로\s*승진했습니다!?(\s*\(.*\))?/);
+        // 다국어 지원: "승진했습니다" 또는 "promoted"
+        const promotedPattern = getLang() === 'en' 
+          ? /🎉\s*(.+?)\s+promoted!?(\s*\(.*\))?/i
+          : /🎉\s*(.+?)으로\s*승진했습니다!?(\s*\(.*\))?/;
+        if (s.startsWith('🎉') && (s.includes('승진했습니다') || /promoted/i.test(s))) {
+          // "🎉 직급으로 승진했습니다! (클릭당 X원)" 또는 "🎉 Career promoted! (X KRW per click)"
+          const m = s.match(promotedPattern);
           const career = m?.[1]?.trim();
           const extra = m?.[2]?.trim();
           const extraText = extra ? extra.replace(/[()]/g,'').trim() : '';
@@ -2274,9 +2455,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 해금
+        // 다국어 지원: "해금" 또는 "unlocked"
+        const unlockPattern = getLang() === 'en'
+          ? /^🔓\s*(.+?)\s+unlocked/i
+          : /^🔓\s*(.+?)이\s*해금/;
         if (s.startsWith('🔓')) {
           const body = soften(s);
-          const m = s.match(/^🔓\s*(.+?)이\s*해금/);
+          const m = s.match(unlockPattern);
           const name = (m?.[1] || '').trim();
           const unlockByProduct = {
             '적금': [
@@ -2421,7 +2606,11 @@ document.addEventListener('DOMContentLoaded', () => {
             `내일을 기다려야 한다.\n${body}`,
           ]);
         }
-        if (s.startsWith('✅') && s.includes('구입했습니다')) {
+        // 구매 메시지: "✅ 구입했습니다" 또는 "✅ Purchased"
+        const purchasedPattern = getLang() === 'en'
+          ? /^✅\s*.+?\s+purchased/i
+          : /^✅\s*.+?\s+구입했습니다/;
+        if (s.startsWith('✅') && (s.includes('구입했습니다') || /purchased/i.test(s))) {
           const body = soften(s);
           const m = s.match(/^✅\s*(.+?)\s+\d/);
           const name = (m?.[1] || '').trim();
@@ -3401,15 +3590,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const base = soften(s);
         return pick('default', [
           base,
-          `그냥 적어둔다.\n${base}`,
-          `오늘의 기록.\n${base}`,
-          `아무튼, ${base}`,
-          `일단 기록.\n${base}`,
-          `메모해둔다.\n${base}`,
-          `기억해둘 것.\n${base}`,
-          `나중을 위해 기록.\n${base}`,
-          `적어두는 게 좋겠다.\n${base}`,
-          `기록에 남긴다.\n${base}`,
+          `${t('diary.justWrite')}\n${base}`,
+          `${t('diary.todayRecord')}\n${base}`,
+          `${t('diary.anyway')} ${base}`,
+          `${t('diary.justRecord')}\n${base}`,
+          `${t('diary.memo')}\n${base}`,
+          `${t('diary.remember')}\n${base}`,
+          `${t('diary.recordForLater')}\n${base}`,
+          `${t('diary.goodToWrite')}\n${base}`,
+          `${t('diary.leaveRecord')}\n${base}`,
         ]);
       }
 
@@ -3562,8 +3751,8 @@ document.addEventListener('DOMContentLoaded', () => {
       currentMarketEvent = event;
       marketEventEndTime = Date.now() + event.duration;
       
-      addLog(`📈 ${event.name} 발생! ${Math.floor(event.duration/1000)}초간 지속`);
-      addLog(`💡 ${event.description}`);
+      addLog(t('msg.eventStarted', { name: event.name, duration: Math.floor(event.duration/1000) }));
+      addLog(t('msg.eventDescription', { description: event.description }));
       showMarketEventNotification(event);
     }
     
@@ -3591,9 +3780,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const financialEffects = Object.entries(event.effects.financial)
           .filter(([_, multiplier]) => multiplier !== 1.0)
           .map(([product, multiplier]) => {
-            const productNames = { deposit: '예금', savings: '적금', bond: '국내주식', usStock: '미국주식', crypto: '코인' };
             const m = Math.round(multiplier * 10) / 10;
-            return `${productNames[product]} x${String(m).replace(/\.0$/, '')}`;
+            return `${getProductName(product)} x${String(m).replace(/\.0$/, '')}`;
           });
         if (financialEffects.length > 0) {
           effectsText += `💰 ${financialEffects.join(', ')}\n`;
@@ -3604,7 +3792,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const propertyEffects = Object.entries(event.effects.property)
           .filter(([_, multiplier]) => multiplier !== 1.0)
           .map(([product, multiplier]) => {
-            const productNames = { villa: '빌라', officetel: '오피스텔', apartment: '아파트', shop: '상가', building: '빌딩' };
+            const productNames = { 
+              villa: getProductName('villa'), 
+              officetel: getProductName('officetel'), 
+              apartment: getProductName('apartment'), 
+              shop: getProductName('shop'), 
+              building: getProductName('building') 
+            };
             const m = Math.round(multiplier * 10) / 10;
             return `${productNames[product]} x${String(m).replace(/\.0$/, '')}`;
           });
@@ -3635,7 +3829,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (marketEventEndTime > 0 && Date.now() >= marketEventEndTime) {
         currentMarketEvent = null;
         marketEventEndTime = 0;
-        addLog('📉 시장 이벤트가 종료되었습니다.');
+        addLog(t('msg.eventEnded'));
       }
     }
     
@@ -3661,7 +3855,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!achievement.unlocked && achievement.condition()) {
           achievement.unlocked = true;
           showAchievementNotification(achievement);
-          addLog(`🏆 업적 달성: ${achievement.name} - ${achievement.desc}`);
+          // 업적 번역 키가 없으면 원본 한글 사용 (fallback)
+          const achievementName = t(`achievement.${achievement.id}.name`, {}, achievement.name);
+          const achievementDesc = t(`achievement.${achievement.id}.desc`, {}, achievement.desc);
+          addLog(t('msg.achievementUnlocked', { name: achievementName, desc: achievementDesc }));
         }
       });
     }
@@ -3684,10 +3881,13 @@ document.addEventListener('DOMContentLoaded', () => {
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         animation: achievementPop 1s ease-out;
       `;
+      // 번역 키가 없으면 fallback으로 한글 사용 (개발 중)
+      const achievementName = t(`achievement.${achievement.id}.name`);
+      const achievementDesc = t(`achievement.${achievement.id}.desc`);
       notification.innerHTML = `
         <div style="font-size: 24px; margin-bottom: 10px;">🏆</div>
-        <div style="font-size: 18px; margin-bottom: 5px;">${achievement.name}</div>
-        <div style="font-size: 14px; opacity: 0.8;">${achievement.desc}</div>
+        <div style="font-size: 18px; margin-bottom: 5px;">${achievementName}</div>
+        <div style="font-size: 14px; opacity: 0.8;">${achievementDesc}</div>
       `;
       
       document.body.appendChild(notification);
@@ -3714,7 +3914,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (upgrade.unlockCondition()) {
             upgrade.unlocked = true;
             newUnlocks++;
-            addLog(`🎁 새 업그레이드 해금: ${upgrade.name}`);
+            addLog(t('msg.upgradeUnlocked', { name: t(`upgrade.${id}.name`) }));
           }
         } catch (error) {
           console.error(`업그레이드 해금 조건 체크 실패 (${id}):`, error);
@@ -3793,9 +3993,20 @@ document.addEventListener('DOMContentLoaded', () => {
       
       upgradeCount.textContent = `(${availableUpgrades.length})`;
       
+      // 빈 상태 메시지 처리
+      const noUpgradesMsg = document.getElementById('noUpgradesMessage');
       if (availableUpgrades.length === 0) {
         upgradeList.innerHTML = '';
+        if (noUpgradesMsg) {
+          noUpgradesMsg.textContent = t('ui.noUpgrades');
+          noUpgradesMsg.style.display = 'block';
+        }
         return;
+      }
+      
+      // 업그레이드가 있으면 빈 상태 메시지 숨김
+      if (noUpgradesMsg) {
+        noUpgradesMsg.style.display = 'none';
       }
       
       upgradeList.innerHTML = '';
@@ -3823,11 +4034,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const name = document.createElement('div');
         name.className = 'upgrade-name';
-        name.textContent = upgrade.name;
+        name.textContent = t(`upgrade.${id}.name`, {}, upgrade.name);
         
         const desc = document.createElement('div');
         desc.className = 'upgrade-desc';
-        desc.textContent = upgrade.desc;
+        desc.textContent = t(`upgrade.${id}.desc`, {}, upgrade.desc);
         
         // 가격은 우측 배지로 이동 (NEW! 대신) → 카드 높이 축소
         const priceText = formatFinancialPrice(upgrade.cost);
@@ -3928,13 +4139,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       if (upgrade.purchased) {
-        addLog('❌ 이미 구매한 업그레이드입니다.');
+        addLog(t('msg.upgradeAlreadyPurchased'));
         console.log('Already purchased');
         return;
       }
       
       if (cash < upgrade.cost) {
-        addLog(`💸 자금이 부족합니다. (필요: ${formatFinancialPrice(upgrade.cost)})`);
+        addLog(t('msg.upgradeInsufficientFunds', { cost: formatFinancialPrice(upgrade.cost) }));
         console.log('Not enough cash. Need:', upgrade.cost, 'Have:', cash);
         return;
       }
@@ -3946,11 +4157,11 @@ document.addEventListener('DOMContentLoaded', () => {
       
       try {
         upgrade.effect(); // 효과 적용
-        addLog(`✅ ${upgrade.name} 구매! ${upgrade.desc}`);
+        addLog(t('msg.upgradePurchased', { name: t(`upgrade.${upgradeId}.name`), desc: t(`upgrade.${upgradeId}.desc`) }));
         console.log('Effect applied successfully');
       } catch (error) {
         console.error(`업그레이드 효과 적용 실패 (${upgradeId}):`, error);
-        addLog(`⚠️ ${upgrade.name} 구매했지만 효과 적용 중 오류 발생`);
+        addLog(t('msg.upgradeError', { name: t(`upgrade.${upgradeId}.name`) }));
       }
       
       console.log('New cash:', cash);
@@ -3986,7 +4197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         careerLevel += 1;
         const newCareer = getCurrentCareer();
         const clickIncome = getClickIncome();
-        addLog(`🎉 ${newCareer.name}으로 승진했습니다! (클릭당 ${formatKoreanNumber(clickIncome)}원)`);
+        addLog(t('msg.promoted', { career: getCareerName(careerLevel), income: formatKoreanNumber(clickIncome) }));
         
         // 승진 시 전환 애니메이션
         if (elWorkArea) {
@@ -4021,12 +4232,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // 스크린 리더 알림
         const currentCareerEl = document.getElementById('currentCareer');
         if (currentCareerEl) {
-          currentCareerEl.setAttribute('aria-label', `${newCareer.name}으로 승진했습니다. 클릭당 ${formatKoreanNumber(clickIncome)}원`);
+          currentCareerEl.setAttribute('aria-label', t('msg.promoted', { career: getCareerName(careerLevel), income: formatKoreanNumber(clickIncome) }));
         }
         
         // 승진 후 즉시 UI 업데이트
         console.log('=== PROMOTION DEBUG ===');
-        console.log('Promoted to:', newCareer.name);
+        console.log('Promoted to:', getCareerName(careerLevel));
         console.log('New career level:', careerLevel);
         console.log('New multiplier:', newCareer.multiplier);
         console.log('Click income:', formatKoreanNumber(clickIncome));
@@ -4286,19 +4497,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // 닉네임 유효성 검사: 1~5자, 공백/특수문자(%, _) 불가
           if (raw.length < 1 || raw.length > 5) {
-            openInfoModal('닉네임 길이 오류', '닉네임은 1~5자여야 합니다.', '⚠️');
+            openInfoModal(t('modal.error.nicknameLength.title'), t('modal.error.nicknameLength.message'), '⚠️');
             __nicknameModalShown = false;
             ensureNicknameModal();
             return;
           }
           if (/\s/.test(raw)) {
-            openInfoModal('닉네임 형식 오류', '닉네임에는 공백을 포함할 수 없습니다.', '⚠️');
+            openInfoModal(t('modal.error.nicknameFormat.title'), t('modal.error.nicknameFormat.message'), '⚠️');
             __nicknameModalShown = false;
             ensureNicknameModal();
             return;
           }
           if (/[%_]/.test(raw)) {
-            openInfoModal('닉네임 형식 오류', '닉네임에는 %, _ 문자를 사용할 수 없습니다.', '⚠️');
+            openInfoModal(t('modal.error.nicknameFormatInvalid.title'), t('modal.error.nicknameFormatInvalid.message'), '⚠️');
             __nicknameModalShown = false;
             ensureNicknameModal();
             return;
@@ -4307,7 +4518,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // 닉네임 중복 여부 확인 (대소문자 구분 없음)
           const { taken } = await isNicknameTaken(raw);
           if (taken) {
-            openInfoModal('닉네임 중복', '이미 사용 중인 닉네임입니다.\n다른 닉네임을 입력해주세요.', '⚠️');
+            openInfoModal(t('modal.error.nicknameTaken.title'), t('modal.error.nicknameTaken.message'), '⚠️');
             __nicknameModalShown = false;
             ensureNicknameModal();
             return;
@@ -4322,17 +4533,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
           playerNickname = raw;
           saveGame(); // 닉네임 저장
-          addLog(`닉네임이 "${playerNickname}"으로 설정되었습니다.`);
+          addLog(t('msg.nicknameSet', { nickname: playerNickname }));
         };
 
         openInputModal(
-          '닉네임 설정',
-          '리더보드에 표시될 닉네임을 입력하세요.\n(1~5자, 공백/%, _ 불가)',
+          t('modal.nickname.title'),
+          t('modal.nickname.message'),
           handleConfirm,
           {
             icon: '✏️',
-            primaryLabel: '확인',
-            placeholder: '1~5자 닉네임',
+            primaryLabel: t('button.confirm'),
+            placeholder: t('modal.nickname.placeholder'),
             maxLength: 5,
             defaultValue: '',
             required: true,
@@ -4461,14 +4672,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetGame() {
       console.log('🔄 resetGame function called'); // 디버깅용
 
-      const message =
-        '게임을 새로 시작하시겠습니까?\n\n' +
-        '⚠️ 모든 진행 상황이 삭제되며 복구할 수 없습니다.';
-
-      openConfirmModal('게임 새로 시작', message, () => {
+      openConfirmModal(t('modal.confirm.reset.title'), t('modal.confirm.reset.message'), () => {
         try {
           // 초기화 진행 메시지
-          addLog('🔄 게임을 초기화합니다...');
+          addLog(t('msg.gameReset'));
           console.log('✅ User confirmed reset'); // 디버깅용
           
           // 저장 데이터 삭제
@@ -4490,12 +4697,12 @@ document.addEventListener('DOMContentLoaded', () => {
           location.reload();
         } catch (error) {
           console.error('❌ Error in resetGame:', error);
-          openInfoModal('오류', '게임 초기화 중 오류가 발생했습니다.\n페이지를 새로고침해주세요.', '⚠️');
+          openInfoModal(t('modal.error.resetError.title'), t('modal.error.resetError.message'), '⚠️');
         }
       }, {
         icon: '🔄',
-        primaryLabel: '새로 시작',
-        secondaryLabel: '취소',
+        primaryLabel: t('modal.confirm.reset.primaryLabel'),
+        secondaryLabel: t('button.cancel'),
       });
     }
     
@@ -4541,7 +4748,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const saveData = localStorage.getItem(SAVE_KEY);
         if (!saveData) {
-          alert('저장된 게임 데이터가 없습니다.');
+          alert(t('modal.error.noSaveData.message'));
           return;
         }
         
@@ -4555,7 +4762,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        addLog('✅ 저장 파일이 다운로드되었습니다.');
+        addLog(t('msg.saveExported'));
       } catch (error) {
         console.error('저장 내보내기 실패:', error);
         alert('저장 내보내기 중 오류가 발생했습니다.');
@@ -4570,7 +4777,7 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             const saveData = JSON.parse(e.target.result);
             localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-            addLog('✅ 저장 파일을 불러왔습니다. 페이지를 새로고침합니다...');
+            addLog(t('msg.saveImported'));
             setTimeout(() => {
               location.reload();
             }, 1000);
@@ -4589,16 +4796,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // 저장 상태 UI 업데이트 함수
     function updateSaveStatus() {
       if (elSaveStatus) {
-        const timeStr = lastSaveTime.toLocaleTimeString('ko-KR', { 
+        const locale = getLang() === 'en' ? 'en-US' : 'ko-KR';
+        const timeStr = lastSaveTime.toLocaleTimeString(locale, { 
           hour: '2-digit', 
           minute: '2-digit' 
         });
-        elSaveStatus.textContent = `저장됨 · ${timeStr}`;
+        elSaveStatus.textContent = t('ui.saved', { time: timeStr });
       }
       // 설정 탭의 마지막 저장 시간 업데이트
       const elLastSaveTimeSettings = document.getElementById('lastSaveTimeSettings');
       if (elLastSaveTimeSettings) {
-        const timeStr = lastSaveTime.toLocaleTimeString('ko-KR', { 
+        const locale = getLang() === 'en' ? 'en-US' : 'ko-KR';
+        const timeStr = lastSaveTime.toLocaleTimeString(locale, { 
           hour: '2-digit', 
           minute: '2-digit',
           second: '2-digit'
@@ -4635,8 +4844,8 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         
-        safeText(elCurrentCareer, currentCareer.name);
-        safeText(elClickIncomeButton, formatKoreanNumber(getClickIncome()));
+        safeText(elCurrentCareer, getCareerName(careerLevel));
+        safeText(elClickIncomeButton, formatNumberForLang(getClickIncome()));
         
         // 직급별 배경 이미지 업데이트
         if (elWorkArea && currentCareer.bgImage) {
@@ -4663,9 +4872,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (elCareerRemaining) {
             if (remaining > 0) {
               // 천 단위 콤마 표기
-              safeText(elCareerRemaining, `다음 승진까지 ${remaining.toLocaleString('ko-KR')}클릭 남음`);
+              safeText(elCareerRemaining, t('ui.nextPromotion', { remaining: remaining.toLocaleString('ko-KR') }));
             } else {
-              safeText(elCareerRemaining, '승진 가능!');
+              safeText(elCareerRemaining, t('ui.promotionAvailable'));
             }
           }
           
@@ -4709,25 +4918,32 @@ document.addEventListener('DOMContentLoaded', () => {
           const d = pad2(now.getDate());
           const base = (typeof gameStartTime !== 'undefined' && gameStartTime) ? gameStartTime : sessionStartTime;
           const days = Math.max(1, Math.floor((Date.now() - base) / 86400000) + 1);
-          elCompact.textContent = `${y}.${m}.${d}(${days}일차)`;
+          elCompact.textContent = `${y}.${m}.${d}(${t('ui.dayCount', { days })})`;
         }
       }
       safeText(elCash, formatHeaderCash(cash));
       // 금융상품 집계 및 툴팁
       const totalFinancial = getTotalFinancialProducts();
-      safeText(elFinancial, formatKoreanNumber(totalFinancial));
+      safeText(elFinancial, formatNumberForLang(totalFinancial));
       const financialChip = document.getElementById('financialChip');
       if (financialChip) {
-        const tooltip = `예금: ${deposits}개\n적금: ${savings}개\n국내주식: ${bonds}개\n미국주식: ${usStocks}개\n코인: ${cryptos}개`;
+        const countUnit = t('ui.unit.count');
+        const tooltip = `${getProductName('deposit')}: ${deposits}${countUnit}\n${getProductName('savings')}: ${savings}${countUnit}\n${getProductName('bond')}: ${bonds}${countUnit}\n${getProductName('usStock')}: ${usStocks}${countUnit}\n${getProductName('crypto')}: ${cryptos}${countUnit}`;
         financialChip.setAttribute('title', tooltip);
       }
       
       // 부동산 집계 및 툴팁
       const totalProperties = getTotalProperties();
-      safeText(elProperties, formatKoreanNumber(totalProperties));
+      safeText(elProperties, formatNumberForLang(totalProperties));
       const propertyChip = document.getElementById('propertyChip');
       if (propertyChip) {
-        const tooltip = `빌라: ${villas}채\n오피스텔: ${officetels}채\n아파트: ${apartments}채\n상가: ${shops}채\n빌딩: ${buildings}채`;
+        const propertyUnit = t('ui.unit.property');
+        const villaName = getProductName('villa');
+        const officetelName = getProductName('officetel');
+        const aptName = getProductName('apartment');
+        const shopName = getProductName('shop');
+        const buildingName = getProductName('building');
+        const tooltip = `${villaName}: ${villas}${propertyUnit}\n${officetelName}: ${officetels}${propertyUnit}\n${aptName}: ${apartments}${propertyUnit}\n${shopName}: ${shops}${propertyUnit}\n${buildingName}: ${buildings}${propertyUnit}`;
         propertyChip.setAttribute('title', tooltip);
       }
       
@@ -4757,7 +4973,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 shops * BASE_RENT.shop +
                                 buildings * BASE_RENT.building) * rentMultiplier;
         
-        const tooltip = `금융 수익: ${formatKoreanNumber(financialIncome)}₩/s\n부동산 수익: ${formatKoreanNumber(propertyIncome)}₩/s\n시장배수: x${marketMultiplier}`;
+        const financialIncomeFormatted = formatNumberForLang(financialIncome) + t('ui.currency') + '/s';
+        const propertyIncomeFormatted = formatNumberForLang(propertyIncome) + t('ui.currency') + '/s';
+        const tooltip = `${t('header.tooltip.financialIncome', { amount: financialIncomeFormatted })}\n${t('header.tooltip.propertyIncome', { amount: propertyIncomeFormatted })}\n${t('header.tooltip.marketMultiplier', { multiplier: marketMultiplier })}`;
         rpsChip.setAttribute('title', tooltip);
       }
 
@@ -4802,11 +5020,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const depositPercent = totalRps > 0 ? ((depositTotalIncome / totalRps) * 100).toFixed(1) : 0;
         
         elDepositCount.textContent = deposits;
-        elIncomePerDeposit.textContent = Math.floor(FINANCIAL_INCOME.deposit).toLocaleString('ko-KR') + '원';
-        document.getElementById('depositTotalIncome').textContent = Math.floor(depositTotalIncome).toLocaleString('ko-KR') + '원';
-        document.getElementById('depositPercent').textContent = depositPercent + '%';
-        document.getElementById('depositLifetime').textContent = formatCashDisplayFixed1(depositsLifetime);
-        elDepositCurrentPrice.textContent = formatFinancialPrice(depositCost);
+        const depositCurrency = t('ui.currency');
+        const depositUnit = t('ui.unit.count');
+        const depositName = getProductName('deposit');
+        const depositPerUnitAmount = Math.floor(FINANCIAL_INCOME.deposit).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + depositCurrency;
+        const depositTotalAmount = Math.floor(depositTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + depositCurrency;
+        const depositLifetimeAmount = formatCashDisplayFixed1(depositsLifetime);
+        const depositPrice = formatFinancialPrice(depositCost);
+        
+        // 상품 이름 업데이트
+        const depositTitleEl = document.querySelector('#depositItem .title');
+        if (depositTitleEl) {
+          const titleSpan = depositTitleEl.querySelector('span[data-i18n="product.deposit"]');
+          if (titleSpan) {
+            titleSpan.textContent = depositName;
+          } else {
+            depositTitleEl.textContent = `💰 ${depositName}`;
+          }
+        }
+        
+        // 설명 업데이트 - HTML의 data-i18n 요소들을 업데이트하고 동적 값만 교체
+        const depositDescEls = document.querySelectorAll('#depositItem .desc');
+        if (depositDescEls.length >= 4) {
+          // 첫 번째 desc: 각 상품이 초당 X 생산
+          const perUnitText = t('product.desc.perUnit', { product: depositName, amount: depositPerUnitAmount });
+          depositDescEls[0].innerHTML = `• ${perUnitText.replace(depositPerUnitAmount, `<b>${depositPerUnitAmount}</b>`)}`;
+          
+          // 두 번째 desc: N개 상품이 초당 X 생산 (총 수익의 Y%)
+          const totalText = t('product.desc.total', { count: deposits, unit: depositUnit, product: depositName, amount: depositTotalAmount, percent: depositPercent });
+          depositDescEls[1].innerHTML = `• ${totalText.replace(depositTotalAmount, `<b>${depositTotalAmount}</b>`).replace(depositPercent + '%', `<b>${depositPercent}%</b>`)}`;
+          
+          // 세 번째 desc: 지금까지 X 생산
+          const lifetimeText = t('product.desc.lifetime', { amount: depositLifetimeAmount });
+          depositDescEls[2].innerHTML = `• ${lifetimeText.replace(depositLifetimeAmount, `<b>${depositLifetimeAmount}</b>`)}`;
+          
+          // 네 번째 desc: 현재가: X
+          const currentPriceText = t('product.desc.currentPrice', { price: depositPrice });
+          depositDescEls[3].innerHTML = currentPriceText.replace(depositPrice, `<b>${depositPrice}</b>`);
+        }
+        
+        // 기존 ID 요소들 업데이트 (하위 호환성)
+        const incomePerDepositEl = document.getElementById('incomePerDeposit');
+        if (incomePerDepositEl) incomePerDepositEl.textContent = depositPerUnitAmount;
+        const depositTotalIncomeEl = document.getElementById('depositTotalIncome');
+        if (depositTotalIncomeEl) depositTotalIncomeEl.textContent = depositTotalAmount;
+        const depositPercentEl = document.getElementById('depositPercent');
+        if (depositPercentEl) depositPercentEl.textContent = depositPercent + '%';
+        const depositLifetimeEl = document.getElementById('depositLifetime');
+        if (depositLifetimeEl) depositLifetimeEl.textContent = depositLifetimeAmount;
+        if (elDepositCurrentPrice) elDepositCurrentPrice.textContent = depositPrice;
         
         // 적금 업데이트
         const savingsCost = purchaseMode === 'buy'
@@ -4816,11 +5078,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const savingsPercent = totalRps > 0 ? ((savingsTotalIncome / totalRps) * 100).toFixed(1) : 0;
         
         elSavingsCount.textContent = savings;
-        elIncomePerSavings.textContent = Math.floor(FINANCIAL_INCOME.savings).toLocaleString('ko-KR') + '원';
-        document.getElementById('savingsTotalIncome').textContent = Math.floor(savingsTotalIncome).toLocaleString('ko-KR') + '원';
+        const savingsCurrency = t('ui.currency');
+        const savingsUnit = t('ui.unit.count');
+        const savingsName = getProductName('savings');
+        const savingsPerUnitAmount = Math.floor(FINANCIAL_INCOME.savings).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + savingsCurrency;
+        const savingsTotalAmount = Math.floor(savingsTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + savingsCurrency;
+        const savingsLifetimeAmount = formatCashDisplayFixed1(savingsLifetime);
+        const savingsPrice = formatFinancialPrice(savingsCost);
+        
+        // 상품 이름 업데이트
+        const savingsTitleEl = document.querySelector('#savingsItem .title');
+        if (savingsTitleEl) savingsTitleEl.textContent = `🏦 ${savingsName}`;
+        
+        // 설명 업데이트
+        const savingsDescEls = document.querySelectorAll('#savingsItem .desc');
+        if (savingsDescEls.length >= 4) {
+          const savingsPerUnitText = t('product.desc.perUnit', { product: savingsName, amount: savingsPerUnitAmount });
+          savingsDescEls[0].innerHTML = `• ${savingsPerUnitText.replace(savingsPerUnitAmount, `<b>${savingsPerUnitAmount}</b>`)}`;
+          const savingsTotalText = t('product.desc.total', { count: savings, unit: savingsUnit, product: savingsName, amount: savingsTotalAmount, percent: savingsPercent });
+          savingsDescEls[1].innerHTML = `• ${savingsTotalText.replace(savingsTotalAmount, `<b>${savingsTotalAmount}</b>`).replace(savingsPercent + '%', `<b>${savingsPercent}%</b>`)}`;
+          const savingsLifetimeText = t('product.desc.lifetime', { amount: savingsLifetimeAmount });
+          savingsDescEls[2].innerHTML = `• ${savingsLifetimeText.replace(savingsLifetimeAmount, `<b>${savingsLifetimeAmount}</b>`)}`;
+          const savingsCurrentPriceText = t('product.desc.currentPrice', { price: savingsPrice });
+          savingsDescEls[3].innerHTML = savingsCurrentPriceText.replace(savingsPrice, `<b>${savingsPrice}</b>`);
+        }
+        
+        elIncomePerSavings.textContent = savingsPerUnitAmount;
+        document.getElementById('savingsTotalIncome').textContent = savingsTotalAmount;
         document.getElementById('savingsPercent').textContent = savingsPercent + '%';
-        document.getElementById('savingsLifetimeDisplay').textContent = formatCashDisplayFixed1(savingsLifetime);
-        elSavingsCurrentPrice.textContent = formatFinancialPrice(savingsCost);
+        document.getElementById('savingsLifetimeDisplay').textContent = savingsLifetimeAmount;
+        elSavingsCurrentPrice.textContent = savingsPrice;
         
         // 주식 업데이트
         const bondCost = purchaseMode === 'buy'
@@ -4830,11 +5117,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const bondPercent = totalRps > 0 ? ((bondTotalIncome / totalRps) * 100).toFixed(1) : 0;
         
         elBondCount.textContent = bonds;
-        elIncomePerBond.textContent = Math.floor(FINANCIAL_INCOME.bond).toLocaleString('ko-KR') + '원';
-        document.getElementById('bondTotalIncome').textContent = Math.floor(bondTotalIncome).toLocaleString('ko-KR') + '원';
+        const bondCurrency = t('ui.currency');
+        const bondUnit = t('ui.unit.count');
+        const bondName = getProductName('bond');
+        const bondPerUnitAmount = Math.floor(FINANCIAL_INCOME.bond).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + bondCurrency;
+        const bondTotalAmount = Math.floor(bondTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + bondCurrency;
+        const bondLifetimeAmount = formatCashDisplayFixed1(bondsLifetime);
+        const bondPrice = formatFinancialPrice(bondCost);
+        
+        // 상품 이름 업데이트
+        const bondTitleEl = document.querySelector('#bondItem .title');
+        if (bondTitleEl) bondTitleEl.textContent = `📈 ${bondName}`;
+        
+        // 설명 업데이트
+        const bondDescEls = document.querySelectorAll('#bondItem .desc');
+        if (bondDescEls.length >= 4) {
+          const bondPerUnitText = t('product.desc.perUnit', { product: bondName, amount: bondPerUnitAmount });
+          bondDescEls[0].innerHTML = `• ${bondPerUnitText.replace(bondPerUnitAmount, `<b>${bondPerUnitAmount}</b>`)}`;
+          const bondTotalText = t('product.desc.total', { count: bonds, unit: bondUnit, product: bondName, amount: bondTotalAmount, percent: bondPercent });
+          bondDescEls[1].innerHTML = `• ${bondTotalText.replace(bondTotalAmount, `<b>${bondTotalAmount}</b>`).replace(bondPercent + '%', `<b>${bondPercent}%</b>`)}`;
+          const bondLifetimeText = t('product.desc.lifetime', { amount: bondLifetimeAmount });
+          bondDescEls[2].innerHTML = `• ${bondLifetimeText.replace(bondLifetimeAmount, `<b>${bondLifetimeAmount}</b>`)}`;
+          const bondCurrentPriceText = t('product.desc.currentPrice', { price: bondPrice });
+          bondDescEls[3].innerHTML = bondCurrentPriceText.replace(bondPrice, `<b>${bondPrice}</b>`);
+        }
+        
+        elIncomePerBond.textContent = bondPerUnitAmount;
+        document.getElementById('bondTotalIncome').textContent = bondTotalAmount;
         document.getElementById('bondPercent').textContent = bondPercent + '%';
-        document.getElementById('bondLifetimeDisplay').textContent = formatCashDisplayFixed1(bondsLifetime);
-        elBondCurrentPrice.textContent = formatFinancialPrice(bondCost);
+        document.getElementById('bondLifetimeDisplay').textContent = bondLifetimeAmount;
+        elBondCurrentPrice.textContent = bondPrice;
         
         // 미국주식 업데이트
         const usStockCost = purchaseMode === 'buy'
@@ -4844,11 +5156,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const usStockPercent = totalRps > 0 ? ((usStockTotalIncome / totalRps) * 100).toFixed(1) : 0;
         
         document.getElementById('usStockCount').textContent = usStocks;
-        document.getElementById('incomePerUsStock').textContent = Math.floor(FINANCIAL_INCOME.usStock).toLocaleString('ko-KR') + '원';
-        document.getElementById('usStockTotalIncome').textContent = Math.floor(usStockTotalIncome).toLocaleString('ko-KR') + '원';
+        const usStockCurrency = t('ui.currency');
+        const usStockUnit = t('ui.unit.count');
+        const usStockName = getProductName('usStock');
+        const usStockPerUnitAmount = Math.floor(FINANCIAL_INCOME.usStock).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + usStockCurrency;
+        const usStockTotalAmount = Math.floor(usStockTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + usStockCurrency;
+        const usStockLifetimeAmount = formatCashDisplayFixed1(usStocksLifetime);
+        const usStockPrice = formatFinancialPrice(usStockCost);
+        
+        // 상품 이름 업데이트
+        const usStockTitleEl = document.querySelector('#usStockItem .title');
+        if (usStockTitleEl) usStockTitleEl.textContent = `🇺🇸 ${usStockName}`;
+        
+        // 설명 업데이트
+        const usStockDescEls = document.querySelectorAll('#usStockItem .desc');
+        if (usStockDescEls.length >= 4) {
+          const usStockPerUnitText = t('product.desc.perUnit', { product: usStockName, amount: usStockPerUnitAmount });
+          usStockDescEls[0].innerHTML = `• ${usStockPerUnitText.replace(usStockPerUnitAmount, `<b>${usStockPerUnitAmount}</b>`)}`;
+          const usStockTotalText = t('product.desc.total', { count: usStocks, unit: usStockUnit, product: usStockName, amount: usStockTotalAmount, percent: usStockPercent });
+          usStockDescEls[1].innerHTML = `• ${usStockTotalText.replace(usStockTotalAmount, `<b>${usStockTotalAmount}</b>`).replace(usStockPercent + '%', `<b>${usStockPercent}%</b>`)}`;
+          const usStockLifetimeText = t('product.desc.lifetime', { amount: usStockLifetimeAmount });
+          usStockDescEls[2].innerHTML = `• ${usStockLifetimeText.replace(usStockLifetimeAmount, `<b>${usStockLifetimeAmount}</b>`)}`;
+          const usStockCurrentPriceText = t('product.desc.currentPrice', { price: usStockPrice });
+          usStockDescEls[3].innerHTML = usStockCurrentPriceText.replace(usStockPrice, `<b>${usStockPrice}</b>`);
+        }
+        
+        document.getElementById('incomePerUsStock').textContent = usStockPerUnitAmount;
+        document.getElementById('usStockTotalIncome').textContent = usStockTotalAmount;
         document.getElementById('usStockPercent').textContent = usStockPercent + '%';
-        document.getElementById('usStockLifetimeDisplay').textContent = formatCashDisplayFixed1(usStocksLifetime);
-        document.getElementById('usStockCurrentPrice').textContent = formatFinancialPrice(usStockCost);
+        document.getElementById('usStockLifetimeDisplay').textContent = usStockLifetimeAmount;
+        document.getElementById('usStockCurrentPrice').textContent = usStockPrice;
         
         // 코인 업데이트
         const cryptoCost = purchaseMode === 'buy'
@@ -4858,11 +5195,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const cryptoPercent = totalRps > 0 ? ((cryptoTotalIncome / totalRps) * 100).toFixed(1) : 0;
         
         document.getElementById('cryptoCount').textContent = cryptos;
-        document.getElementById('incomePerCrypto').textContent = Math.floor(FINANCIAL_INCOME.crypto).toLocaleString('ko-KR') + '원';
-        document.getElementById('cryptoTotalIncome').textContent = Math.floor(cryptoTotalIncome).toLocaleString('ko-KR') + '원';
+        const cryptoCurrency = t('ui.currency');
+        const cryptoUnit = t('ui.unit.count');
+        const cryptoName = getProductName('crypto');
+        const cryptoPerUnitAmount = Math.floor(FINANCIAL_INCOME.crypto).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + cryptoCurrency;
+        const cryptoTotalAmount = Math.floor(cryptoTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + cryptoCurrency;
+        const cryptoLifetimeAmount = formatCashDisplayFixed1(cryptosLifetime);
+        const cryptoPrice = formatFinancialPrice(cryptoCost);
+        
+        // 상품 이름 업데이트
+        const cryptoTitleEl = document.querySelector('#cryptoItem .title');
+        if (cryptoTitleEl) cryptoTitleEl.textContent = `₿ ${cryptoName}`;
+        
+        // 설명 업데이트
+        const cryptoDescEls = document.querySelectorAll('#cryptoItem .desc');
+        if (cryptoDescEls.length >= 4) {
+          const cryptoPerUnitText = t('product.desc.perUnit', { product: cryptoName, amount: cryptoPerUnitAmount });
+          cryptoDescEls[0].innerHTML = `• ${cryptoPerUnitText.replace(cryptoPerUnitAmount, `<b>${cryptoPerUnitAmount}</b>`)}`;
+          const cryptoTotalText = t('product.desc.total', { count: cryptos, unit: cryptoUnit, product: cryptoName, amount: cryptoTotalAmount, percent: cryptoPercent });
+          cryptoDescEls[1].innerHTML = `• ${cryptoTotalText.replace(cryptoTotalAmount, `<b>${cryptoTotalAmount}</b>`).replace(cryptoPercent + '%', `<b>${cryptoPercent}%</b>`)}`;
+          const cryptoLifetimeText = t('product.desc.lifetime', { amount: cryptoLifetimeAmount });
+          cryptoDescEls[2].innerHTML = `• ${cryptoLifetimeText.replace(cryptoLifetimeAmount, `<b>${cryptoLifetimeAmount}</b>`)}`;
+          const cryptoCurrentPriceText = t('product.desc.currentPrice', { price: cryptoPrice });
+          cryptoDescEls[3].innerHTML = cryptoCurrentPriceText.replace(cryptoPrice, `<b>${cryptoPrice}</b>`);
+        }
+        
+        document.getElementById('incomePerCrypto').textContent = cryptoPerUnitAmount;
+        document.getElementById('cryptoTotalIncome').textContent = cryptoTotalAmount;
         document.getElementById('cryptoPercent').textContent = cryptoPercent + '%';
-        document.getElementById('cryptoLifetimeDisplay').textContent = formatCashDisplayFixed1(cryptosLifetime);
-        document.getElementById('cryptoCurrentPrice').textContent = formatFinancialPrice(cryptoCost);
+        document.getElementById('cryptoLifetimeDisplay').textContent = cryptoLifetimeAmount;
+        document.getElementById('cryptoCurrentPrice').textContent = cryptoPrice;
         
         // 디버깅: 금융상품 카운트 확인 (강화된 로깅)
         console.log('=== FINANCIAL PRODUCTS DEBUG ===');
@@ -4890,11 +5252,36 @@ document.addEventListener('DOMContentLoaded', () => {
       const villaPercent = totalRps2 > 0 ? ((villaTotalIncome / totalRps2) * 100).toFixed(1) : 0;
       
       elVillaCount.textContent = villas;
-      elRentPerVilla.textContent = Math.floor(BASE_RENT.villa).toLocaleString('ko-KR') + '원';
-      document.getElementById('villaTotalIncome').textContent = Math.floor(villaTotalIncome).toLocaleString('ko-KR') + '원';
+      const villaCurrency = t('ui.currency');
+      const villaUnit = t('ui.unit.property');
+      const villaName = getProductName('villa');
+      const villaPerUnitAmount = Math.floor(BASE_RENT.villa).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + villaCurrency;
+      const villaTotalAmount = Math.floor(villaTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + villaCurrency;
+      const villaLifetimeAmount = formatCashDisplayFixed1(villasLifetime);
+      const villaPrice = formatPropertyPrice(villaCost);
+      
+      // 상품 이름 업데이트
+      const villaTitleEl = document.querySelector('#villaItem .title');
+      if (villaTitleEl) villaTitleEl.textContent = `🏘️ ${villaName}`;
+      
+      // 설명 업데이트
+      const villaDescEls = document.querySelectorAll('#villaItem .desc');
+      if (villaDescEls.length >= 4) {
+        const villaPerUnitText = t('product.desc.perUnit', { product: villaName, amount: villaPerUnitAmount });
+        villaDescEls[0].innerHTML = `• ${villaPerUnitText.replace(villaPerUnitAmount, `<b>${villaPerUnitAmount}</b>`)}`;
+        const villaTotalText = t('product.desc.total', { count: villas, unit: villaUnit, product: villaName, amount: villaTotalAmount, percent: villaPercent });
+        villaDescEls[1].innerHTML = `• ${villaTotalText.replace(villaTotalAmount, `<b>${villaTotalAmount}</b>`).replace(villaPercent + '%', `<b>${villaPercent}%</b>`)}`;
+        const villaLifetimeText = t('product.desc.lifetime', { amount: villaLifetimeAmount });
+        villaDescEls[2].innerHTML = `• ${villaLifetimeText.replace(villaLifetimeAmount, `<b>${villaLifetimeAmount}</b>`)}`;
+        const villaCurrentPriceText = t('product.desc.currentPrice', { price: villaPrice });
+        villaDescEls[3].innerHTML = villaCurrentPriceText.replace(villaPrice, `<b>${villaPrice}</b>`);
+      }
+      
+      elRentPerVilla.textContent = villaPerUnitAmount;
+      document.getElementById('villaTotalIncome').textContent = villaTotalAmount;
       document.getElementById('villaPercent').textContent = villaPercent + '%';
-      document.getElementById('villaLifetimeDisplay').textContent = formatCashDisplayFixed1(villasLifetime);
-      elVillaCurrentPrice.textContent = formatPropertyPrice(villaCost);
+      document.getElementById('villaLifetimeDisplay').textContent = villaLifetimeAmount;
+      elVillaCurrentPrice.textContent = villaPrice;
       
       // 오피스텔
       const officetelCost = purchaseMode === 'buy'
@@ -4904,11 +5291,36 @@ document.addEventListener('DOMContentLoaded', () => {
       const officetelPercent = totalRps2 > 0 ? ((officetelTotalIncome / totalRps2) * 100).toFixed(1) : 0;
       
       elOfficetelCount.textContent = officetels;
-      elRentPerOfficetel.textContent = Math.floor(BASE_RENT.officetel).toLocaleString('ko-KR') + '원';
-      document.getElementById('officetelTotalIncome').textContent = Math.floor(officetelTotalIncome).toLocaleString('ko-KR') + '원';
+      const officetelCurrency = t('ui.currency');
+      const officetelUnit = t('ui.unit.property');
+      const officetelName = getProductName('officetel');
+      const officetelPerUnitAmount = Math.floor(BASE_RENT.officetel).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + officetelCurrency;
+      const officetelTotalAmount = Math.floor(officetelTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + officetelCurrency;
+      const officetelLifetimeAmount = formatCashDisplayFixed1(officetelsLifetime);
+      const officetelPrice = formatPropertyPrice(officetelCost);
+      
+      // 상품 이름 업데이트
+      const officetelTitleEl = document.querySelector('#officetelItem .title');
+      if (officetelTitleEl) officetelTitleEl.textContent = `🏢 ${officetelName}`;
+      
+      // 설명 업데이트
+      const officetelDescEls = document.querySelectorAll('#officetelItem .desc');
+      if (officetelDescEls.length >= 4) {
+        const officetelPerUnitText = t('product.desc.perUnit', { product: officetelName, amount: officetelPerUnitAmount });
+        officetelDescEls[0].innerHTML = `• ${officetelPerUnitText.replace(officetelPerUnitAmount, `<b>${officetelPerUnitAmount}</b>`)}`;
+        const officetelTotalText = t('product.desc.total', { count: officetels, unit: officetelUnit, product: officetelName, amount: officetelTotalAmount, percent: officetelPercent });
+        officetelDescEls[1].innerHTML = `• ${officetelTotalText.replace(officetelTotalAmount, `<b>${officetelTotalAmount}</b>`).replace(officetelPercent + '%', `<b>${officetelPercent}%</b>`)}`;
+        const officetelLifetimeText = t('product.desc.lifetime', { amount: officetelLifetimeAmount });
+        officetelDescEls[2].innerHTML = `• ${officetelLifetimeText.replace(officetelLifetimeAmount, `<b>${officetelLifetimeAmount}</b>`)}`;
+        const officetelCurrentPriceText = t('product.desc.currentPrice', { price: officetelPrice });
+        officetelDescEls[3].innerHTML = officetelCurrentPriceText.replace(officetelPrice, `<b>${officetelPrice}</b>`);
+      }
+      
+      elRentPerOfficetel.textContent = officetelPerUnitAmount;
+      document.getElementById('officetelTotalIncome').textContent = officetelTotalAmount;
       document.getElementById('officetelPercent').textContent = officetelPercent + '%';
-      document.getElementById('officetelLifetimeDisplay').textContent = formatCashDisplayFixed1(officetelsLifetime);
-      elOfficetelCurrentPrice.textContent = formatPropertyPrice(officetelCost);
+      document.getElementById('officetelLifetimeDisplay').textContent = officetelLifetimeAmount;
+      elOfficetelCurrentPrice.textContent = officetelPrice;
       
       // 아파트
       const aptCost = purchaseMode === 'buy'
@@ -4918,11 +5330,36 @@ document.addEventListener('DOMContentLoaded', () => {
       const aptPercent = totalRps2 > 0 ? ((aptTotalIncome / totalRps2) * 100).toFixed(1) : 0;
       
       elAptCount.textContent = apartments;
-      elRentPerApt.textContent = Math.floor(BASE_RENT.apartment).toLocaleString('ko-KR') + '원';
-      document.getElementById('aptTotalIncome').textContent = Math.floor(aptTotalIncome).toLocaleString('ko-KR') + '원';
+      const aptCurrency = t('ui.currency');
+      const aptUnit = t('ui.unit.property');
+      const aptName = getProductName('apartment');
+      const aptPerUnitAmount = Math.floor(BASE_RENT.apartment).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + aptCurrency;
+      const aptTotalAmount = Math.floor(aptTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + aptCurrency;
+      const aptLifetimeAmount = formatCashDisplayFixed1(apartmentsLifetime);
+      const aptPrice = formatPropertyPrice(aptCost);
+      
+      // 상품 이름 업데이트
+      const aptTitleEl = document.querySelector('#aptItem .title');
+      if (aptTitleEl) aptTitleEl.textContent = `🏬 ${aptName}`;
+      
+      // 설명 업데이트
+      const aptDescEls = document.querySelectorAll('#aptItem .desc');
+      if (aptDescEls.length >= 4) {
+        const aptPerUnitText = t('product.desc.perUnit', { product: aptName, amount: aptPerUnitAmount });
+        aptDescEls[0].innerHTML = `• ${aptPerUnitText.replace(aptPerUnitAmount, `<b>${aptPerUnitAmount}</b>`)}`;
+        const aptTotalText = t('product.desc.total', { count: apartments, unit: aptUnit, product: aptName, amount: aptTotalAmount, percent: aptPercent });
+        aptDescEls[1].innerHTML = `• ${aptTotalText.replace(aptTotalAmount, `<b>${aptTotalAmount}</b>`).replace(aptPercent + '%', `<b>${aptPercent}%</b>`)}`;
+        const aptLifetimeText = t('product.desc.lifetime', { amount: aptLifetimeAmount });
+        aptDescEls[2].innerHTML = `• ${aptLifetimeText.replace(aptLifetimeAmount, `<b>${aptLifetimeAmount}</b>`)}`;
+        const aptCurrentPriceText = t('product.desc.currentPrice', { price: aptPrice });
+        aptDescEls[3].innerHTML = aptCurrentPriceText.replace(aptPrice, `<b>${aptPrice}</b>`);
+      }
+      
+      elRentPerApt.textContent = aptPerUnitAmount;
+      document.getElementById('aptTotalIncome').textContent = aptTotalAmount;
       document.getElementById('aptPercent').textContent = aptPercent + '%';
-      document.getElementById('aptLifetimeDisplay').textContent = formatCashDisplayFixed1(apartmentsLifetime);
-      elAptCurrentPrice.textContent = formatPropertyPrice(aptCost);
+      document.getElementById('aptLifetimeDisplay').textContent = aptLifetimeAmount;
+      elAptCurrentPrice.textContent = aptPrice;
       
       // 상가
       const shopCost = purchaseMode === 'buy'
@@ -4932,11 +5369,36 @@ document.addEventListener('DOMContentLoaded', () => {
       const shopPercent = totalRps2 > 0 ? ((shopTotalIncome / totalRps2) * 100).toFixed(1) : 0;
       
       elShopCount.textContent = shops;
-      elRentPerShop.textContent = Math.floor(BASE_RENT.shop).toLocaleString('ko-KR') + '원';
-      document.getElementById('shopTotalIncome').textContent = Math.floor(shopTotalIncome).toLocaleString('ko-KR') + '원';
+      const shopCurrency = t('ui.currency');
+      const shopUnit = t('ui.unit.property');
+      const shopName = getProductName('shop');
+      const shopPerUnitAmount = Math.floor(BASE_RENT.shop).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + shopCurrency;
+      const shopTotalAmount = Math.floor(shopTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + shopCurrency;
+      const shopLifetimeAmount = formatCashDisplayFixed1(shopsLifetime);
+      const shopPrice = formatPropertyPrice(shopCost);
+      
+      // 상품 이름 업데이트
+      const shopTitleEl = document.querySelector('#shopItem .title');
+      if (shopTitleEl) shopTitleEl.textContent = `🏪 ${shopName}`;
+      
+      // 설명 업데이트
+      const shopDescEls = document.querySelectorAll('#shopItem .desc');
+      if (shopDescEls.length >= 4) {
+        const shopPerUnitText = t('product.desc.perUnit', { product: shopName, amount: shopPerUnitAmount });
+        shopDescEls[0].innerHTML = `• ${shopPerUnitText.replace(shopPerUnitAmount, `<b>${shopPerUnitAmount}</b>`)}`;
+        const shopTotalText = t('product.desc.total', { count: shops, unit: shopUnit, product: shopName, amount: shopTotalAmount, percent: shopPercent });
+        shopDescEls[1].innerHTML = `• ${shopTotalText.replace(shopTotalAmount, `<b>${shopTotalAmount}</b>`).replace(shopPercent + '%', `<b>${shopPercent}%</b>`)}`;
+        const shopLifetimeText = t('product.desc.lifetime', { amount: shopLifetimeAmount });
+        shopDescEls[2].innerHTML = `• ${shopLifetimeText.replace(shopLifetimeAmount, `<b>${shopLifetimeAmount}</b>`)}`;
+        const shopCurrentPriceText = t('product.desc.currentPrice', { price: shopPrice });
+        shopDescEls[3].innerHTML = shopCurrentPriceText.replace(shopPrice, `<b>${shopPrice}</b>`);
+      }
+      
+      elRentPerShop.textContent = shopPerUnitAmount;
+      document.getElementById('shopTotalIncome').textContent = shopTotalAmount;
       document.getElementById('shopPercent').textContent = shopPercent + '%';
-      document.getElementById('shopLifetimeDisplay').textContent = formatCashDisplayFixed1(shopsLifetime);
-      elShopCurrentPrice.textContent = formatPropertyPrice(shopCost);
+      document.getElementById('shopLifetimeDisplay').textContent = shopLifetimeAmount;
+      elShopCurrentPrice.textContent = shopPrice;
       
       // 빌딩
       const buildingCost = purchaseMode === 'buy'
@@ -4946,18 +5408,59 @@ document.addEventListener('DOMContentLoaded', () => {
       const buildingPercent = totalRps2 > 0 ? ((buildingTotalIncome / totalRps2) * 100).toFixed(1) : 0;
       
       elBuildingCount.textContent = buildings;
-      elRentPerBuilding.textContent = Math.floor(BASE_RENT.building).toLocaleString('ko-KR') + '원';
-      document.getElementById('buildingTotalIncome').textContent = Math.floor(buildingTotalIncome).toLocaleString('ko-KR') + '원';
+      const buildingCurrency = t('ui.currency');
+      const buildingUnit = t('ui.unit.property');
+      const buildingName = getProductName('building');
+      const buildingPerUnitAmount = Math.floor(BASE_RENT.building).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + buildingCurrency;
+      const buildingTotalAmount = Math.floor(buildingTotalIncome).toLocaleString(getLang() === 'en' ? 'en-US' : 'ko-KR') + buildingCurrency;
+      const buildingLifetimeAmount = formatCashDisplayFixed1(buildingsLifetime);
+      const buildingPrice = formatPropertyPrice(buildingCost);
+      
+      // 상품 이름 업데이트
+      const buildingTitleEl = document.querySelector('#buildingItem .title');
+      if (buildingTitleEl) buildingTitleEl.textContent = `🏙️ ${buildingName}`;
+      
+      // 설명 업데이트
+      const buildingDescEls = document.querySelectorAll('#buildingItem .desc');
+      if (buildingDescEls.length >= 4) {
+        const buildingPerUnitText = t('product.desc.perUnit', { product: buildingName, amount: buildingPerUnitAmount });
+        buildingDescEls[0].innerHTML = `• ${buildingPerUnitText.replace(buildingPerUnitAmount, `<b>${buildingPerUnitAmount}</b>`)}`;
+        const buildingTotalText = t('product.desc.total', { count: buildings, unit: buildingUnit, product: buildingName, amount: buildingTotalAmount, percent: buildingPercent });
+        buildingDescEls[1].innerHTML = `• ${buildingTotalText.replace(buildingTotalAmount, `<b>${buildingTotalAmount}</b>`).replace(buildingPercent + '%', `<b>${buildingPercent}%</b>`)}`;
+        const buildingLifetimeText = t('product.desc.lifetime', { amount: buildingLifetimeAmount });
+        buildingDescEls[2].innerHTML = `• ${buildingLifetimeText.replace(buildingLifetimeAmount, `<b>${buildingLifetimeAmount}</b>`)}`;
+        const buildingCurrentPriceText = t('product.desc.currentPrice', { price: buildingPrice });
+        buildingDescEls[3].innerHTML = buildingCurrentPriceText.replace(buildingPrice, `<b>${buildingPrice}</b>`);
+      }
+      
+      elRentPerBuilding.textContent = buildingPerUnitAmount;
+      document.getElementById('buildingTotalIncome').textContent = buildingTotalAmount;
       document.getElementById('buildingPercent').textContent = buildingPercent + '%';
-      document.getElementById('buildingLifetimeDisplay').textContent = formatCashDisplayFixed1(buildingsLifetime);
-      elBuildingCurrentPrice.textContent = formatPropertyPrice(buildingCost);
+      document.getElementById('buildingLifetimeDisplay').textContent = buildingLifetimeAmount;
+      elBuildingCurrentPrice.textContent = buildingPrice;
       
       // 서울타워 (프레스티지, 수익 없음)
+      const towerName = getProductName('tower');
+      const towerUnit = t('ui.unit.count');
+      const towerPrice = formatPropertyPrice(BASE_COSTS.tower);
+      
+      // 상품 이름 업데이트
+      const towerTitleEl = document.querySelector('#towerItem .title');
+      if (towerTitleEl) towerTitleEl.textContent = `🗼 ${towerName}`;
+      
+      // 설명 업데이트
+      const towerDescEls = document.querySelectorAll('#towerItem .desc');
+      if (towerDescEls.length >= 4) {
+        towerDescEls[0].innerHTML = `• ${t('tower.desc.prestige')}`;
+        towerDescEls[1].innerHTML = `• ${t('tower.desc.owned', { count: towers })}`;
+        towerDescEls[2].innerHTML = `• ${t('tower.desc.leaderboard', { count: towers })}`;
+        towerDescEls[3].innerHTML = `${t('product.desc.currentPrice', { price: towerPrice })}`;
+      }
+      
       if (elTowerCountDisplay) elTowerCountDisplay.textContent = towers;
       if (elTowerCountBadge) elTowerCountBadge.textContent = towers;
       if (elTowerCurrentPrice) {
-        const towerCost = BASE_COSTS.tower;
-        elTowerCurrentPrice.textContent = formatPropertyPrice(towerCost);
+        elTowerCurrentPrice.textContent = towerPrice;
       }
       
       // 디버깅: 부동산 카운트 확인
@@ -5004,9 +5507,9 @@ document.addEventListener('DOMContentLoaded', () => {
             marketEventBar.textContent = '';
           } else {
             marketEventBar.classList.add('is-visible');
-            const evName = currentMarketEvent?.name ? String(currentMarketEvent.name) : '시장 이벤트';
+            const evName = currentMarketEvent?.name ? String(currentMarketEvent.name) : t('ui.marketEvent');
             const seconds = Math.floor((marketEventEndTime - now) / 1000);
-            const secText = seconds >= 0 ? `${seconds}초` : '0초';
+            const secText = seconds >= 0 ? `${seconds}${t('ui.second', {}, '초')}` : `0${t('ui.second', {}, '초')}`;
             // 영향 요약(배수≠1 항목 5개 이내)
             const summarize = (effects, names) => {
               if (!effects) return [];
@@ -5015,13 +5518,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 .slice(0, 5)
                 .map(([k, m]) => `${names[k] ?? k} x${(Math.round(m * 10) / 10).toString().replace(/\.0$/, '')}`);
             };
-            const finNames = { deposit: '예금', savings: '적금', bond: '국내주식', usStock: '미국주식', crypto: '코인' };
-            const propNames = { villa: '빌라', officetel: '오피스텔', apartment: '아파트', shop: '상가', building: '빌딩' };
+            const finNames = { 
+              deposit: getProductName('deposit'), 
+              savings: getProductName('savings'), 
+              bond: getProductName('bond'), 
+              usStock: getProductName('usStock'), 
+              crypto: getProductName('crypto') 
+            };
+            const propNames = { 
+              villa: getProductName('villa'), 
+              officetel: getProductName('officetel'), 
+              apartment: getProductName('apartment'), 
+              shop: getProductName('shop'), 
+              building: getProductName('building') 
+            };
             const fin = summarize(currentMarketEvent?.effects?.financial, finNames);
             const prop = summarize(currentMarketEvent?.effects?.property, propNames);
             const parts = [...fin, ...prop].slice(0, 5);
             const hint = parts.length ? ` · ${parts.join(', ')}` : '';
-            marketEventBar.innerHTML = `📈 <b>${evName}</b> · 남은 <span class="good">${secText}</span>${hint}`;
+            marketEventBar.innerHTML = `📈 <b>${evName}</b> · ${t('ui.remaining')} <span class="good">${secText}</span>${hint}`;
           }
         }
 
@@ -5346,7 +5861,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ? (category === 'financial' ? getFinancialCost(type, count, qty) : getPropertyCost(type, count, qty))
         : (category === 'financial' ? getFinancialSellPrice(type, count, qty) : getPropertySellPrice(type, count, qty));
       
-      const modeText = isBuy ? '구입' : '판매';
+      const modeText = isBuy ? t('button.buy') : t('button.sell');
       const qtyText = qty > 1 ? ` x${qty}` : '';
       
       // 버튼 텍스트: 가격 제거, 모드와 수량만 표시
@@ -5371,7 +5886,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 업그레이드 효과 적용 (새 UPGRADES 시스템)
       if (UPGRADES['performance_bonus'] && UPGRADES['performance_bonus'].purchased && Math.random() < 0.02) {
         income *= 10; // 2% 확률로 10배 수익
-        addLog('💰 성과급 지급! 10배 수익!');
+        addLog(t('msg.bonusPaid'));
       }
 
       // 떨어지는 쿠키 애니메이션 생성 (설정에서 활성화된 경우만)
@@ -5408,7 +5923,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 50클릭, 25클릭, 10클릭, 5클릭 남았을 때 알림
         if (remaining === 50 || remaining === 25 || remaining === 10 || remaining === 5) {
-          addLog(`🎯 다음 업그레이드 "${nextUpgrade.upgrade.name}"까지 ${remaining}클릭 남음!`);
+          addLog(t('msg.nextUpgradeHint', { name: t(`upgrade.${nextUpgrade.id}.name`), remaining }));
         }
       }
 
@@ -5455,7 +5970,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elModalMessage.textContent = message;
 
       elModalSecondary.style.display = 'none';
-      elModalPrimary.textContent = '확인';
+      elModalPrimary.textContent = t('button.confirm');
 
       elModalPrimary.onclick = () => {
         closeModal();
@@ -5480,8 +5995,8 @@ document.addEventListener('DOMContentLoaded', () => {
       elModalMessage.textContent = message;
 
       elModalSecondary.style.display = 'inline-flex';
-      elModalPrimary.textContent = options.primaryLabel || '예';
-      elModalSecondary.textContent = options.secondaryLabel || '아니오';
+      elModalPrimary.textContent = options.primaryLabel || t('button.yes');
+      elModalSecondary.textContent = options.secondaryLabel || t('button.no');
 
       modalOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
 
@@ -5528,7 +6043,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // placeholder / maxLength 적용
-      inputEl.placeholder = options.placeholder || inputEl.placeholder || '닉네임을 입력하세요';
+      inputEl.placeholder = options.placeholder || inputEl.placeholder || t('modal.nickname.placeholder');
       if (typeof options.maxLength === 'number') {
         inputEl.maxLength = options.maxLength;
       } else if (!inputEl.maxLength || inputEl.maxLength <= 0) {
@@ -5550,7 +6065,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         elModalSecondary.style.display = 'none';
       }
-      elModalPrimary.textContent = options.primaryLabel || '확인';
+      elModalPrimary.textContent = options.primaryLabel || t('ui.confirm');
 
       // Enter 키로 확인
       const handleEnter = (e) => {
@@ -5732,7 +6247,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function showIncomeAnimation(amount) {
       const animation = document.createElement('div');
       animation.className = 'income-increase';
-      animation.textContent = `+${formatKoreanNumber(amount)}원`;
+      const formattedAmount = formatKoreanNumber(amount);
+      animation.textContent = t('ui.incomeFormat', { amount: formattedAmount });
       
       // 노동 버튼 위치 기준으로 애니메이션 위치 설정
       const workRect = elWork.getBoundingClientRect();
@@ -5784,7 +6300,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elBuySavings.addEventListener('click', ()=>{
       if (!isProductUnlocked('savings')) {
-        addLog('❌ 적금은 예금을 1개 이상 보유해야 해금됩니다.');
+        addLog(t('msg.unlock.savings'));
         return;
       }
       const result = handleTransaction('financial', 'savings', savings);
@@ -5798,7 +6314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elBuyBond.addEventListener('click', ()=>{
       if (!isProductUnlocked('bond')) {
-        addLog('❌ 국내주식은 적금을 1개 이상 보유해야 해금됩니다.');
+        addLog(t('msg.unlock.bond'));
         return;
       }
       const result = handleTransaction('financial', 'bond', bonds);
@@ -5991,7 +6507,7 @@ document.addEventListener('DOMContentLoaded', () => {
           {
             icon: '🗼',
             primaryLabel: '새 게임 시작',
-            secondaryLabel: '나중에'
+            secondaryLabel: t('button.later')
           }
         );
       };
@@ -6012,7 +6528,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault(); // 브라우저 저장 방지
         saveGame();
-        addLog('💾 수동 저장 완료!');
+        addLog(t('msg.manualSave'));
       }
       // Ctrl + O: 저장 가져오기
       if (e.ctrlKey && e.key === 'o') {
@@ -6093,11 +6609,11 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
       const gameLoaded = loadGame(); // 게임 데이터 불러오기 시도
       if (gameLoaded) {
-        addLog('저장된 게임을 불러왔습니다.');
+        addLog(t('msg.gameLoaded'));
         // 로컬 저장이 있으면 즉시 닉네임 모달 확인
         ensureNicknameModal();
       } else {
-        addLog('환영합니다! 노동으로 종잣돈을 모아 첫 부동산을 구입해보세요.');
+        addLog(t('msg.welcome'));
         // 로컬 저장이 없으면 클라우드 복구를 먼저 확인
         const willReload = await maybeOfferCloudRestore();
         if (!willReload) {
@@ -6123,6 +6639,36 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elToggleParticles) elToggleParticles.checked = settings.particles;
     if (elToggleFancyGraphics) elToggleFancyGraphics.checked = settings.fancyGraphics;
     if (elToggleShortNumbers) elToggleShortNumbers.checked = settings.shortNumbers;
+    
+    // 언어 변경 시 모든 UI 업데이트 함수
+    function updateAllUIForLanguage() {
+      // 직급 표시 업데이트
+      const currentCareerEl = document.getElementById('currentCareer');
+      if (currentCareerEl) {
+        safeText(currentCareerEl, getCareerName(careerLevel));
+      }
+      
+      // UI 업데이트 호출 (직급, 상품 이름 등이 포함됨)
+      updateUI();
+      
+      // 업적 그리드 다시 렌더링 (툴팁 번역을 위해)
+      updateAchievementGrid();
+      
+      // 저장 상태 업데이트 (시간 포맷 번역을 위해)
+      updateSaveStatus();
+    }
+    
+    // 언어 선택 핸들러
+    const elLanguageSelect = document.getElementById('languageSelect');
+    if (elLanguageSelect) {
+      elLanguageSelect.value = getLang();
+      elLanguageSelect.addEventListener('change', (e) => {
+        const newLang = e.target.value;
+        setLang(newLang);
+        applyI18nToDOM();
+        updateAllUIForLanguage();
+      });
+    }
     
     // 설정 탭 이벤트 리스너
     const elExportSaveBtn = document.getElementById('exportSaveBtn');
@@ -6166,7 +6712,8 @@ document.addEventListener('DOMContentLoaded', () => {
         el.textContent = '--:--';
         return;
       }
-      el.textContent = __lastCloudSyncAt.toLocaleTimeString('ko-KR', {
+      const locale = getLang() === 'en' ? 'en-US' : 'ko-KR';
+      el.textContent = __lastCloudSyncAt.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
@@ -6206,13 +6753,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function cloudUpload() {
       const user = await getUser();
       if (!user) {
-        openInfoModal('로그인 필요', '클라우드 세이브는 로그인 사용자만 사용할 수 있습니다.', '🔐');
+        openInfoModal(t('modal.error.loginRequired.title'), t('modal.error.loginRequired.message'), '🔐');
         return;
       }
 
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) {
-        openInfoModal('저장 데이터 없음', '로컬 저장 데이터가 없습니다. 먼저 게임을 진행한 뒤 저장해 주세요.', '💾');
+        openInfoModal(t('modal.error.noSaveData.title'), t('modal.error.noSaveData.message'), '💾');
         return;
       }
 
@@ -6220,7 +6767,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         saveObj = JSON.parse(raw);
       } catch {
-        openInfoModal('오류', '로컬 저장 데이터 형식이 올바르지 않습니다.', '⚠️');
+        openInfoModal(t('modal.error.invalidSaveData.title'), t('modal.error.invalidSaveData.message'), '⚠️');
         return;
       }
 
@@ -6228,24 +6775,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!r.ok) {
         if (r.reason === 'missing_table') {
           openInfoModal(
-            '클라우드 테이블 없음',
-            'Supabase에 game_saves 테이블이 아직 없습니다.\nSupabase SQL Editor에서 supabase/game_saves.sql을 실행해 주세요.',
+            t('modal.error.cloudTableMissing.title'),
+            t('modal.error.cloudTableMissing.message'),
             '🛠️'
           );
           return;
         }
-        openInfoModal('업로드 실패', `클라우드 저장에 실패했습니다.\n${r.error?.message || ''}`.trim(), '⚠️');
+        openInfoModal(t('modal.error.uploadFailed.title'), t('modal.error.uploadFailed.message', { error: r.error?.message || '' }), '⚠️');
         return;
       }
 
-      addLog('☁️ 클라우드에 저장했습니다.');
-      openInfoModal('완료', '클라우드 저장 완료!', '☁️');
+      addLog(t('msg.cloudSaved'));
+      openInfoModal(t('modal.info.cloudSaveComplete.title'), t('modal.info.cloudSaveComplete.message'), '☁️');
     }
 
     async function cloudDownload() {
       const user = await getUser();
       if (!user) {
-        openInfoModal('로그인 필요', '클라우드 세이브는 로그인 사용자만 사용할 수 있습니다.', '🔐');
+        openInfoModal(t('modal.error.loginRequired.title'), t('modal.error.loginRequired.message'), '🔐');
         return;
       }
 
@@ -6253,39 +6800,35 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!r.ok) {
         if (r.reason === 'missing_table') {
           openInfoModal(
-            '클라우드 테이블 없음',
-            'Supabase에 game_saves 테이블이 아직 없습니다.\nSupabase SQL Editor에서 supabase/game_saves.sql을 실행해 주세요.',
+            t('modal.error.cloudTableMissing.title'),
+            t('modal.error.cloudTableMissing.message'),
             '🛠️'
           );
           return;
         }
-        openInfoModal('불러오기 실패', `클라우드 불러오기에 실패했습니다.\n${r.error?.message || ''}`.trim(), '⚠️');
+        openInfoModal(t('modal.error.downloadFailed.title'), t('modal.error.downloadFailed.message', { error: r.error?.message || '' }), '⚠️');
         return;
       }
 
       if (!r.found) {
-        openInfoModal('클라우드 저장 없음', '이 계정에 저장된 클라우드 세이브가 없습니다.', '☁️');
+        openInfoModal(t('modal.error.noCloudSave.title'), t('modal.error.noCloudSave.message'), '☁️');
         return;
       }
 
-      const cloudTime = r.save?.saveTime ? new Date(r.save.saveTime).toLocaleString() : (r.updated_at ? new Date(r.updated_at).toLocaleString() : '시간 정보 없음');
-      const message =
-        '클라우드 세이브를 발견했습니다.\n\n' +
-        `저장 시간: ${cloudTime}\n\n` +
-        '불러오면 로컬 저장이 클라우드 데이터로 덮어써지고 페이지가 새로고침됩니다.\n계속할까요?';
-
-      openConfirmModal('클라우드 불러오기', message, () => {
+      const locale = getLang() === 'en' ? 'en-US' : 'ko-KR';
+      const cloudTime = r.save?.saveTime ? new Date(r.save.saveTime).toLocaleString(locale) : (r.updated_at ? new Date(r.updated_at).toLocaleString(locale) : t('ui.noTimeInfo'));
+      openConfirmModal(t('modal.confirm.cloudLoad.title'), t('modal.confirm.cloudLoad.message', { time: cloudTime }), () => {
         try {
           localStorage.setItem(SAVE_KEY, JSON.stringify(r.save));
-          addLog('☁️ 클라우드 세이브를 적용했습니다. 페이지를 새로고침합니다...');
+          addLog(t('msg.cloudApplied'));
           setTimeout(() => location.reload(), 600);
         } catch (e) {
-          openInfoModal('오류', `클라우드 세이브 적용에 실패했습니다.\n${String(e)}`, '⚠️');
+          openInfoModal(t('modal.error.cloudApplyFailed.title'), t('modal.error.cloudApplyFailed.message', { error: String(e) }), '⚠️');
         }
       }, {
         icon: '☁️',
-        primaryLabel: '불러오기',
-        secondaryLabel: '취소',
+        primaryLabel: t('button.load'),
+        secondaryLabel: t('button.cancel'),
       });
     }
 
@@ -6323,11 +6866,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = await fetchCloudSave('seoulsurvival');
       if (!r.ok || !r.found) return false;
 
-      const cloudTime = r.save?.saveTime ? new Date(r.save.saveTime).toLocaleString() : (r.updated_at ? new Date(r.updated_at).toLocaleString() : '시간 정보 없음');
-      const message =
-        '클라우드 세이브가 있습니다.\n\n' +
-        `저장 시간: ${cloudTime}\n\n` +
-        '불러오시겠습니까?';
+      const locale = getLang() === 'en' ? 'en-US' : 'ko-KR';
+      const cloudTime = r.save?.saveTime ? new Date(r.save.saveTime).toLocaleString(locale) : (r.updated_at ? new Date(r.updated_at).toLocaleString(locale) : t('ui.noTimeInfo'));
+      const message = t('modal.confirm.cloudRestore.message', { time: cloudTime });
 
       // Promise를 반환하여 사용자 선택을 기다림
       return new Promise((resolve) => {
@@ -6341,13 +6882,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         openConfirmModal(
-          '클라우드 세이브 발견',
+          t('modal.confirm.cloudRestore.title'),
           message,
           () => {
             // "불러오기" 클릭 시
             try {
               localStorage.setItem(SAVE_KEY, JSON.stringify(r.save));
-              addLog('☁️ 클라우드 세이브를 적용했습니다. 페이지를 새로고침합니다...');
+              addLog(t('msg.cloudApplied'));
               setTimeout(() => location.reload(), 600);
               done(true); // reload가 예약되었음을 반환
             } catch (error) {
@@ -6357,8 +6898,8 @@ document.addEventListener('DOMContentLoaded', () => {
           },
           {
             icon: '☁️',
-            primaryLabel: '불러오기',
-            secondaryLabel: '나중에',
+            primaryLabel: t('button.load'),
+            secondaryLabel: t('button.later'),
             onCancel: () => {
               // "나중에" 클릭 시
               done(false); // reload 예약 안 됨
@@ -6424,8 +6965,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 클라우드가 더 나은 경우 제안
       const cloudTime = cloudSave.saveTime ? new Date(cloudSave.saveTime).toLocaleString('ko-KR') : 
-                        (cloudResult.updated_at ? new Date(cloudResult.updated_at).toLocaleString('ko-KR') : '시간 정보 없음');
-      const localTime = localSave.saveTime ? new Date(localSave.saveTime).toLocaleString('ko-KR') : '시간 정보 없음';
+                        (cloudResult.updated_at ? new Date(cloudResult.updated_at).toLocaleString(locale) : t('ui.noTimeInfo'));
+      const localTime = localSave.saveTime ? new Date(localSave.saveTime).toLocaleString(locale) : t('ui.noTimeInfo');
 
       // 플레이타임 포맷
       const localPlayTimeText = formatPlaytimeMs(localPlayTimeMs);
@@ -6458,18 +6999,18 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         openConfirmModal(
-          '진행 상황 선택',
-          message,
+          t('modal.confirm.progressSwitch.title'),
+          t('modal.confirm.progressSwitch.message', { message }),
           () => {
             // 다른 기기로 바꾸기
             try {
               localStorage.setItem(SAVE_KEY, JSON.stringify(cloudSave));
-              addLog('☁️ 다른 기기의 진행 상황을 불러왔습니다. 페이지를 새로고침합니다...');
+              addLog(t('msg.cloudProgressLoaded'));
               setTimeout(() => location.reload(), 600);
               done(true);
             } catch (error) {
               console.error('클라우드 세이브 적용 실패:', error);
-              openInfoModal('오류', `진행 상황 전환에 실패했습니다.\n${error.message || String(error)}`, '⚠️');
+              openInfoModal(t('modal.error.progressSwitchFailed.title'), t('modal.error.progressSwitchFailed.message', { error: error.message || String(error) }), '⚠️');
               done(false);
             }
           },
@@ -6631,10 +7172,12 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // 마일스톤 계산
       const milestones = [1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000];
-      let nextMilestone = milestones.find(m => m > currentEarnings) || '최고 달성';
-      if (nextMilestone !== '최고 달성') {
+      const maxAchievedText = t('stats.maxAchieved');
+      let nextMilestone = milestones.find(m => m > currentEarnings) || maxAchievedText;
+      if (nextMilestone !== maxAchievedText) {
         const remaining = nextMilestone - currentEarnings;
-        nextMilestone = `${formatStatsNumber(remaining)} 남음`;
+        const remainingText = t('stats.remaining', { amount: formatStatsNumber(remaining) });
+        nextMilestone = remainingText;
       }
       
       // UI 업데이트
@@ -6642,7 +7185,8 @@ document.addEventListener('DOMContentLoaded', () => {
       safeText(document.getElementById('dailyEarnings'), formatCashDisplay(Math.max(0, dailyEarnings)));
       // "+0.0%/시간" 처럼 소수점 1자리 고정 + -0.0 방지
       const growthRateStable = Math.abs(growthRate) < 0.05 ? 0 : growthRate;
-      safeText(document.getElementById('growthRate'), `${growthRateStable >= 0 ? '+' : ''}${growthRateStable.toFixed(1)}%/시간`);
+      const perHourUnitForGrowth = t('stats.unit.perHour');
+      safeText(document.getElementById('growthRate'), `${growthRateStable >= 0 ? '+' : ''}${growthRateStable.toFixed(1)}%${perHourUnitForGrowth}`);
       safeText(document.getElementById('nextMilestone'), nextMilestone);
       
       lastEarningsSnapshot = currentEarnings;
@@ -6817,11 +7361,14 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('totalAssets'), formatStatsNumber(totalAssets));
         safeText(document.getElementById('totalEarnings'), formatStatsNumber(totalEarnings));
         // 통계 탭에서는 축약 표기/고정 소수점 규칙을 그대로 사용
-        safeText(document.getElementById('rpsStats'), formatCashDisplay(getRps()) + '/초');
+        const perSecUnit = t('stats.unit.perSec');
+        safeText(document.getElementById('rpsStats'), formatCashDisplay(getRps()) + perSecUnit);
         safeText(document.getElementById('clickIncomeStats'), formatCashDisplay(getClickIncome()));
         
         // 2. 플레이 정보
-        safeText(document.getElementById('totalClicksStats'), totalClicks.toLocaleString('ko-KR') + '회');
+        const timesUnit = t('stats.unit.times');
+        const locale = getLang() === 'en' ? 'en-US' : 'ko-KR';
+        safeText(document.getElementById('totalClicksStats'), totalClicks.toLocaleString(locale) + timesUnit);
         safeText(document.getElementById('laborIncomeStats'), formatStatsNumber(totalLaborIncome));
         
         // 플레이 시간 계산 (누적 플레이시간 시스템)
@@ -6830,9 +7377,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const playTimeMinutes = Math.floor(totalPlayTimeMs / 60000);
         const playTimeHours = Math.floor(playTimeMinutes / 60);
         const remainingMinutes = playTimeMinutes % 60;
+        const hourUnit = t('stats.unit.hour');
+        const minuteUnit = t('stats.unit.minute');
         const playTimeText = playTimeHours > 0 
-          ? `${playTimeHours}시간 ${remainingMinutes}분` 
-          : `${playTimeMinutes}분`;
+          ? `${playTimeHours}${hourUnit} ${remainingMinutes}${minuteUnit}` 
+          : `${playTimeMinutes}${minuteUnit}`;
         
         // 디버깅 로그
         console.log('🕐 플레이시간 계산:', {
@@ -6849,7 +7398,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const hourlyRateValue = playTimeMinutes > 0 
           ? (totalEarnings / playTimeMinutes) * 60 
           : 0;
-        safeText(document.getElementById('hourlyRate'), formatCashDisplay(hourlyRateValue) + '/시간');
+        const perHourUnit = t('stats.unit.perHour');
+        safeText(document.getElementById('hourlyRate'), formatCashDisplay(hourlyRateValue) + perHourUnit);
         
         // 3. 수익 구조
         const laborPercent = totalEarnings > 0 ? (totalLaborIncome / totalEarnings * 100) : 0;
@@ -6901,9 +7451,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // 범례 업데이트
-        safeText(document.getElementById('laborLegend'), `노동: ${laborPercent.toFixed(1)}%`);
-        safeText(document.getElementById('financialLegend'), `금융: ${financialPercent.toFixed(1)}%`);
-        safeText(document.getElementById('propertyLegend'), `부동산: ${propertyPercent.toFixed(1)}%`);
+        safeText(document.getElementById('laborLegend'), `${t('stats.labor')}: ${laborPercent.toFixed(1)}%`);
+        safeText(document.getElementById('financialLegend'), `${t('stats.financial')}: ${financialPercent.toFixed(1)}%`);
+        safeText(document.getElementById('propertyLegend'), `${t('stats.property')}: ${propertyPercent.toFixed(1)}%`);
         
         // 성장 추적 업데이트
         updateGrowthTracking();
@@ -6918,7 +7468,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatsLockStates();
         
         // 예금
-        safeText(document.getElementById('depositsOwnedStats'), deposits + '개');
+        const countUnit = t('ui.unit.count');
+        safeText(document.getElementById('depositsOwnedStats'), deposits + countUnit);
         safeText(document.getElementById('depositsLifetimeStats'), formatStatsNumber(depositsLifetime));
         const depositsContribution = totalEarningsForContribution > 0 ? (depositsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('depositsContribution'), `(${depositsContribution}%)`);
@@ -6926,7 +7477,7 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('depositsValue'), formatKoreanNumber(depositsValue));
         
         // 적금
-        safeText(document.getElementById('savingsOwnedStats'), savings + '개');
+        safeText(document.getElementById('savingsOwnedStats'), savings + countUnit);
         safeText(document.getElementById('savingsLifetimeStats'), formatStatsNumber(savingsLifetime));
         const savingsContribution = totalEarningsForContribution > 0 ? (savingsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('savingsContribution'), `(${savingsContribution}%)`);
@@ -6934,7 +7485,7 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('savingsValue'), formatKoreanNumber(savingsValue));
         
         // 주식
-        safeText(document.getElementById('bondsOwnedStats'), bonds + '개');
+        safeText(document.getElementById('bondsOwnedStats'), bonds + countUnit);
         safeText(document.getElementById('bondsLifetimeStats'), formatStatsNumber(bondsLifetime));
         const bondsContribution = totalEarningsForContribution > 0 ? (bondsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('bondsContribution'), `(${bondsContribution}%)`);
@@ -6942,7 +7493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('bondsValue'), formatKoreanNumber(bondsValue));
         
         // 미국주식
-        safeText(document.getElementById('usStocksOwnedStats'), usStocks + '개');
+        safeText(document.getElementById('usStocksOwnedStats'), usStocks + countUnit);
         safeText(document.getElementById('usStocksLifetimeStats'), formatStatsNumber(usStocksLifetime));
         const usStocksContribution = totalEarningsForContribution > 0 ? (usStocksLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('usStocksContribution'), `(${usStocksContribution}%)`);
@@ -6950,7 +7501,7 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('usStocksValue'), formatKoreanNumber(usStocksValue));
         
         // 코인
-        safeText(document.getElementById('cryptosOwnedStats'), cryptos + '개');
+        safeText(document.getElementById('cryptosOwnedStats'), cryptos + countUnit);
         safeText(document.getElementById('cryptosLifetimeStats'), formatStatsNumber(cryptosLifetime));
         const cryptosContribution = totalEarningsForContribution > 0 ? (cryptosLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('cryptosContribution'), `(${cryptosContribution}%)`);
@@ -6959,7 +7510,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 5. 부동산 상세 (수익 기여도 및 총 가치 추가)
         // 빌라
-        safeText(document.getElementById('villasOwnedStats'), villas + '채');
+        const propertyUnitForStats = t('ui.unit.property');
+        safeText(document.getElementById('villasOwnedStats'), villas + propertyUnitForStats);
         safeText(document.getElementById('villasLifetimeStats'), formatCashDisplay(villasLifetime));
         const villasContribution = totalEarningsForContribution > 0 ? (villasLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('villasContribution'), `(${villasContribution}%)`);
@@ -6967,7 +7519,7 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('villasValue'), formatCashDisplay(villasValue));
         
         // 오피스텔
-        safeText(document.getElementById('officetelsOwnedStats'), officetels + '채');
+        safeText(document.getElementById('officetelsOwnedStats'), officetels + propertyUnitForStats);
         safeText(document.getElementById('officetelsLifetimeStats'), formatCashDisplay(officetelsLifetime));
         const officetelsContribution = totalEarningsForContribution > 0 ? (officetelsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('officetelsContribution'), `(${officetelsContribution}%)`);
@@ -6975,7 +7527,7 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('officetelsValue'), formatCashDisplay(officetelsValue));
         
         // 아파트
-        safeText(document.getElementById('apartmentsOwnedStats'), apartments + '채');
+        safeText(document.getElementById('apartmentsOwnedStats'), apartments + propertyUnitForStats);
         safeText(document.getElementById('apartmentsLifetimeStats'), formatCashDisplay(apartmentsLifetime));
         const apartmentsContribution = totalEarningsForContribution > 0 ? (apartmentsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('apartmentsContribution'), `(${apartmentsContribution}%)`);
@@ -6983,7 +7535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('apartmentsValue'), formatCashDisplay(apartmentsValue));
         
         // 상가
-        safeText(document.getElementById('shopsOwnedStats'), shops + '채');
+        safeText(document.getElementById('shopsOwnedStats'), shops + propertyUnitForStats);
         safeText(document.getElementById('shopsLifetimeStats'), formatCashDisplay(shopsLifetime));
         const shopsContribution = totalEarningsForContribution > 0 ? (shopsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('shopsContribution'), `(${shopsContribution}%)`);
@@ -6991,7 +7543,8 @@ document.addEventListener('DOMContentLoaded', () => {
         safeText(document.getElementById('shopsValue'), formatCashDisplay(shopsValue));
         
         // 빌딩
-        safeText(document.getElementById('buildingsOwnedStats'), buildings + '채');
+        const propertyUnit = t('ui.unit.property');
+        safeText(document.getElementById('buildingsOwnedStats'), buildings + propertyUnit);
         safeText(document.getElementById('buildingsLifetimeStats'), formatCashDisplay(buildingsLifetime));
         const buildingsContribution = totalEarningsForContribution > 0 ? (buildingsLifetime / totalEarningsForContribution * 100).toFixed(1) : '0.0';
         safeText(document.getElementById('buildingsContribution'), `(${buildingsContribution}%)`);
@@ -7107,7 +7660,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
           // 로딩 메시지 표시
-          container.innerHTML = '<div class="leaderboard-loading">리더보드를 불러오는 중...</div>';
+          container.innerHTML = `<div class="leaderboard-loading">${t('ranking.loadingText')}</div>`;
           
           console.log('리더보드: API 호출 시작');
           const result = await getLeaderboard(10, 'assets');
@@ -7157,7 +7710,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const entries = result.data || [];
           if (entries.length === 0) {
             console.log('리더보드: 기록 없음');
-            container.innerHTML = '<div class="leaderboard-empty">리더보드에 아직 기록이 없습니다.</div>';
+            container.innerHTML = `<div class="leaderboard-empty">${t('ranking.empty')}</div>`;
             __leaderboardLoading = false;
             __leaderboardLastUpdate = Date.now();
             // 내 순위 영역도 비움
@@ -7181,10 +7734,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const thead = document.createElement('thead');
           thead.innerHTML = `
             <tr>
-              <th class="col-rank">#</th>
-              <th class="col-nickname">닉네임</th>
-              <th class="col-assets">자산</th>
-              <th class="col-playtime">시간</th>
+              <th class="col-rank">${t('ranking.table.rank')}</th>
+              <th class="col-nickname">${t('ranking.table.nickname')}</th>
+              <th class="col-assets">${t('ranking.table.assets')}</th>
+              <th class="col-playtime">${t('ranking.table.playtime')}</th>
             </tr>
           `;
           table.appendChild(thead);
@@ -7252,7 +7805,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const hh = String(d.getHours()).padStart(2, '0');
             const mm = String(d.getMinutes()).padStart(2, '0');
             const ss = String(d.getSeconds()).padStart(2, '0');
-            lastUpdatedEl.textContent = `마지막 갱신: ${hh}:${mm}:${ss}`;
+            const timeStr = `${hh}:${mm}:${ss}`;
+            lastUpdatedEl.textContent = t('ranking.lastUpdated', { time: timeStr });
           }
 
           // 내 순위 영역 업데이트 (Top10 및 Top10 밖 모두)
@@ -7299,10 +7853,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('[LB] 로그인되지 않음, 로그인 버튼 표시');
                 myRankContent.innerHTML = `
                   <div class="leaderboard-my-rank-empty">
-                    로그인 후에 내 순위를 볼 수 있습니다.
+                    ${t('ranking.loginRequired')}
                     <div class="leaderboard-my-rank-actions">
                       <button type="button" class="btn" id="openLoginFromRanking">
-                        🔐 Google로 로그인
+                        🔐 ${t('settings.loginGoogle')}
                       </button>
                     </div>
                   </div>
@@ -7350,10 +7904,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.warn('[LB] 권한 부족으로 내 순위 조회 실패');
                     innerHtml = `
                       <div class="leaderboard-my-rank-empty">
-                        로그인 후에 내 순위를 볼 수 있습니다.
+                        ${t('ranking.loginRequired')}
                         <div class="leaderboard-my-rank-actions">
                           <button type="button" class="btn" id="openLoginFromRanking">
-                            🔐 Google로 로그인
+                            🔐 ${t('settings.loginGoogle')}
                           </button>
                         </div>
                       </div>
@@ -7420,8 +7974,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 업데이트 실패하거나 여전히 기록이 없으면 안내 메시지
                     innerHtml = `
                       <div class="leaderboard-my-rank-empty">
-                        아직 리더보드에 기록이 없습니다.<br />
-                        게임을 플레이하고 저장하면 순위가 표시됩니다.
+                        ${t('ranking.emptyMessage')}<br />
+                        ${t('ranking.emptyHint')}
                       </div>
                     `;
                   } else {
@@ -7490,7 +8044,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
           clearTimeout(timeoutId);
           console.error('리더보드 UI 업데이트 실패:', error);
-          container.innerHTML = `<div class="leaderboard-error">리더보드를 불러오는 중 오류가 발생했습니다: ${error.message || '알 수 없는 오류'}</div>`;
+          const errorMsg = error.message || t('ranking.error', { error: 'Unknown error' });
+          container.innerHTML = `<div class="leaderboard-error">${t('ranking.error', { error: errorMsg })}</div>`;
           __leaderboardLastUpdate = Date.now();
         } finally {
           __leaderboardLoading = false;
@@ -7720,44 +8275,45 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // 금융상품
       if (deposits > 0) {
-        assets.push({ name: '예금', efficiency: FINANCIAL_INCOME.deposit, count: deposits });
+        assets.push({ name: getProductName('deposit'), efficiency: FINANCIAL_INCOME.deposit, count: deposits });
       }
       if (savings > 0) {
-        assets.push({ name: '적금', efficiency: FINANCIAL_INCOME.savings, count: savings });
+        assets.push({ name: getProductName('savings'), efficiency: FINANCIAL_INCOME.savings, count: savings });
       }
       if (bonds > 0) {
-        assets.push({ name: '국내주식', efficiency: FINANCIAL_INCOME.bond, count: bonds });
+        assets.push({ name: getProductName('bond'), efficiency: FINANCIAL_INCOME.bond, count: bonds });
       }
       if (usStocks > 0) {
-        assets.push({ name: '미국주식', efficiency: FINANCIAL_INCOME.usStock, count: usStocks });
+        assets.push({ name: getProductName('usStock'), efficiency: FINANCIAL_INCOME.usStock, count: usStocks });
       }
       if (cryptos > 0) {
-        assets.push({ name: '코인', efficiency: FINANCIAL_INCOME.crypto, count: cryptos });
+        assets.push({ name: getProductName('crypto'), efficiency: FINANCIAL_INCOME.crypto, count: cryptos });
       }
       
       // 부동산
       if (villas > 0) {
-        assets.push({ name: '빌라', efficiency: BASE_RENT.villa * rentMultiplier, count: villas });
+        assets.push({ name: getProductName('villa'), efficiency: BASE_RENT.villa * rentMultiplier, count: villas });
       }
       if (officetels > 0) {
-        assets.push({ name: '오피스텔', efficiency: BASE_RENT.officetel * rentMultiplier, count: officetels });
+        assets.push({ name: getProductName('officetel'), efficiency: BASE_RENT.officetel * rentMultiplier, count: officetels });
       }
       if (apartments > 0) {
-        assets.push({ name: '아파트', efficiency: BASE_RENT.apartment * rentMultiplier, count: apartments });
+        assets.push({ name: getProductName('apartment'), efficiency: BASE_RENT.apartment * rentMultiplier, count: apartments });
       }
       if (shops > 0) {
-        assets.push({ name: '상가', efficiency: BASE_RENT.shop * rentMultiplier, count: shops });
+        assets.push({ name: getProductName('shop'), efficiency: BASE_RENT.shop * rentMultiplier, count: shops });
       }
       if (buildings > 0) {
-        assets.push({ name: '빌딩', efficiency: BASE_RENT.building * rentMultiplier, count: buildings });
+        assets.push({ name: getProductName('building'), efficiency: BASE_RENT.building * rentMultiplier, count: buildings });
       }
       
       // 효율 순으로 정렬
       assets.sort((a, b) => b.efficiency - a.efficiency);
       
       // 상위 3개 반환
+      const perSecUnit = t('stats.unit.perSec');
       return assets.slice(0, 3).map(a => 
-        `${a.name} (${formatKoreanNumber(Math.floor(a.efficiency))}원/초, ${a.count}개 보유)`
+        `${a.name} (${formatNumberForLang(Math.floor(a.efficiency))}${t('ui.currency')}${perSecUnit}, ${a.count}${t('ui.unit.count')} ${t('ui.owned')})`
       );
     }
     
@@ -7788,9 +8344,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const getAchText = (achId) => {
           const ach = ACHIEVEMENTS.find(a => a.id === achId);
           if (!ach) return '';
-          return ach.unlocked
-            ? `${ach.name}\n${ach.desc}\n✅ 달성!`
-            : `${ach.name}\n${ach.desc}\n🔒 미달성`;
+          const achievementName = t(`achievement.${ach.id}.name`, {}, ach.name);
+          const achievementDesc = t(`achievement.${ach.id}.desc`, {}, ach.desc);
+          const statusText = ach.unlocked ? t('achievement.status.unlocked') : t('achievement.status.locked');
+          return `${achievementName}\n${achievementDesc}\n${statusText}`;
         };
 
         const hideTooltip = () => {
@@ -7915,9 +8472,10 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           // 네이티브 title은 항상 최신으로 유지 (툴팁 대체/접근성)
-          icon.title = ach.unlocked
-            ? `${ach.name}\n${ach.desc}\n✅ 달성!`
-            : `${ach.name}\n${ach.desc}\n🔒 미달성`;
+          const achievementName = t(`achievement.${ach.id}.name`, {}, ach.name);
+          const achievementDesc = t(`achievement.${ach.id}.desc`, {}, ach.desc);
+          const statusText = ach.unlocked ? t('achievement.status.unlocked') : t('achievement.status.locked');
+          icon.title = `${achievementName}\n${achievementDesc}\n${statusText}`;
         });
         
         const totalAchievements = Object.keys(ACHIEVEMENTS).length;
@@ -7936,9 +8494,10 @@ document.addEventListener('DOMContentLoaded', () => {
         icon.id = 'ach_' + ach.id;
         icon.dataset.achievementId = ach.id;
         icon.textContent = ach.icon;
-        icon.title = ach.unlocked 
-          ? `${ach.name}\n${ach.desc}\n✅ 달성!` 
-          : `${ach.name}\n${ach.desc}\n🔒 미달성`;
+        const achievementName = t(`achievement.${ach.id}.name`, {}, ach.name);
+        const achievementDesc = t(`achievement.${ach.id}.desc`, {}, ach.desc);
+        const statusText = ach.unlocked ? t('achievement.status.unlocked') : t('achievement.status.locked');
+        icon.title = `${achievementName}\n${achievementDesc}\n${statusText}`;
         
         if (ach.unlocked) {
           icon.classList.add('unlocked');
@@ -8065,6 +8624,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     updateUI(); // 초기 UI 업데이트
+    updateProductLockStates(); // 초기 잠금 상태 업데이트
     
     // 초기 리더보드 로드/폴링 및 Observer 설정
     setTimeout(() => {

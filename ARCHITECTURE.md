@@ -67,10 +67,18 @@
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
   - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.
+  - 다국어 지원: `data-i18n` 속성으로 정적 텍스트 자동 번역, `data-i18n-alt`, `data-i18n-aria-label` 지원
 - **게임 코어(대부분)**: `seoulsurvival/src/main.js`
   - 상태 변수(현금/보유/업그레이드/직급/이벤트/로그/서울타워 개수 등)와 메인 루프를 포함.
   - UI 업데이트, 저장/로드, 이벤트, 순차 해금, 업그레이드 해금/구매 처리 등 핵심 로직이 여기 집중.
   - 프레스티지 시스템: 서울타워(`towers`) 상태 변수, 구매 시 엔딩 모달, 리더보드 업데이트 중단 플래그(`shouldUpdateLeaderboard`)
+  - 다국어 지원: 모든 동적 텍스트(로그, 모달, 업적 툴팁, 일기장)에 `t()` 함수 사용, 언어 변경 시 `updateAllUIForLanguage()` 호출
+- **다국어 시스템(i18n)**: `seoulsurvival/src/i18n/`
+  - 핵심 모듈: `index.js` (언어 해석, 번역 함수, DOM 적용)
+  - 번역 파일: `translations/ko.js` (한국어, 기본), `translations/en.js` (영어)
+  - 언어 동기화: 허브와 동일한 `localStorage` 키(`clicksurvivor_lang`) 사용, URL 파라미터(`?lang=ko|en`) 지원
+  - 번역 범위: 약 400개 텍스트 (탭, 버튼, 상품명, 업적, 업그레이드, 시장 이벤트, 모달, 일기장, 통계 등)
+  - 숫자 포맷: `formatNumberForLang()` 함수로 한국어(만/억/조)와 영어(K/M/B/T) 단위 지원
 - **유틸/모듈 분리**
   - `seoulsurvival/src/economy/pricing.js`: 금융/부동산 **구매/판매 비용** 계산(등비 합)
   - `seoulsurvival/src/systems/market.js`: 시장 이벤트 스케줄/배수 계산(모듈형)

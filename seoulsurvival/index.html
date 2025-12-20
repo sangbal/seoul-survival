@@ -630,7 +630,7 @@
     }
     
     .upgrade-list:empty::after {
-      content: '해금된 업그레이드가 없습니다';
+      content: '';
       display: block;
       text-align: center;
       color: var(--muted);
@@ -1477,6 +1477,33 @@
       font-family: 'Courier New', monospace;
     }
     
+    .settings-select-group {
+      margin-top: 8px;
+    }
+    
+    .settings-select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .settings-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.1);
+    }
+    
+    .settings-select:hover {
+      border-color: var(--accent);
+    }
+    
     .settings-info-group {
       display: flex;
       flex-direction: column;
@@ -2299,20 +2326,20 @@
         aria-label="즐겨찾기 / 홈 화면에 추가 안내"
       >
         <span class="favorite-icon">⭐</span>
-        <span class="favorite-label">즐겨찾기</span>
+        <span class="favorite-label" data-i18n="header.favorite_btn">즐겨찾기</span>
       </button>
 
       <button class="chip share-btn" id="shareBtn" type="button" title="게임 공유하기" aria-label="게임 공유하기">
         <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.6 2.6 0 0 0 0-1.39l7.02-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .06.59L7.03 9.7A3 3 0 1 0 7 14.3l7.02 4.11A3 3 0 1 0 18 16.08z"></path>
         </svg>
-        <span class="share-label">공유</span>
+        <span class="share-label" data-i18n="header.share_btn">공유</span>
       </button>
       <div class="statbar">
-        <div class="chip"><span>💵 현금</span><b id="cash">0</b></div>
-        <div class="chip stat-tooltip" id="financialChip" title=""><span>💰 금융</span><b id="financial">0</b><span class="muted">개</span></div>
-        <div class="chip stat-tooltip" id="propertyChip" title=""><span>🏢 부동산</span><b id="properties">0</b><span class="muted">채</span></div>
-        <div class="chip stat-tooltip" id="rpsChip" title=""><span>📈 초당</span><b id="rps">0</b></div>
+        <div class="chip"><span data-i18n="header.cash">💵 현금</span><b id="cash">0</b></div>
+        <div class="chip stat-tooltip" id="financialChip" title=""><span data-i18n="header.financial">💰 금융</span><b id="financial">0</b><span class="muted" data-i18n="ui.unit.count">개</span></div>
+        <div class="chip stat-tooltip" id="propertyChip" title=""><span data-i18n="header.properties">🏢 부동산</span><b id="properties">0</b><span class="muted" data-i18n="ui.unit.property">채</span></div>
+        <div class="chip stat-tooltip" id="rpsChip" title=""><span data-i18n="header.rps">📈 초당</span><b id="rps">0</b></div>
         <div class="chip" id="towerBadge" style="display: none; background: linear-gradient(135deg, rgba(94, 234, 212, 0.15), rgba(94, 234, 212, 0.05)); border: 1px solid rgba(94, 234, 212, 0.3); box-shadow: 0 0 12px rgba(94, 234, 212, 0.2);"><span style="font-size: 16px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">🗼</span><b id="towerCountHeader">0</b></div>
       </div>
     </header>
@@ -2322,10 +2349,10 @@
       <div id="workTab" class="tab-content active">
       <section class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <h2 style="margin: 0;">🛠️ 노동</h2>
+          <h2 style="margin: 0;" data-i18n="ui.work">🛠️ 노동</h2>
         </div>
         <div class="work">
-          <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼, 클릭당 수익" aria-describedby="clickIncomeButton">🛠️ 노동 +<span id="clickIncomeButton" aria-label="클릭당 수익 금액">1만</span>원</button>
+          <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼, 클릭당 수익" aria-describedby="clickIncomeButton"><span data-i18n="work.button">🛠️ 노동</span> +<span id="clickIncomeButton" aria-label="클릭당 수익 금액">1만</span><span data-i18n="ui.currencyShort">원</span></button>
         </div>
         <!-- 승진 진행 카드 -->
         <div class="career-progress-card" style="margin-top: 12px; padding: 12px; background: var(--bg2); border-radius: 8px;">
@@ -2334,7 +2361,7 @@
             <span class="desc" id="careerRemaining" style="font-size: 12px; color: var(--accent);" aria-live="polite">다음 승진까지 40클릭 남음</span>
           </div>
           <div class="progress-container" style="margin-bottom: 6px;">
-            <div class="progress-bar" id="careerProgress" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="승진 진행률"></div>
+            <div class="progress-bar" id="careerProgress" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" data-i18n-aria-label="ui.careerProgress"></div>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="desc" id="careerProgressText" style="font-size: 12px;" aria-live="polite">0% (0/40)</span>
@@ -2343,10 +2370,10 @@
         </div>
         <div class="card diary-card" style="margin-top:12px">
           <h2>
-            <span class="diary-title">📓 일기장</span>
+            <span class="diary-title" data-i18n="ui.diary">📓 일기장</span>
             <span class="diary-header-meta" id="diaryHeaderMeta">----.--.--(--일차)</span>
           </h2>
-          <div id="log" class="log diary-log" aria-label="일기장"></div>
+          <div id="log" class="log diary-log" data-i18n-aria-label="ui.diary"></div>
         </div>
       </section>
     </div>
@@ -2355,20 +2382,21 @@
     <div id="shopTab" class="tab-content">
       <section>
         <div class="card">
-          <h2>💰 투자</h2>
+          <h2 data-i18n="tab.investment">💰 투자</h2>
           <div id="marketEventBar" class="market-event-bar" aria-live="polite"></div>
           
           <!-- 업그레이드 리스트 - Cookie Clicker 스타일 -->
-          <h3>업그레이드 <span class="upgrade-count" id="upgradeCount">(0)</span> <span class="toggle-btn" id="toggleUpgrades" aria-label="업그레이드 섹션 토글">▼</span></h3>
+          <h3><span data-i18n="ui.upgrades">업그레이드</span> <span class="upgrade-count" id="upgradeCount">(0)</span> <span class="toggle-btn" id="toggleUpgrades" aria-label="업그레이드 섹션 토글">▼</span></h3>
           <div class="upgrade-list" id="upgradeList">
             <!-- 동적으로 생성됨 -->
+            <div id="noUpgradesMessage" class="no-upgrades-message" style="display: none;"></div>
           </div>
 
           <!-- 구매 수량 선택 시스템 -->
           <div class="purchase-options">
             <div class="mode-toggle">
-              <button id="buyMode" class="active">구매</button>
-              <button id="sellMode">판매</button>
+              <button id="buyMode" class="active" data-i18n="ui.buy">구매</button>
+              <button id="sellMode" data-i18n="ui.sell">판매</button>
             </div>
             <div class="quantity-selector">
               <button id="qty1" class="active">1</button>
@@ -2377,130 +2405,193 @@
             </div>
           </div>
           
-          <h3>금융상품 <span class="toggle-btn" id="toggleFinancial" aria-label="금융상품 섹션 토글">▼</span></h3>
+          <h3><span data-i18n="ui.financial">금융상품</span> <span class="toggle-btn" id="toggleFinancial" aria-label="금융상품 섹션 토글">▼</span></h3>
         <div class="upg-list" id="financialSection">
           <div class="row building-item" id="depositItem">
             <div class="meta">
-                <span class="title">💰 예금</span>
-                <span class="desc">• 각 예금이 초당 <b id="incomePerDeposit">10원</b> 생산</span>
-                <span class="desc">• <b id="depositCount">0</b>개 예금이 초당 <b id="depositTotalIncome">0원</b> 생산 (총 수익의 <b id="depositPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="depositLifetime">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="depositCurrentPrice">5만</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="depositCount" style="display:none;">0</b>
+                <b id="incomePerDeposit" style="display:none;"></b>
+                <b id="depositTotalIncome" style="display:none;">0</b>
+                <b id="depositPercent" style="display:none;">0%</b>
+                <b id="depositLifetime" style="display:none;">0</b>
+                <b id="depositCurrentPrice" style="display:none;">0</b>
             </div>
-              <button id="buyDeposit" class="btn">구입</button>
+              <button id="buyDeposit" class="btn" data-i18n="button.buy">구입</button>
           </div>
 
             <div class="row building-item" id="savingsItem">
             <div class="meta">
-                <span class="title">🏦 적금</span>
-                <span class="desc">• 각 적금이 초당 <b id="incomePerSavings">120원</b> 생산</span>
-                <span class="desc">• <b id="savingsCount">0</b>개 적금이 초당 <b id="savingsTotalIncome">0원</b> 생산 (총 수익의 <b id="savingsPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="savingsLifetimeDisplay">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="savingsCurrentPrice">50만</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="savingsCount" style="display:none;">0</b>
+                <b id="incomePerSavings" style="display:none;"></b>
+                <b id="savingsTotalIncome" style="display:none;">0</b>
+                <b id="savingsPercent" style="display:none;">0%</b>
+                <b id="savingsLifetimeDisplay" style="display:none;">0</b>
+                <b id="savingsCurrentPrice" style="display:none;">0</b>
             </div>
-              <button id="buySavings" class="btn">구입</button>
+              <button id="buySavings" class="btn" data-i18n="button.buy">구입</button>
           </div>
 
           <div class="row building-item" id="bondItem">
             <div class="meta">
-                <span class="title">📈 국내주식</span>
-                <span class="desc">• 각 주식이 초당 <b id="incomePerBond">1,125원</b> 생산</span>
-                <span class="desc">• <b id="bondCount">0</b>개 주식이 초당 <b id="bondTotalIncome">0원</b> 생산 (총 수익의 <b id="bondPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="bondLifetimeDisplay">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="bondCurrentPrice">500만</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="bondCount" style="display:none;">0</b>
+                <b id="incomePerBond" style="display:none;"></b>
+                <b id="bondTotalIncome" style="display:none;">0</b>
+                <b id="bondPercent" style="display:none;">0%</b>
+                <b id="bondLifetimeDisplay" style="display:none;">0</b>
+                <b id="bondCurrentPrice" style="display:none;">0</b>
             </div>
-            <button id="buyBond" class="btn">구입</button>
+            <button id="buyBond" class="btn" data-i18n="button.buy">구입</button>
           </div>
 
           <div class="row building-item" id="usStockItem">
             <div class="meta">
-                <span class="title">🇺🇸 미국주식</span>
-                <span class="desc">• 각 주식이 초당 <b id="incomePerUsStock">6,000원</b> 생산</span>
-                <span class="desc">• <b id="usStockCount">0</b>개 주식이 초당 <b id="usStockTotalIncome">0원</b> 생산 (총 수익의 <b id="usStockPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="usStockLifetimeDisplay">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="usStockCurrentPrice">2,500만</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="usStockCount" style="display:none;">0</b>
+                <b id="incomePerUsStock" style="display:none;"></b>
+                <b id="usStockTotalIncome" style="display:none;">0</b>
+                <b id="usStockPercent" style="display:none;">0%</b>
+                <b id="usStockLifetimeDisplay" style="display:none;">0</b>
+                <b id="usStockCurrentPrice" style="display:none;">0</b>
             </div>
-            <button id="buyUsStock" class="btn">구입</button>
+            <button id="buyUsStock" class="btn" data-i18n="button.buy">구입</button>
           </div>
 
           <div class="row building-item" id="cryptoItem">
             <div class="meta">
-                <span class="title">₿ 코인</span>
-                <span class="desc">• 각 코인이 초당 <b id="incomePerCrypto">25,000원</b> 생산</span>
-                <span class="desc">• <b id="cryptoCount">0</b>개 코인이 초당 <b id="cryptoTotalIncome">0원</b> 생산 (총 수익의 <b id="cryptoPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="cryptoLifetimeDisplay">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="cryptoCurrentPrice">1억</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="cryptoCount" style="display:none;">0</b>
+                <b id="incomePerCrypto" style="display:none;"></b>
+                <b id="cryptoTotalIncome" style="display:none;">0</b>
+                <b id="cryptoPercent" style="display:none;">0%</b>
+                <b id="cryptoLifetimeDisplay" style="display:none;">0</b>
+                <b id="cryptoCurrentPrice" style="display:none;">0</b>
             </div>
-            <button id="buyCrypto" class="btn">구입</button>
+            <button id="buyCrypto" class="btn" data-i18n="button.buy">구입</button>
           </div>
           </div>
           
-          <h3>부동산 <span class="toggle-btn" id="toggleProperties" aria-label="부동산 섹션 토글">▼</span></h3>
+          <h3><span data-i18n="ui.properties">부동산</span> <span class="toggle-btn" id="toggleProperties" aria-label="부동산 섹션 토글">▼</span></h3>
           <div class="upg-list" id="propertySection">
             <div class="row building-item" id="villaItem">
               <div class="meta">
-                <span class="title">🏘️ 빌라</span>
-                <span class="desc">• 각 빌라가 초당 <b id="rentPerVilla">250원</b> 생산</span>
-                <span class="desc">• <b id="villaCount">0</b>채 빌라가 초당 <b id="villaTotalIncome">0원</b> 생산 (총 수익의 <b id="villaPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="villaLifetimeDisplay">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="villaCurrentPrice">2.5억</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="villaCount" style="display:none;">0</b>
+                <b id="rentPerVilla" style="display:none;"></b>
+                <b id="villaTotalIncome" style="display:none;">0</b>
+                <b id="villaPercent" style="display:none;">0%</b>
+                <b id="villaLifetimeDisplay" style="display:none;">0</b>
+                <b id="villaCurrentPrice" style="display:none;">0</b>
               </div>
-              <button id="buyVilla" class="btn">구입</button>
+              <button id="buyVilla" class="btn" data-i18n="button.buy">구입</button>
             </div>
 
             <div class="row building-item" id="officetelItem">
               <div class="meta">
-                <span class="title">🏢 오피스텔</span>
-                <span class="desc">• 각 오피스텔이 초당 <b id="rentPerOfficetel">500원</b> 생산</span>
-                <span class="desc">• <b id="officetelCount">0</b>채 오피스텔이 초당 <b id="officetelTotalIncome">0원</b> 생산 (총 수익의 <b id="officetelPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="officetelLifetimeDisplay">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="officetelCurrentPrice">3.5억</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="officetelCount" style="display:none;">0</b>
+                <b id="rentPerOfficetel" style="display:none;"></b>
+                <b id="officetelTotalIncome" style="display:none;">0</b>
+                <b id="officetelPercent" style="display:none;">0%</b>
+                <b id="officetelLifetimeDisplay" style="display:none;">0</b>
+                <b id="officetelCurrentPrice" style="display:none;">0</b>
               </div>
-              <button id="buyOfficetel" class="btn">구입</button>
+              <button id="buyOfficetel" class="btn" data-i18n="button.buy">구입</button>
             </div>
 
             <div class="row building-item" id="aptItem">
               <div class="meta">
-                <span class="title">🏬 아파트</span>
-                <span class="desc">• 각 아파트가 초당 <b id="rentPerApt">1,000원</b> 생산</span>
-                <span class="desc">• <b id="aptCount">0</b>채 아파트가 초당 <b id="aptTotalIncome">0원</b> 생산 (총 수익의 <b id="aptPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="aptLifetimeDisplay">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="aptCurrentPrice">8억</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="aptCount" style="display:none;">0</b>
+                <b id="rentPerApt" style="display:none;"></b>
+                <b id="aptTotalIncome" style="display:none;">0</b>
+                <b id="aptPercent" style="display:none;">0%</b>
+                <b id="aptLifetimeDisplay" style="display:none;">0</b>
+                <b id="aptCurrentPrice" style="display:none;">0</b>
               </div>
-              <button id="buyApt" class="btn">구입</button>
+              <button id="buyApt" class="btn" data-i18n="button.buy">구입</button>
             </div>
 
             <div class="row building-item" id="shopItem">
               <div class="meta">
-                <span class="title">🏪 상가</span>
-                <span class="desc">• 각 상가가 초당 <b id="rentPerShop">2,000원</b> 생산</span>
-                <span class="desc">• <b id="shopCount">0</b>채 상가가 초당 <b id="shopTotalIncome">0원</b> 생산 (총 수익의 <b id="shopPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="shopLifetimeDisplay">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="shopCurrentPrice">12억</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="shopCount" style="display:none;">0</b>
+                <b id="rentPerShop" style="display:none;"></b>
+                <b id="shopTotalIncome" style="display:none;">0</b>
+                <b id="shopPercent" style="display:none;">0%</b>
+                <b id="shopLifetimeDisplay" style="display:none;">0</b>
+                <b id="shopCurrentPrice" style="display:none;">0</b>
               </div>
-              <button id="buyShop" class="btn">구입</button>
+              <button id="buyShop" class="btn" data-i18n="button.buy">구입</button>
             </div>
 
             <div class="row building-item" id="buildingItem">
               <div class="meta">
-                <span class="title">🏙️ 빌딩</span>
-                <span class="desc">• 각 빌딩이 초당 <b id="rentPerBuilding">5,000원</b> 생산</span>
-                <span class="desc">• <b id="buildingCount">0</b>채 빌딩이 초당 <b id="buildingTotalIncome">0원</b> 생산 (총 수익의 <b id="buildingPercent">0%</b>)</span>
-                <span class="desc">• 지금까지 <b id="buildingLifetimeDisplay">0원</b> 생산</span>
-                <span class="desc">현재가: <b id="buildingCurrentPrice">30억</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="buildingCount" style="display:none;">0</b>
+                <b id="rentPerBuilding" style="display:none;"></b>
+                <b id="buildingTotalIncome" style="display:none;">0</b>
+                <b id="buildingPercent" style="display:none;">0%</b>
+                <b id="buildingLifetimeDisplay" style="display:none;">0</b>
+                <b id="buildingCurrentPrice" style="display:none;">0</b>
               </div>
-              <button id="buyBuilding" class="btn">구입</button>
+              <button id="buyBuilding" class="btn" data-i18n="button.buy">구입</button>
             </div>
 
             <div class="row building-item" id="towerItem">
               <div class="meta">
-                <span class="title">🗼 서울타워</span>
-                <span class="desc">• 프레스티지 상품 (수익 없음)</span>
-                <span class="desc">• <b id="towerCountDisplay">0</b>개 보유</span>
-                <span class="desc">• 리더보드에 기록됨: 🗼x<b id="towerCountBadge">0</b></span>
-                <span class="desc">현재가: <b id="towerCurrentPrice">1조</b>원</span>
+                <span class="title"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <span class="desc"></span>
+                <b id="towerCountDisplay" style="display:none;">0</b>
+                <b id="towerCountBadge" style="display:none;">0</b>
+                <b id="towerCurrentPrice" style="display:none;">0</b>
               </div>
-              <button id="buyTower" class="btn">구입</button>
+              <button id="buyTower" class="btn" data-i18n="button.buy">구입</button>
             </div>
           </div>
         </div>
@@ -2510,26 +2601,26 @@
     <!-- 통계 탭 -->
     <div id="statsTab" class="tab-content">
       <section class="card">
-        <h2>📊 통계</h2>
+        <h2 data-i18n="ui.stats">📊 통계</h2>
         
         <!-- 1. 핵심 지표 (고정) -->
         <div class="stats-section stats-pinned">
-          <h3>💰 전체 수익</h3>
+          <h3><span data-i18n="stats.totalEarningsTitle">💰 전체 수익</span></h3>
           <div class="stat-grid">
             <div class="stat-item highlight">
-              <span class="stat-label">총 자산</span>
+              <span class="stat-label" data-i18n="stats.totalAssets">총 자산</span>
               <span class="stat-value" id="totalAssets">0원</span>
             </div>
             <div class="stat-item highlight">
-              <span class="stat-label">총 누적 수익</span>
+              <span class="stat-label" data-i18n="stats.totalEarnings">총 누적 수익</span>
               <span class="stat-value" id="totalEarnings">0원</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">초당 수익</span>
+              <span class="stat-label" data-i18n="stats.rps">초당 수익</span>
               <span class="stat-value" id="rpsStats">0원/초</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">클릭당 수익</span>
+              <span class="stat-label" data-i18n="stats.clickIncome">클릭당 수익</span>
               <span class="stat-value" id="clickIncomeStats">0원</span>
             </div>
           </div>
@@ -2537,23 +2628,23 @@
 
         <!-- 성장 추적 -->
         <div class="stats-section collapsible">
-          <h3 class="stats-toggle">📈 성장 추적 <span class="toggle-icon">▼</span></h3>
+          <h3 class="stats-toggle"><span data-i18n="stats.growthTracking">📈 성장 추적</span> <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
             <div class="stat-grid">
               <div class="stat-item">
-                <span class="stat-label">최근 1시간 수익</span>
+                <span class="stat-label" data-i18n="stats.hourlyEarnings">최근 1시간 수익</span>
                 <span class="stat-value" id="hourlyEarnings">0원</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">최근 24시간 수익</span>
+                <span class="stat-label" data-i18n="stats.dailyEarnings">최근 24시간 수익</span>
                 <span class="stat-value" id="dailyEarnings">0원</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">성장 속도</span>
+                <span class="stat-label" data-i18n="stats.growthRate">성장 속도</span>
                 <span class="stat-value" id="growthRate">0%/시간</span>
               </div>
               <div class="stat-item milestone">
-                <span class="stat-label">다음 마일스톤</span>
+                <span class="stat-label" data-i18n="stats.nextMilestone">다음 마일스톤</span>
                 <span class="stat-value" id="nextMilestone">-</span>
               </div>
             </div>
@@ -2562,23 +2653,23 @@
 
         <!-- 2. 플레이 정보 -->
         <div class="stats-section collapsible">
-          <h3 class="stats-toggle">⏱️ 플레이 정보 <span class="toggle-icon">▼</span></h3>
+          <h3 class="stats-toggle"><span data-i18n="stats.playInfo">⏱️ 플레이 정보</span> <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
             <div class="stat-grid">
               <div class="stat-item">
-                <span class="stat-label">총 클릭 횟수</span>
+                <span class="stat-label" data-i18n="stats.totalClicks">총 클릭 횟수</span>
                 <span class="stat-value" id="totalClicksStats">0회</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">노동 수익</span>
+                <span class="stat-label" data-i18n="stats.laborIncome">노동 수익</span>
                 <span class="stat-value" id="laborIncomeStats">0원</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">플레이 시간</span>
+                <span class="stat-label" data-i18n="stats.playTime">플레이 시간</span>
                 <span class="stat-value" id="playTimeStats">0분</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">시간당 수익</span>
+                <span class="stat-label" data-i18n="stats.hourlyRate">시간당 수익</span>
                 <span class="stat-value" id="hourlyRate">0원/시간</span>
               </div>
             </div>
@@ -2587,7 +2678,7 @@
 
         <!-- 3. 효율 분석 -->
         <div class="stats-section collapsible">
-          <h3 class="stats-toggle">⚡ 효율 순위 (개당 초당 수익) <span class="toggle-icon">▼</span></h3>
+          <h3 class="stats-toggle"><span data-i18n="stats.efficiencyRanking">⚡ 효율 순위 (개당 초당 수익)</span> <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
             <div class="efficiency-list">
               <div class="efficiency-item best">
@@ -2608,7 +2699,7 @@
 
         <!-- 4. 수익 구조 -->
         <div class="stats-section collapsible">
-          <h3 class="stats-toggle">📈 수익 구조 <span class="toggle-icon">▼</span></h3>
+          <h3 class="stats-toggle"><span data-i18n="stats.incomeStructure">📈 수익 구조</span> <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
             <div class="income-breakdown">
               <div class="income-bar animated">
@@ -2641,21 +2732,21 @@
             <div class="donut-chart-container">
               <canvas id="assetDonutChart" width="200" height="200"></canvas>
               <div class="donut-center">
-                <span class="donut-label">자산 비율</span>
+                <span class="donut-label" data-i18n="stats.assetRatio">자산 비율</span>
               </div>
             </div>
             <div class="income-legend" style="justify-content:center;">
               <div class="legend-item">
                 <span class="legend-color cash"></span>
-                <span>현금</span>
+                <span data-i18n="stats.cash">현금</span>
               </div>
               <div class="legend-item">
                 <span class="legend-color financial"></span>
-                <span>금융</span>
+                <span data-i18n="stats.financial">금융</span>
               </div>
               <div class="legend-item">
                 <span class="legend-color property"></span>
-                <span>부동산</span>
+                <span data-i18n="stats.property">부동산</span>
               </div>
             </div>
           </div>
@@ -2663,47 +2754,47 @@
 
         <!-- 5. 금융상품 상세 -->
         <div class="stats-section collapsible">
-          <h3 class="stats-toggle">💼 금융상품 <span class="toggle-icon">▼</span></h3>
+          <h3 class="stats-toggle"><span data-i18n="stats.financialProducts">💼 금융상품</span> <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
             <div class="asset-stats">
               <div class="asset-row">
                 <span class="asset-icon">💰</span>
                 <div class="asset-info">
-                  <div class="asset-name">예금 <span id="depositsOwnedStats">0개</span></div>
-                  <div class="asset-production">누적 수익: <b id="depositsLifetimeStats">0원</b> <span class="asset-contribution" id="depositsContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="depositsValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="product.deposit">예금</span> <span id="depositsOwnedStats">0개</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="depositsLifetimeStats">0원</b> <span class="asset-contribution" id="depositsContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="depositsValue">0원</b></div>
                 </div>
               </div>
               <div class="asset-row">
                 <span class="asset-icon">🏦</span>
                 <div class="asset-info">
-                  <div class="asset-name">적금 <span id="savingsOwnedStats">0개</span></div>
-                  <div class="asset-production">누적 수익: <b id="savingsLifetimeStats">0원</b> <span class="asset-contribution" id="savingsContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="savingsValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="product.savings">적금</span> <span id="savingsOwnedStats">0개</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="savingsLifetimeStats">0원</b> <span class="asset-contribution" id="savingsContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="savingsValue">0원</b></div>
                 </div>
               </div>
               <div class="asset-row">
                 <span class="asset-icon">📈</span>
                 <div class="asset-info">
-                  <div class="asset-name">주식 <span id="bondsOwnedStats">0개</span></div>
-                  <div class="asset-production">누적 수익: <b id="bondsLifetimeStats">0원</b> <span class="asset-contribution" id="bondsContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="bondsValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="product.bond">국내주식</span> <span id="bondsOwnedStats">0개</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="bondsLifetimeStats">0원</b> <span class="asset-contribution" id="bondsContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="bondsValue">0원</b></div>
                 </div>
               </div>
               <div class="asset-row">
                 <span class="asset-icon">🇺🇸</span>
                 <div class="asset-info">
-                  <div class="asset-name">미국주식 <span id="usStocksOwnedStats">0개</span></div>
-                  <div class="asset-production">누적 수익: <b id="usStocksLifetimeStats">0원</b> <span class="asset-contribution" id="usStocksContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="usStocksValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="product.usStock">미국주식</span> <span id="usStocksOwnedStats">0개</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="usStocksLifetimeStats">0원</b> <span class="asset-contribution" id="usStocksContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="usStocksValue">0원</b></div>
                 </div>
               </div>
               <div class="asset-row">
                 <span class="asset-icon">₿</span>
                 <div class="asset-info">
-                  <div class="asset-name">코인 <span id="cryptosOwnedStats">0개</span></div>
-                  <div class="asset-production">누적 수익: <b id="cryptosLifetimeStats">0원</b> <span class="asset-contribution" id="cryptosContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="cryptosValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="product.crypto">코인</span> <span id="cryptosOwnedStats">0개</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="cryptosLifetimeStats">0원</b> <span class="asset-contribution" id="cryptosContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="cryptosValue">0원</b></div>
                 </div>
               </div>
             </div>
@@ -2712,47 +2803,47 @@
 
         <!-- 6. 부동산 상세 -->
         <div class="stats-section collapsible">
-          <h3 class="stats-toggle">🏢 부동산 <span class="toggle-icon">▼</span></h3>
+          <h3 class="stats-toggle"><span data-i18n="stats.properties">🏢 부동산</span> <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
             <div class="asset-stats">
               <div class="asset-row">
                 <span class="asset-icon">🏘️</span>
                 <div class="asset-info">
-                  <div class="asset-name">빌라 <span id="villasOwnedStats">0채</span></div>
-                  <div class="asset-production">누적 수익: <b id="villasLifetimeStats">0원</b> <span class="asset-contribution" id="villasContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="villasValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="property.villa">빌라</span> <span id="villasOwnedStats">0채</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="villasLifetimeStats">0원</b> <span class="asset-contribution" id="villasContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="villasValue">0원</b></div>
                 </div>
               </div>
               <div class="asset-row">
                 <span class="asset-icon">🏢</span>
                 <div class="asset-info">
-                  <div class="asset-name">오피스텔 <span id="officetelsOwnedStats">0채</span></div>
-                  <div class="asset-production">누적 수익: <b id="officetelsLifetimeStats">0원</b> <span class="asset-contribution" id="officetelsContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="officetelsValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="property.officetel">오피스텔</span> <span id="officetelsOwnedStats">0채</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="officetelsLifetimeStats">0원</b> <span class="asset-contribution" id="officetelsContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="officetelsValue">0원</b></div>
                 </div>
               </div>
               <div class="asset-row">
                 <span class="asset-icon">🏘️</span>
                 <div class="asset-info">
-                  <div class="asset-name">아파트 <span id="apartmentsOwnedStats">0채</span></div>
-                  <div class="asset-production">누적 수익: <b id="apartmentsLifetimeStats">0원</b> <span class="asset-contribution" id="apartmentsContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="apartmentsValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="property.apartment">아파트</span> <span id="apartmentsOwnedStats">0채</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="apartmentsLifetimeStats">0원</b> <span class="asset-contribution" id="apartmentsContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="apartmentsValue">0원</b></div>
                 </div>
               </div>
               <div class="asset-row">
                 <span class="asset-icon">🏪</span>
                 <div class="asset-info">
-                  <div class="asset-name">상가 <span id="shopsOwnedStats">0채</span></div>
-                  <div class="asset-production">누적 수익: <b id="shopsLifetimeStats">0원</b> <span class="asset-contribution" id="shopsContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="shopsValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="property.shop">상가</span> <span id="shopsOwnedStats">0채</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="shopsLifetimeStats">0원</b> <span class="asset-contribution" id="shopsContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="shopsValue">0원</b></div>
                 </div>
               </div>
               <div class="asset-row">
                 <span class="asset-icon">🏙️</span>
                 <div class="asset-info">
-                  <div class="asset-name">빌딩 <span id="buildingsOwnedStats">0채</span></div>
-                  <div class="asset-production">누적 수익: <b id="buildingsLifetimeStats">0원</b> <span class="asset-contribution" id="buildingsContribution">(0%)</span></div>
-                  <div class="asset-value">총 가치: <b id="buildingsValue">0원</b></div>
+                  <div class="asset-name"><span data-i18n="property.building">빌딩</span> <span id="buildingsOwnedStats">0채</span></div>
+                  <div class="asset-production"><span data-i18n="stats.lifetimeEarnings">누적 수익</span>: <b id="buildingsLifetimeStats">0원</b> <span class="asset-contribution" id="buildingsContribution">(0%)</span></div>
+                  <div class="asset-value"><span data-i18n="stats.totalValue">총 가치</span>: <b id="buildingsValue">0원</b></div>
                 </div>
               </div>
             </div>
@@ -2765,17 +2856,17 @@
     <!-- 랭킹 탭 -->
     <div id="rankingTab" class="tab-content">
       <section class="card">
-        <h2>🏅 랭킹</h2>
+        <h2 data-i18n="ui.ranking">🏅 랭킹</h2>
         <p class="leaderboard-refresh-note">
-          기록은 주기적으로 갱신됩니다. <span id="leaderboardLastUpdated">마지막 갱신: -</span>
+          <span data-i18n="ranking.refreshNote">기록은 주기적으로 갱신됩니다.</span> <span id="leaderboardLastUpdated"></span>
         </p>
 
         <!-- 내 순위 영역 -->
         <div class="stats-section" id="myRankSection">
-          <h3>내 기록</h3>
+          <h3 data-i18n="ranking.myRecord">내 기록</h3>
           <div class="leaderboard-my-rank" id="myRankContent">
             <!-- JS에서 닉네임/자산/플레이타임 및 순위를 채움 -->
-            <div class="leaderboard-my-rank-empty">
+            <div class="leaderboard-my-rank-empty" data-i18n="ranking.nicknameRequired">
               닉네임을 설정하면 내 순위와 기록이 여기 표시됩니다.
             </div>
           </div>
@@ -2783,9 +2874,9 @@
 
         <!-- 글로벌 리더보드 (TOP 10) -->
         <div class="stats-section">
-          <h3>글로벌 리더보드 (TOP 10)</h3>
+          <h3 data-i18n="ranking.globalLeaderboard">글로벌 리더보드 (TOP 10)</h3>
           <div id="leaderboardContainer">
-            <div class="leaderboard-loading" style="text-align: center; padding: 20px; color: var(--muted);">
+            <div class="leaderboard-loading" style="text-align: center; padding: 20px; color: var(--muted);" data-i18n="ranking.loading">
               리더보드를 불러오는 중...
             </div>
           </div>
@@ -2793,7 +2884,7 @@
 
         <!-- 업적 그리드 (통계 탭에서 이동) -->
         <div class="stats-section collapsible">
-          <h3 class="stats-toggle">🏆 업적 (<span id="achievementProgress">0/0</span>) <span class="toggle-icon">▼</span></h3>
+          <h3 class="stats-toggle"><span data-i18n="ranking.achievements">🏆 업적</span> (<span id="achievementProgress">0/0</span>) <span class="toggle-icon">▼</span></h3>
           <div class="stats-content">
             <div class="achievement-grid" id="achievementGrid">
               <!-- JavaScript로 동적 생성 -->
@@ -2806,30 +2897,30 @@
     <!-- 설정 탭 -->
     <div id="settingsTab" class="tab-content">
       <section class="card">
-        <h2>⚙️ 설정</h2>
+        <h2 data-i18n="ui.settings">⚙️ 설정</h2>
 
         <!-- 게임 정보 (맨 위로 이동) -->
         <div class="stats-section game-info-section">
-          <h3>📋 게임 정보</h3>
+          <h3 data-i18n="settings.gameInfo.title">📋 게임 정보</h3>
           <div style="text-align: center; margin-bottom: 16px;">
             <img src="assets/images/logo.png" alt="Capital Clicker: Seoul Survival" style="max-width: 120px; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));" />
           </div>
           <div class="stat-grid">
             <div class="stat-item" style="grid-column: 1 / 3;">
-              <span class="stat-label">게임 제목</span>
+              <span class="stat-label" data-i18n="settings.gameTitle">게임 제목</span>
               <span class="stat-value">Capital Clicker: Seoul Survival</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">개발자</span>
+              <span class="stat-label" data-i18n="settings.author">제작자</span>
               <span class="stat-value">clicksurvivor</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">버전</span>
+              <span class="stat-label" data-i18n="settings.version">버전</span>
               <span class="stat-value">v1.0</span>
             </div>
           </div>
           <div class="settings-link-group" style="margin-top: 16px;">
-            <a href="/" target="_blank" rel="noopener noreferrer" class="settings-link">
+            <a href="/" target="_blank" rel="noopener noreferrer" class="settings-link" data-i18n="settings.homepage">
               🌐 홈페이지 이동
             </a>
           </div>
@@ -2837,12 +2928,12 @@
 
         <!-- 시각 효과 설정 -->
         <div class="stats-section">
-          <h3>🎨 시각 효과</h3>
+          <h3 data-i18n="settings.visualEffects.title">🎨 시각 효과</h3>
           <div class="settings-toggle-group">
             <div class="settings-toggle-item">
               <div class="settings-toggle-info">
-                <span class="settings-toggle-label">파티클 켬</span>
-                <div class="settings-toggle-desc">
+                <span class="settings-toggle-label" data-i18n="settings.particles">파티클 켬</span>
+                <div class="settings-toggle-desc" data-i18n="settings.particlesDesc">
                   떨어지는 지폐/상품 애니메이션
                 </div>
               </div>
@@ -2853,8 +2944,8 @@
             </div>
             <div class="settings-toggle-item">
               <div class="settings-toggle-info">
-                <span class="settings-toggle-label">화려한 그래픽 켬</span>
-                <div class="settings-toggle-desc">
+                <span class="settings-toggle-label" data-i18n="settings.fancyGraphics">화려한 그래픽 켬</span>
+                <div class="settings-toggle-desc" data-i18n="settings.fancyGraphicsDesc">
                   시각 효과 향상 (비활성화 시 성능 향상)
                 </div>
               </div>
@@ -2868,12 +2959,12 @@
 
         <!-- 숫자 표시 설정 -->
         <div class="stats-section">
-          <h3>🔢 숫자 표시</h3>
+          <h3 data-i18n="settings.numberDisplay.title">🔢 숫자 표시</h3>
           <div class="settings-toggle-group">
             <div class="settings-toggle-item">
               <div class="settings-toggle-info">
-                <span class="settings-toggle-label">짧은 숫자 켬</span>
-                <div class="settings-toggle-desc">
+                <span class="settings-toggle-label" data-i18n="settings.shortNumbers">짧은 숫자 켬</span>
+                <div class="settings-toggle-desc" data-i18n="settings.shortNumbersDesc">
                   큰 숫자를 간단하게 표시 (예: 1,000만 → 1천만)
                 </div>
               </div>
@@ -2885,29 +2976,40 @@
           </div>
         </div>
 
+        <!-- 언어 설정 -->
+        <div class="stats-section">
+          <h3 data-i18n="settings.language.title">🌐 언어</h3>
+          <div class="settings-select-group">
+            <select id="languageSelect" class="settings-select">
+              <option value="ko" data-i18n-option="settings.language.korean">한국어</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
+
         <!-- 계정(소셜 로그인) -->
         <div class="stats-section">
-          <h3>👤 계정 (소셜 로그인)</h3>
+          <h3 data-i18n="settings.account.title">👤 계정 (소셜 로그인)</h3>
           <div class="settings-info-group">
             <div class="settings-info-item">
-              <span class="settings-info-label">상태</span>
-              <span class="settings-info-value" id="authStatusLabel">게스트 모드 (로그인 준비 중)</span>
+              <span class="settings-info-label" data-i18n="settings.status">상태</span>
+              <span class="settings-info-value" id="authStatusLabel" data-i18n="settings.guestMode">게스트 모드 (로그인 준비 중)</span>
             </div>
             <div class="settings-info-item">
-              <span class="settings-info-label">사용자</span>
-              <span class="settings-info-value" id="authUserLabel">게스트</span>
+              <span class="settings-info-label" data-i18n="settings.user">사용자</span>
+              <span class="settings-info-value" id="authUserLabel" data-i18n="settings.guest">게스트</span>
             </div>
             <div class="settings-info-item" id="nicknameInfoItem" style="display: none;">
-              <span class="settings-info-label">닉네임</span>
+              <span class="settings-info-label" data-i18n="settings.nickname">닉네임</span>
               <span class="settings-info-value" id="playerNicknameLabel">-</span>
             </div>
           </div>
           <div class="settings-button-group" style="margin-top: 10px;">
             <div id="authProviderButtons" style="display:flex; gap: 10px; flex-wrap: wrap;">
-              <button class="btn settings-btn" data-auth-provider="google" style="background: var(--primary); color: white; min-width: 160px;">🔐 Google로 로그인</button>
+              <button class="btn settings-btn" data-auth-provider="google" style="background: var(--primary); color: white; min-width: 160px;" data-i18n="settings.loginGoogle">🔐 Google로 로그인</button>
             </div>
             <div id="logoutButtonContainer" style="display:flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;" hidden>
-              <button class="btn settings-btn" id="logoutBtn" style="background: var(--bad); color: white; min-width: 160px;">
+              <button class="btn settings-btn" id="logoutBtn" style="background: var(--bad); color: white; min-width: 160px;" data-i18n="settings.logout">
                 🚪 로그아웃
               </button>
             </div>
@@ -2916,49 +3018,49 @@
 
         <!-- 저장 관리 (통합) -->
         <div class="stats-section">
-          <h3>💾 저장 관리</h3>
+          <h3 data-i18n="settings.saveManagement.title">💾 저장 관리</h3>
           <div class="settings-button-group">
             <!-- 클라우드 저장 (로그인 사용자만) -->
             <div id="cloudSaveSection" style="display: none;">
-              <div class="settings-desc" style="margin-bottom: 10px;">
+              <div class="settings-desc" style="margin-bottom: 10px;" data-i18n="settings.saveManagement.cloudSaveDesc">
                 ☁️ 클라우드 세이브: 로그인한 사용자는 클라우드에 저장하여 여러 기기에서 진행 상황을 동기화할 수 있습니다.
               </div>
               <div style="display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
-                <button class="btn settings-btn" id="cloudUploadBtn" style="background: var(--info); color: white; min-width: 160px;">
+                <button class="btn settings-btn" id="cloudUploadBtn" style="background: var(--info); color: white; min-width: 160px;" data-i18n="settings.saveManagement.cloudSaveBtn">
                   ☁️ 클라우드 저장
                 </button>
-                <button class="btn settings-btn" id="cloudDownloadBtn" style="background: var(--btn2); color: var(--text); min-width: 160px;">
+                <button class="btn settings-btn" id="cloudDownloadBtn" style="background: var(--btn2); color: var(--text); min-width: 160px;" data-i18n="settings.saveManagement.cloudLoadBtn">
                   ☁️ 클라우드 불러오기
                 </button>
               </div>
-              <div class="settings-desc" id="cloudSaveHint" style="margin-bottom: 10px;">
+              <div class="settings-desc" id="cloudSaveHint" style="margin-bottom: 10px;" data-i18n="settings.saveManagement.cloudSaveHint">
                 로컬 저장은 5초마다 자동으로 이루어집니다. 클라우드 저장은 탭을 닫을 때 자동으로 업로드되며, 수동으로도 저장/불러오기가 가능합니다.
               </div>
               <div class="settings-info-group" style="margin-bottom: 16px;">
                 <div class="settings-info-item">
-                  <span class="settings-info-label">마지막 클라우드 동기화</span>
+                  <span class="settings-info-label" data-i18n="settings.saveManagement.lastCloudSync">마지막 클라우드 동기화</span>
                   <span class="settings-info-value" id="cloudLastSync">--:--</span>
                 </div>
               </div>
             </div>
             
             <!-- 비로그인 상태 안내 -->
-            <div id="guestSaveInfo" class="settings-desc" style="margin-bottom: 16px;">
+            <div id="guestSaveInfo" class="settings-desc" style="margin-bottom: 16px;" data-i18n="settings.saveManagement.guestSaveInfo">
               게스트 모드에서는 브라우저 LocalStorage에만 저장됩니다. 여러 기기에서 진행 상황을 동기화하려면 로그인이 필요합니다.
             </div>
 
             <!-- 저장 정보 -->
             <div class="settings-info-group" style="margin-bottom: 16px;">
               <div class="settings-info-item">
-                <span class="settings-info-label">자동 저장 주기</span>
-                <span class="settings-info-value">5초마다</span>
+                <span class="settings-info-label" data-i18n="settings.saveManagement.autoSaveInterval">자동 저장 주기</span>
+                <span class="settings-info-value" data-i18n="settings.saveManagement.autoSaveIntervalValue">5초마다</span>
               </div>
               <div class="settings-info-item">
-                <span class="settings-info-label">저장 위치</span>
-                <span class="settings-info-value">브라우저 LocalStorage</span>
+                <span class="settings-info-label" data-i18n="settings.saveManagement.saveLocation">저장 위치</span>
+                <span class="settings-info-value" data-i18n="settings.saveManagement.saveLocationValue">브라우저 LocalStorage</span>
               </div>
               <div class="settings-info-item">
-                <span class="settings-info-label">마지막 저장</span>
+                <span class="settings-info-label" data-i18n="settings.saveManagement.lastSave">마지막 저장</span>
                 <span class="settings-info-value" id="lastSaveTimeSettings">--:--</span>
               </div>
             </div>
@@ -2982,12 +3084,12 @@
 
         <!-- 게임 새로 시작 (분리) -->
         <div class="stats-section">
-          <h3>🔄 게임 새로 시작</h3>
+          <h3 data-i18n="settings.reset.title">🔄 게임 새로 시작</h3>
           <div class="settings-button-group">
-            <button class="reset-btn settings-btn" id="resetBtnSettings" style="background: var(--bad); color: white; min-width: 160px;">
+            <button class="reset-btn settings-btn" id="resetBtnSettings" style="background: var(--bad); color: white; min-width: 160px;" data-i18n="settings.reset.title">
               🔄 게임 새로 시작
             </button>
-            <div class="settings-warning">
+            <div class="settings-warning" data-i18n="settings.resetWarning">
               ⚠️ 게임을 새로 시작하면 모든 진행 상황이 삭제되며 복구할 수 없습니다.
             </div>
           </div>
@@ -3003,23 +3105,23 @@
     <nav class="bottom-nav">
       <button class="nav-btn active" data-tab="workTab">
         <div>🛠️</div>
-        <span>노동</span>
+        <span data-i18n="tab.labor">노동</span>
       </button>
       <button class="nav-btn" data-tab="shopTab">
         <div>💰</div>
-        <span>투자</span>
+        <span data-i18n="tab.investment">투자</span>
       </button>
       <button class="nav-btn" data-tab="statsTab">
         <div>📊</div>
-        <span>통계</span>
+        <span data-i18n="tab.stats">통계</span>
       </button>
       <button class="nav-btn" data-tab="rankingTab">
         <div>🏅</div>
-        <span>랭킹</span>
+        <span data-i18n="tab.ranking">랭킹</span>
       </button>
       <button class="nav-btn" data-tab="settingsTab">
         <div>⚙️</div>
-        <span>설정</span>
+        <span data-i18n="tab.settings">설정</span>
       </button>
     </nav>
   </div>
@@ -3033,8 +3135,8 @@
       </h2>
       <p id="gameModalMessage" class="game-modal-message"></p>
       <div class="game-modal-actions">
-        <button id="gameModalSecondary" type="button" class="btn btn-secondary">취소</button>
-        <button id="gameModalPrimary" type="button" class="btn">확인</button>
+        <button id="gameModalSecondary" type="button" class="btn btn-secondary" data-i18n="button.cancel">취소</button>
+        <button id="gameModalPrimary" type="button" class="btn" data-i18n="button.confirm">확인</button>
       </div>
     </div>
   </div>

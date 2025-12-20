@@ -2,6 +2,7 @@
  * 통계 탭 렌더러
  * - main.js의 전역 변수들을 직접 참조하지 않도록, 필요한 값은 state로 전달
  */
+import { t, getLang } from '../i18n/index.js';
 
 /**
  * @param {{
@@ -78,11 +79,14 @@ export function updateStatsTab(deps) {
     safeText(document.getElementById('totalAssets'), formatCashDisplay(totalAssets));
     safeText(document.getElementById('totalEarnings'), formatCashDisplay(totalEarnings));
     // 통계 탭: 축약 표기(짧은 숫자)에서 소수점 자릿수 고정된 formatCashDisplay 사용
-    safeText(document.getElementById('rpsStats'), formatCashDisplay(getRps()) + '/초');
+    const perSecUnit = t('stats.unit.perSec');
+    safeText(document.getElementById('rpsStats'), formatCashDisplay(getRps()) + perSecUnit);
     safeText(document.getElementById('clickIncomeStats'), formatCashDisplay(getClickIncome()));
 
     // 2. 플레이 정보
-    safeText(document.getElementById('totalClicksStats'), state.totalClicks.toLocaleString('ko-KR') + '회');
+    const timesUnit = t('stats.unit.times');
+    const locale = getLang() === 'en' ? 'en-US' : 'ko-KR';
+    safeText(document.getElementById('totalClicksStats'), state.totalClicks.toLocaleString(locale) + timesUnit);
     safeText(document.getElementById('laborIncomeStats'), formatCashDisplay(state.totalLaborIncome));
 
     // 플레이 시간(누적)
@@ -91,13 +95,18 @@ export function updateStatsTab(deps) {
     const playTimeMinutes = Math.floor(totalPlayTimeMs / 60000);
     const playTimeHours = Math.floor(playTimeMinutes / 60);
     const remainingMinutes = playTimeMinutes % 60;
-    const playTimeText = playTimeHours > 0 ? `${playTimeHours}시간 ${remainingMinutes}분` : `${playTimeMinutes}분`;
+    const hourUnit = t('stats.unit.hour');
+    const minuteUnit = t('stats.unit.minute');
+    const playTimeText = playTimeHours > 0 
+      ? `${playTimeHours} ${hourUnit} ${remainingMinutes} ${minuteUnit}` 
+      : `${playTimeMinutes} ${minuteUnit}`;
 
     safeText(document.getElementById('playTimeStats'), playTimeText);
 
     // 시간당 수익
     const hourlyRateValue = playTimeMinutes > 0 ? (totalEarnings / playTimeMinutes) * 60 : 0;
-    safeText(document.getElementById('hourlyRate'), formatCashDisplay(hourlyRateValue) + '/시간');
+    const perHourUnit = t('stats.unit.perHour');
+    safeText(document.getElementById('hourlyRate'), formatCashDisplay(hourlyRateValue) + perHourUnit);
 
     // 3. 수익 구조
     const laborPercent = totalEarnings > 0 ? (state.totalLaborIncome / totalEarnings) * 100 : 0;
@@ -140,40 +149,46 @@ export function updateStatsTab(deps) {
     }
 
     // 범례
-    safeText(document.getElementById('laborLegend'), `노동: ${laborPercent.toFixed(1)}%`);
-    safeText(document.getElementById('financialLegend'), `금융: ${financialPercent.toFixed(1)}%`);
-    safeText(document.getElementById('propertyLegend'), `부동산: ${propertyPercent.toFixed(1)}%`);
+    safeText(document.getElementById('laborLegend'), `${t('stats.labor')}: ${laborPercent.toFixed(1)}%`);
+    safeText(document.getElementById('financialLegend'), `${t('stats.financial')}: ${financialPercent.toFixed(1)}%`);
+    safeText(document.getElementById('propertyLegend'), `${t('stats.property')}: ${propertyPercent.toFixed(1)}%`);
 
     // 4. 금융상품 상세
-    safeText(document.getElementById('depositsOwnedStats'), state.deposits + '개');
+    const countUnit = t('ui.unit.count');
+    const lifetimeEarningsLabel = t('stats.lifetimeEarnings');
+    const totalValueLabel = t('stats.totalValue');
+    
+    safeText(document.getElementById('depositsOwnedStats'), state.deposits + countUnit);
     safeText(document.getElementById('depositsLifetimeStats'), formatCashDisplay(state.depositsLifetime));
 
-    safeText(document.getElementById('savingsOwnedStats'), state.savings + '개');
+    safeText(document.getElementById('savingsOwnedStats'), state.savings + countUnit);
     safeText(document.getElementById('savingsLifetimeStats'), formatCashDisplay(state.savingsLifetime));
 
-    safeText(document.getElementById('bondsOwnedStats'), state.bonds + '개');
+    safeText(document.getElementById('bondsOwnedStats'), state.bonds + countUnit);
     safeText(document.getElementById('bondsLifetimeStats'), formatCashDisplay(state.bondsLifetime));
 
-    safeText(document.getElementById('usStocksOwnedStats'), state.usStocks + '개');
+    safeText(document.getElementById('usStocksOwnedStats'), state.usStocks + countUnit);
     safeText(document.getElementById('usStocksLifetimeStats'), formatCashDisplay(state.usStocksLifetime));
 
-    safeText(document.getElementById('cryptosOwnedStats'), state.cryptos + '개');
+    safeText(document.getElementById('cryptosOwnedStats'), state.cryptos + countUnit);
     safeText(document.getElementById('cryptosLifetimeStats'), formatCashDisplay(state.cryptosLifetime));
 
     // 5. 부동산 상세
-    safeText(document.getElementById('villasOwnedStats'), state.villas + '채');
+    const propertyUnit = t('ui.unit.property');
+    
+    safeText(document.getElementById('villasOwnedStats'), state.villas + propertyUnit);
     safeText(document.getElementById('villasLifetimeStats'), formatCashDisplay(state.villasLifetime));
 
-    safeText(document.getElementById('officetelsOwnedStats'), state.officetels + '채');
+    safeText(document.getElementById('officetelsOwnedStats'), state.officetels + propertyUnit);
     safeText(document.getElementById('officetelsLifetimeStats'), formatCashDisplay(state.officetelsLifetime));
 
-    safeText(document.getElementById('apartmentsOwnedStats'), state.apartments + '채');
+    safeText(document.getElementById('apartmentsOwnedStats'), state.apartments + propertyUnit);
     safeText(document.getElementById('apartmentsLifetimeStats'), formatCashDisplay(state.apartmentsLifetime));
 
-    safeText(document.getElementById('shopsOwnedStats'), state.shops + '채');
+    safeText(document.getElementById('shopsOwnedStats'), state.shops + propertyUnit);
     safeText(document.getElementById('shopsLifetimeStats'), formatCashDisplay(state.shopsLifetime));
 
-    safeText(document.getElementById('buildingsOwnedStats'), state.buildings + '채');
+    safeText(document.getElementById('buildingsOwnedStats'), state.buildings + propertyUnit);
     safeText(document.getElementById('buildingsLifetimeStats'), formatCashDisplay(state.buildingsLifetime));
 
     // 6. 효율 분석

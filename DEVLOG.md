@@ -3,6 +3,24 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## 2025-12-20 (다국어 지원 시스템 구현)
+- **[seoulsurvival] 다국어 지원(i18n) 시스템 구축**
+  - i18n 인프라: `seoulsurvival/src/i18n/index.js`에 핵심 함수 구현 (`STORAGE_KEY`, `translations`, `resolveLang`, `getLangFromUrl`, `getInitialLang`, `t`, `setLang`, `getLang`, `applyI18nToDOM`)
+  - 번역 파일: `seoulsurvival/src/i18n/translations/ko.js` (한국어, 기본), `en.js` (영어)
+  - 언어 동기화: 허브와 동일한 `localStorage` 키(`clicksurvivor_lang`) 사용, URL 파라미터(`?lang=ko|en`) 지원
+  - 번역 범위: 약 400개 텍스트 번역 (탭 제목, 버튼, 상품명, 업적, 업그레이드, 시장 이벤트, 모달, 일기장 등)
+  - DOM 번역: `data-i18n` 속성으로 정적 텍스트 자동 번역, `data-i18n-alt`, `data-i18n-aria-label` 지원
+  - 동적 텍스트: `t()` 함수로 모든 로그 메시지, 모달, 업적 툴팁, 일기장 엔트리 번역
+  - 언어 변경: Settings 탭에서 언어 선택 시 즉시 UI 업데이트 (`updateAllUIForLanguage()`)
+  - 숫자 포맷: `formatNumberForLang()` 함수로 한국어(만/억/조)와 영어(K/M/B/T) 단위 지원
+- **[seoulsurvival] 번역 품질 개선 및 QA**
+  - 업적 툴팁 번역: `updateAchievementGrid()` 및 `getAchText()` 함수에서 `t()` 사용, 32개 업적 모두 번역
+  - Settings 탭: Status/User 필드 `data-i18n` 속성 추가, Last Save 시간 포맷 로케일 적용
+  - 모달 번역: 닉네임 설정, Reset Game, 클라우드 세이브 관련 모든 모달 메시지 번역
+  - 일기장 번역: `diaryize()` 함수에서 모든 일기 엔트리 템플릿 번역
+  - 번역 키 구조: `tab.*`, `button.*`, `product.*`, `achievement.*`, `upgrade.*`, `modal.*`, `diary.*` 등 계층적 구조
+  - QA 완료: 브라우저에서 영어 모드로 모든 탭/모달/툴팁 확인, 남은 한글 제거
+
 ## 2025-12-20 (프레스티지 시스템 구현)
 - **[seoulsurvival] 프레스티지 시스템: 서울타워 구현**
   - 엔드게임 콘텐츠 추가: 서울타워(🗼) 상품 추가, 가격 1조원, CEO 달성 + 빌딩 1개 이상 보유 시 해금
