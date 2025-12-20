@@ -6368,6 +6368,124 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    /**
+     * 로그인 시 클라우드/로컬 저장 비교 및 제안
+     * @returns {Promise<boolean>} true: 저장이 변경됨 (reload 필요), false: 변경 없음
+     */
+    async function compareAndOfferSaveSync() {
+      const user = await getUser();
+      if (!user) return false;
+
+      // 로컬 저장 확인
+      const localSaveStr = localStorage.getItem(SAVE_KEY);
+      if (!localSaveStr) {
+        // 로컬 저장 없으면 기존 maybeOfferCloudRestore() 사용
+        return await maybeOfferCloudRestore();
+      }
+
+      let localSave;
+      try {
+        localSave = JSON.parse(localSaveStr);
+      } catch (e) {
+        console.error('로컬 저장 파싱 실패:', e);
+        return false;
+      }
+
+      // 클라우드 저장 확인
+      const cloudResult = await fetchCloudSave('seoulsurvival');
+      if (!cloudResult.ok || !cloudResult.found) {
+        // 클라우드 저장 없으면 현재 로컬 저장 사용
+        return false;
+      }
+
+      const cloudSave = cloudResult.save;
+      
+      // 자산 계산
+      const localAssets = calculateTotalAssetValueFromSave(localSave);
+      const cloudAssets = calculateTotalAssetValueFromSave(cloudSave);
+      
+      // 플레이타임 계산
+      const localPlayTimeMs = calculatePlayTimeMsFromSave(localSave, sessionStartTime);
+      const cloudPlayTimeMs = calculatePlayTimeMsFromSave(cloudSave, Date.now());
+      
+      // 타임스탬프 비교
+      const localTs = Number(localSave.ts || 0);
+      const cloudTs = Number(cloudResult.save_ts || 0);
+
+      // 비교 로직: 클라우드가 더 높은 자산이거나, 자산이 같으면 더 최신인 경우
+      const shouldOfferCloud = 
+        cloudAssets > localAssets || // 클라우드가 더 높은 자산
+        (cloudAssets === localAssets && cloudTs > localTs); // 자산 같으면 더 최신 것
+
+      if (!shouldOfferCloud) {
+        // 로컬이 더 나으면 제안하지 않음
+        return false;
+      }
+
+      // 클라우드가 더 나은 경우 제안
+      const cloudTime = cloudSave.saveTime ? new Date(cloudSave.saveTime).toLocaleString('ko-KR') : 
+                        (cloudResult.updated_at ? new Date(cloudResult.updated_at).toLocaleString('ko-KR') : '시간 정보 없음');
+      const localTime = localSave.saveTime ? new Date(localSave.saveTime).toLocaleString('ko-KR') : '시간 정보 없음';
+
+      // 플레이타임 포맷
+      const localPlayTimeText = formatPlaytimeMs(localPlayTimeMs);
+      const cloudPlayTimeText = formatPlaytimeMs(cloudPlayTimeMs);
+
+      // 자산 포맷
+      const localAssetsText = formatLeaderboardAssets(localAssets);
+      const cloudAssetsText = formatLeaderboardAssets(cloudAssets);
+
+      const message = 
+        `다른 기기에서 더 높은 점수로 저장된 진행이 있습니다.\n\n` +
+        `📊 지금 이 기기\n` +
+        `   자산: ${localAssetsText}\n` +
+        `   플레이타임: ${localPlayTimeText}\n` +
+        `   저장 시간: ${localTime}\n\n` +
+        `☁️ 다른 기기\n` +
+        `   자산: ${cloudAssetsText}\n` +
+        `   플레이타임: ${cloudPlayTimeText}\n` +
+        `   저장 시간: ${cloudTime}\n\n` +
+        `어떤 진행을 사용하시겠습니까?`;
+
+      return new Promise((resolve) => {
+        let settled = false;
+        
+        const done = (value) => {
+          if (!settled) {
+            settled = true;
+            resolve(value);
+          }
+        };
+
+        openConfirmModal(
+          '진행 상황 선택',
+          message,
+          () => {
+            // 다른 기기로 바꾸기
+            try {
+              localStorage.setItem(SAVE_KEY, JSON.stringify(cloudSave));
+              addLog('☁️ 다른 기기의 진행 상황을 불러왔습니다. 페이지를 새로고침합니다...');
+              setTimeout(() => location.reload(), 600);
+              done(true);
+            } catch (error) {
+              console.error('클라우드 세이브 적용 실패:', error);
+              openInfoModal('오류', `진행 상황 전환에 실패했습니다.\n${error.message || String(error)}`, '⚠️');
+              done(false);
+            }
+          },
+          {
+            icon: '☁️',
+            primaryLabel: '다른 기기로 바꾸기',
+            secondaryLabel: '지금 기기 그대로',
+            onCancel: () => {
+              // 지금 기기 그대로 선택 시
+              done(false);
+            }
+          }
+        );
+      });
+    }
+
     if (elCloudUploadBtn) elCloudUploadBtn.addEventListener('click', cloudUpload);
     if (elCloudDownloadBtn) elCloudDownloadBtn.addEventListener('click', cloudDownload);
     // 로컬 저장이 없으면 클라우드 복구를 1회 제안
@@ -6377,8 +6495,24 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
       try {
         __currentUser = await getUser();
-        onAuthStateChange((u) => {
-          __currentUser = u;
+        onAuthStateChange(async (user) => {
+          __currentUser = user;
+          
+          // 로그인 성공 시 저장 비교 (1회만)
+          if (user && !window.__saveSyncChecked) {
+            window.__saveSyncChecked = true;
+            // UI 안정화를 위해 약간의 지연
+            setTimeout(async () => {
+              try {
+                await compareAndOfferSaveSync();
+              } catch (error) {
+                console.error('저장 동기화 확인 중 오류:', error);
+              }
+            }, 1500); // 로그인 UI 업데이트 후 실행
+          } else if (!user) {
+            // 로그아웃 시 플래그 리셋
+            window.__saveSyncChecked = false;
+          }
         });
       } catch {}
     })();
@@ -7505,6 +7639,79 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       return totalValue;
+    }
+    
+    /**
+     * 저장 데이터에서 총 자산 계산 (saveData 객체 기준)
+     */
+    function calculateTotalAssetValueFromSave(saveData) {
+      if (!saveData) return 0;
+      
+      let totalValue = 0;
+      const cash = Number(saveData.cash || 0);
+      
+      // 금융상품 가치
+      const deposits = Number(saveData.deposits || 0);
+      const savings = Number(saveData.savings || 0);
+      const bonds = Number(saveData.bonds || 0);
+      const usStocks = Number(saveData.usStocks || 0);
+      const cryptos = Number(saveData.cryptos || 0);
+      
+      for (let i = 0; i < deposits; i++) {
+        totalValue += getFinancialCost('deposit', i);
+      }
+      for (let i = 0; i < savings; i++) {
+        totalValue += getFinancialCost('savings', i);
+      }
+      for (let i = 0; i < bonds; i++) {
+        totalValue += getFinancialCost('bond', i);
+      }
+      for (let i = 0; i < usStocks; i++) {
+        totalValue += getFinancialCost('usStock', i);
+      }
+      for (let i = 0; i < cryptos; i++) {
+        totalValue += getFinancialCost('crypto', i);
+      }
+      
+      // 부동산 가치
+      const villas = Number(saveData.villas || 0);
+      const officetels = Number(saveData.officetels || 0);
+      const apartments = Number(saveData.apartments || 0);
+      const shops = Number(saveData.shops || 0);
+      const buildings = Number(saveData.buildings || 0);
+      const towers = Number(saveData.towers || 0);
+      
+      for (let i = 0; i < villas; i++) {
+        totalValue += getPropertyCost('villa', i);
+      }
+      for (let i = 0; i < officetels; i++) {
+        totalValue += getPropertyCost('officetel', i);
+      }
+      for (let i = 0; i < apartments; i++) {
+        totalValue += getPropertyCost('apartment', i);
+      }
+      for (let i = 0; i < shops; i++) {
+        totalValue += getPropertyCost('shop', i);
+      }
+      for (let i = 0; i < buildings; i++) {
+        totalValue += getPropertyCost('building', i);
+      }
+      for (let i = 0; i < towers; i++) {
+        totalValue += getPropertyCost('tower', i);
+      }
+      
+      return cash + totalValue;
+    }
+    
+    /**
+     * 저장 데이터에서 플레이타임 계산 (ms 단위)
+     */
+    function calculatePlayTimeMsFromSave(saveData, sessionStartTime) {
+      if (!saveData) return 0;
+      const savedTotalPlayTime = Number(saveData.totalPlayTime || 0);
+      const savedSessionStartTime = Number(saveData.sessionStartTime || Date.now());
+      const currentSessionTime = Date.now() - (sessionStartTime || savedSessionStartTime);
+      return savedTotalPlayTime + Math.max(0, currentSessionTime);
     }
     
     // 효율 분석 (개당 초당 수익 순위)
