@@ -739,6 +739,31 @@ document.addEventListener('DOMContentLoaded', () => {
       return formatStatsNumber(num);
     }
     
+    // 리더보드 전용 자산 포맷 (조/억/만원 단위로 표시, 소수점 없음, 천단위 콤마 통일)
+    // - 조/억: 정수만 표기, 천단위 콤마 (예: 1조, 1,234억)
+    // - 만원: 정수만 표기, 천단위 콤마 (예: 1만원, 1,551만원)
+    // - 만원 미만: 0만원으로 표기
+    function formatLeaderboardAssets(num) {
+      const assetsValue = Math.floor(num || 0);
+      
+      if (assetsValue >= 1000000000000) {
+        // 조 단위: 정수만, 천단위 콤마 (예: 1조, 1,234조)
+        const value = Math.floor(assetsValue / 1000000000000);
+        return value.toLocaleString('ko-KR') + '조';
+      } else if (assetsValue >= 100000000) {
+        // 억 단위: 정수만, 천단위 콤마 (예: 1억, 1,234억)
+        const value = Math.floor(assetsValue / 100000000);
+        return value.toLocaleString('ko-KR') + '억';
+      } else if (assetsValue >= 10000) {
+        // 만원 단위: 정수만, 천단위 콤마 (예: 1만원, 1,551만원)
+        const value = Math.floor(assetsValue / 10000);
+        return value.toLocaleString('ko-KR') + '만원';
+      } else {
+        // 만원 미만: 0만원으로 표기
+        return '0만원';
+      }
+    }
+    
     // 금융상품용 포맷 (만원 단위까지 반올림, 천단위 콤마)
     function formatFinancialPrice(num) {
       if (num >= 100000000) {
@@ -7052,11 +7077,10 @@ document.addEventListener('DOMContentLoaded', () => {
               : (entry.nickname || '익명');
             nickTd.textContent = displayName;
 
-            // 자산 셀
+            // 자산 셀 (만원/억 단위로 표시)
             const assetsTd = document.createElement('td');
             assetsTd.className = 'col-assets';
-            const assetsValue = Math.floor(entry.total_assets || 0);
-            assetsTd.textContent = `${assetsValue.toLocaleString('ko-KR')}원`;
+            assetsTd.textContent = formatLeaderboardAssets(entry.total_assets || 0);
 
             // 플레이타임 셀
             const playtimeTd = document.createElement('td');
@@ -7121,7 +7145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   </div>
                   <div class="my-rank-main">
                     <div class="my-rank-name">${displayName}</div>
-                    <div class="my-rank-assets">💰 ${formatStatsNumber(myEntry.total_assets || 0)}</div>
+                    <div class="my-rank-assets">💰 ${formatLeaderboardAssets(myEntry.total_assets || 0)}</div>
                   </div>
                   <div class="my-rank-meta">
                     <span class="my-rank-playtime">⏱️ ${playTimeText}</span>
@@ -7132,9 +7156,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               // 닉네임은 있지만 Top10 밖인 경우: RPC로 실제 순위 조회
               // 먼저 로그인 상태 확인
+              console.log('[LB] 내 기록 조회 시작', { playerNickname, currentNickLower });
               const user = await getUser();
+              console.log('[LB] 로그인 상태 확인', { hasUser: !!user, userId: user?.id });
+              
               if (!user) {
                 // 비로그인 상태: 간단한 문구 + 버튼만 표시
+                console.log('[LB] 로그인되지 않음, 로그인 버튼 표시');
                 myRankContent.innerHTML = `
                   <div class="leaderboard-my-rank-empty">
                     로그인 후에 내 순위를 볼 수 있습니다.
@@ -7156,6 +7184,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const result = await signInWithOAuth('google');
                     if (!result.ok) {
                       alert('로그인에 실패했습니다. 다시 시도해 주세요.');
+                    } else {
+                      // 로그인 성공 후 리더보드 UI 다시 업데이트
+                      setTimeout(() => updateLeaderboardUI(true), 1000);
                     }
                   });
                 }
@@ -7163,6 +7194,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
 
               // 로그인 상태: RPC로 순위 조회
+              console.log('[LB] 로그인 확인됨, 내 순위 조회 시작');
               myRankContent.innerHTML = `
                 <div class="leaderboard-my-rank-loading">
                   내 순위를 불러오는 중...
@@ -7171,10 +7203,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
               try {
                 const rankResult = await getMyRank(playerNickname, 'assets');
+                console.log('[LB] 내 순위 조회 결과', { 
+                  success: rankResult.success, 
+                  errorType: rankResult.errorType,
+                  hasData: !!rankResult.data 
+                });
+                
                 if (!rankResult.success || !rankResult.data) {
                   let innerHtml = '';
                   if (rankResult.errorType === 'forbidden') {
                     // 권한 부족: 간단한 문구 + 버튼만 표시
+                    console.warn('[LB] 권한 부족으로 내 순위 조회 실패');
                     innerHtml = `
                       <div class="leaderboard-my-rank-empty">
                         로그인 후에 내 순위를 볼 수 있습니다.
@@ -7186,13 +7225,65 @@ document.addEventListener('DOMContentLoaded', () => {
                       </div>
                     `;
                   } else if (rankResult.errorType === 'network') {
+                    console.error('[LB] 네트워크 오류로 내 순위 조회 실패');
                     innerHtml = `
                       <div class="leaderboard-my-rank-error">
                         네트워크 오류로 내 순위를 불러올 수 없습니다.
                       </div>
                     `;
                   } else if (rankResult.errorType === 'not_found') {
-                    // 리더보드에 기록이 없음: 안내 메시지
+                    // 리더보드에 기록이 없음: 로그인 상태면 리더보드 업데이트 시도
+                    console.log('[LB] 리더보드에 기록 없음, 리더보드 업데이트 시도');
+                    // 로그인 상태이고 닉네임이 있으면 리더보드 업데이트 시도
+                    if (user && playerNickname) {
+                      try {
+                        const totalAssets = cash + calculateTotalAssetValue();
+                        const currentSessionTime = Date.now() - sessionStartTime;
+                        const totalPlayTimeMs = totalPlayTime + currentSessionTime;
+                        console.log('[LB] 리더보드 업데이트 시도', { 
+                          nickname: playerNickname, 
+                          totalAssets, 
+                          totalPlayTimeMs,
+                          towerCount: towers 
+                        });
+                        const updateResult = await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs, towers);
+                        if (updateResult.success) {
+                          console.log('[LB] 리더보드 업데이트 성공, 다시 조회');
+                          // 업데이트 성공 후 다시 조회
+                          const retryResult = await getMyRank(playerNickname, 'assets');
+                          if (retryResult.success && retryResult.data) {
+                            const me = retryResult.data;
+                            const playTimeText = formatPlaytimeMs(me.play_time_ms || 0);
+                            const towerCount = me.tower_count || 0;
+                            const displayName = towerCount > 0
+                              ? `${me.nickname || playerNickname || '익명'} 🗼${towerCount > 1 ? `x${towerCount}` : ''}`
+                              : (me.nickname || playerNickname || '익명');
+                            myRankContent.innerHTML = `
+                              <div class="my-rank-card">
+                                <div class="my-rank-header">
+                                  <span class="my-rank-label">내 기록</span>
+                                  <span class="my-rank-rank-badge">${me.rank}위</span>
+                                </div>
+                                <div class="my-rank-main">
+                                  <div class="my-rank-name">${displayName}</div>
+                                  <div class="my-rank-assets">💰 ${formatLeaderboardAssets(me.total_assets || 0)}</div>
+                                </div>
+                                <div class="my-rank-meta">
+                                  <span class="my-rank-playtime">⏱️ ${playTimeText}</span>
+                                  <span class="my-rank-note">내 실제 순위</span>
+                                </div>
+                              </div>
+                            `;
+                            return;
+                          }
+                        } else {
+                          console.error('[LB] 리더보드 업데이트 실패', updateResult.error);
+                        }
+                      } catch (updateError) {
+                        console.error('[LB] 리더보드 업데이트 중 오류', updateError);
+                      }
+                    }
+                    // 업데이트 실패하거나 여전히 기록이 없으면 안내 메시지
                     innerHtml = `
                       <div class="leaderboard-my-rank-empty">
                         아직 리더보드에 기록이 없습니다.<br />
@@ -7200,6 +7291,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       </div>
                     `;
                   } else {
+                    console.error('[LB] 내 순위 조회 실패', rankResult.errorType);
                     innerHtml = `
                       <div class="leaderboard-my-rank-error">
                         내 순위를 불러올 수 없습니다.
@@ -7220,11 +7312,15 @@ document.addEventListener('DOMContentLoaded', () => {
                       const result = await signInWithOAuth('google');
                       if (!result.ok) {
                         alert('로그인에 실패했습니다. 다시 시도해 주세요.');
+                      } else {
+                        // 로그인 성공 후 리더보드 UI 다시 업데이트
+                        setTimeout(() => updateLeaderboardUI(true), 1000);
                       }
                     });
                   }
                 } else {
                   const me = rankResult.data;
+                  console.log('[LB] 내 순위 조회 성공', { rank: me.rank, nickname: me.nickname });
                   const playTimeText = formatPlaytimeMs(me.play_time_ms || 0);
                   const towerCount = me.tower_count || 0;
                   const displayName = towerCount > 0
@@ -7238,7 +7334,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       </div>
                       <div class="my-rank-main">
                         <div class="my-rank-name">${displayName}</div>
-                        <div class="my-rank-assets">💰 ${formatStatsNumber(me.total_assets || 0)}</div>
+                        <div class="my-rank-assets">💰 ${formatLeaderboardAssets(me.total_assets || 0)}</div>
                       </div>
                       <div class="my-rank-meta">
                         <span class="my-rank-playtime">⏱️ ${playTimeText}</span>
@@ -7248,7 +7344,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   `;
                 }
               } catch (e) {
-                console.error('내 순위 RPC 호출 실패:', e);
+                console.error('[LB] 내 순위 RPC 호출 실패:', e);
                 myRankContent.innerHTML = `
                   <div class="leaderboard-my-rank-error">
                     내 순위를 불러오는 중 오류가 발생했습니다.
@@ -7270,22 +7366,45 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 리더보드 업데이트 함수 (게임 저장 시 호출)
     async function updateLeaderboardEntry() {
-      if (!playerNickname) return; // 닉네임이 없으면 업데이트 안 함
+      if (!playerNickname) {
+        console.log('[LB] 리더보드 업데이트 스킵: 닉네임 없음');
+        return; // 닉네임이 없으면 업데이트 안 함
+      }
       
       // 타워가 1개 이상이면 자동 업데이트 중단 (타워 구매 시점 자산으로 고정)
       if (towers > 0) {
-        console.log('리더보드: 타워 달성 후 자동 업데이트 중단');
+        console.log('[LB] 리더보드 업데이트 스킵: 타워 달성 후 자동 업데이트 중단');
         return;
       }
       
       try {
+        // 로그인 상태 확인
+        const user = await getUser();
+        if (!user) {
+          console.log('[LB] 리더보드 업데이트 스킵: 로그인되지 않음');
+          return;
+        }
+        
         const totalAssets = cash + calculateTotalAssetValue();
         const currentSessionTime = Date.now() - sessionStartTime;
         const totalPlayTimeMs = totalPlayTime + currentSessionTime;
         
-        await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs, towers);
+        console.log('[LB] 리더보드 업데이트 시도', { 
+          nickname: playerNickname, 
+          totalAssets, 
+          totalPlayTimeMs,
+          towerCount: towers,
+          userId: user.id 
+        });
+        
+        const result = await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs, towers);
+        if (result.success) {
+          console.log('[LB] 리더보드 업데이트 성공');
+        } else {
+          console.error('[LB] 리더보드 업데이트 실패', result.error);
+        }
       } catch (error) {
-        console.error('리더보드 업데이트 실패:', error);
+        console.error('[LB] 리더보드 업데이트 예외 발생:', error);
       }
     }
     
