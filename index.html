@@ -544,6 +544,120 @@
     }
     .shotcap{ padding: 10px 12px; font-size: 12px; line-height: 1.45; color: rgba(148,163,184,.92); }
 
+    /* 게임 카드 섹션 */
+    .games-row{
+      display: flex;
+      gap: var(--space-4);
+      overflow-x: auto;
+      padding: var(--space-2) 0;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .games-row::-webkit-scrollbar{
+      height: 6px;
+    }
+    .games-row::-webkit-scrollbar-track{
+      background: rgba(148,163,184,.08);
+      border-radius: 3px;
+    }
+    .games-row::-webkit-scrollbar-thumb{
+      background: rgba(148,163,184,.25);
+      border-radius: 3px;
+    }
+    .games-row::-webkit-scrollbar-thumb:hover{
+      background: rgba(148,163,184,.35);
+    }
+    .game-card-small{
+      flex: 0 0 280px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: all .2s ease;
+      cursor: pointer;
+      display: block;
+      scroll-snap-align: start;
+    }
+    .game-card-small:hover{
+      transform: translateY(-4px);
+      box-shadow: var(--shadow);
+      border-color: rgba(148,163,184,.28);
+    }
+    .game-card-small-cover{
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+    .game-card-small-body{
+      padding: var(--space-4);
+    }
+    .game-card-small-title{
+      font-size: var(--font-md);
+      font-weight: 950;
+      margin: 0 0 var(--space-2);
+      letter-spacing: -.1px;
+    }
+    .game-card-small-tagline{
+      color: var(--muted);
+      font-size: var(--font-xs);
+      margin: 0 0 var(--space-3);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .game-card-small-footer{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+    .game-card-small-status{
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(148,163,184,.12);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .game-card-small-status.playable{
+      background: rgba(96,165,250,.12);
+      color: rgba(96,165,250,.95);
+    }
+    .game-card-small-cta{
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: rgba(96,165,250,.92);
+      color: white;
+      font-size: var(--font-xs);
+      font-weight: 950;
+      border: 0;
+      cursor: pointer;
+      transition: all .15s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .game-card-small-cta:hover{
+      background: rgba(96,165,250,.98);
+    }
+    .section-header{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+    .section-link{
+      color: var(--accent);
+      font-size: var(--font-sm);
+      font-weight: 900;
+      text-decoration: none;
+    }
+    .section-link:hover{
+      text-decoration: underline;
+    }
+
     .callout{
       display:flex;
       gap: 14px;
@@ -759,6 +873,8 @@
 
       <nav aria-label="허브 내비게이션">
         <a class="navlink" href="#about" data-i18n="hub.header.about">소개</a>
+        <a class="navlink" href="games/">게임 목록</a>
+        <a class="navlink" href="patch-notes/">패치노트</a>
         <a class="navlink" href="account/" data-i18n="hub.header.account">계정</a>
       </nav>
 
@@ -792,6 +908,8 @@
     <div class="drawer-content">
       <nav class="drawer-nav" aria-label="허브 내비게이션">
         <a class="drawer-nav-link" href="#about" data-i18n="hub.header.about">소개</a>
+        <a class="drawer-nav-link" href="games/">게임 목록</a>
+        <a class="drawer-nav-link" href="patch-notes/">패치노트</a>
         <a class="drawer-nav-link" href="account/" data-i18n="hub.header.account">계정</a>
       </nav>
 
@@ -816,24 +934,24 @@
   </aside>
 
   <main class="wrap" id="top">
-    <section class="hero" aria-label="Featured game">
-      <div class="hero-inner">
-        <div class="badge"><span class="dot"></span><span data-i18n="hub.hero.badge">FEATURED</span></div>
-        <div>
-          <h1 class="hero-title">ClickSurvivor</h1>
-          <p class="hero-sub">
-            ClickSurvivor는 클릭 기반 생존·성장 게임을 제작하는 인디 게임 스튜디오입니다. 
-            대표작 Capital Clicker: SeoulSurvivor를 시작으로, 증분 게임의 재미를 웹에서 바로 경험할 수 있습니다.
-          </p>
-          <h2 style="margin: 16px 0 8px; font-size: var(--font-xl); font-weight: 950;">대표작: Capital Clicker: SeoulSurvivor</h2>
-          <p class="hero-sub" data-i18n="hub.hero.subtitle" style="margin-top: 0;">
-            서울 생존 클리커 — 노동·투자·승진, 그리고 시장 이벤트
-          </p>
-          <div class="ctaRow">
-            <a class="btn primary" href="seoulsurvival/" data-i18n="hub.hero.cta.play">플레이</a>
-            <a class="btn" href="#about" data-i18n="hub.hero.cta.details">자세히</a>
-          </div>
-        </div>
+    <section class="hero" aria-label="Featured game" id="featuredHero">
+      <!-- 레지스트리 기반으로 동적 렌더링 -->
+    </section>
+
+    <section id="allGames" aria-label="All Games">
+      <div class="section-header">
+        <h2 class="sectionTitle">모든 게임</h2>
+        <a href="games/" class="section-link">전체보기 →</a>
+      </div>
+      <div class="games-row" id="allGamesRow">
+        <!-- 레지스트리 기반으로 동적 렌더링 -->
+      </div>
+    </section>
+
+    <section id="recentlyUpdated" aria-label="Recently Updated">
+      <h2 class="sectionTitle">최근 업데이트</h2>
+      <div class="games-row" id="recentlyUpdatedRow">
+        <!-- 레지스트리 기반으로 동적 렌더링 -->
       </div>
     </section>
 
@@ -963,18 +1081,18 @@
           <div class="footer-section">
             <div class="footer-section-title" data-i18n="hub.footer.game.title">게임</div>
             <div class="footer-links">
+              <a href="games/">게임 목록</a>
               <a href="seoulsurvival/" data-i18n="hub.footer.game.play">Seoul Survival 플레이</a>
               <a href="#about" data-i18n="hub.footer.game.about">게임 소개</a>
-              <a href="#screenshots" data-i18n="hub.footer.game.screenshots">스크린샷</a>
             </div>
           </div>
 
           <div class="footer-section">
             <div class="footer-section-title" data-i18n="hub.footer.support.title">지원</div>
             <div class="footer-links">
+              <a href="patch-notes/">패치노트</a>
               <a href="account/" data-i18n="hub.footer.support.account">계정 관리</a>
               <a href="#" onclick="return false;" data-i18n="hub.footer.contact">문의하기</a>
-              <a href="#" onclick="return false;" data-i18n="hub.footer.support.faq">자주 묻는 질문</a>
             </div>
           </div>
 
@@ -1011,6 +1129,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite">Coming soon</div>
   <script type="module" src="./hub/main.js"></script>
+  <script type="module" src="./hub/home.js"></script>
   <script type="module" src="./shared/authBoot.js"></script>
 </body>
 </html>

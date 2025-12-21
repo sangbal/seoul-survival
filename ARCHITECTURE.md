@@ -15,15 +15,23 @@
 
 ## 상위 구조 개요
 - **허브/루트**: `index.html`
-  - "게임 1개 집중" 넷플릭스 톤 허브 페이지.
-  - 히어로(도트 배경) + 앵커 섹션: `#about`, `#screenshots`, `#account` (로그인 CTA만, 상세는 `/account/`로 이동)
+  - 다게임 허브 페이지 (레지스트리 기반)
+  - 히어로(Featured 게임) + 게임 섹션(All Games, Recently Updated) + 앵커 섹션: `#about`, `#account`
+  - 게임 레지스트리: `hub/games.registry.js` (단일 소스)
+- **게임 카탈로그**: `games/index.html`
+  - 모든 게임 목록, 검색/필터 기능
+- **게임 상세**: `games/{slug}/index.html`
+  - 게임별 상세 페이지 (스크린샷, 기능, 패치노트 요약)
+- **패치노트**: `patch-notes/index.html`
+  - 전역 패치노트 (RELEASE_NOTES.md 기반)
 - **계정관리 페이지**: `account/index.html`
   - 폴더형 URL: `/account/` (Cloudflare Pages 호환)
   - 계정관리 전용 UI: Account Overview/Preferences/Privacy & Data/Danger Zone
   - 위험 버튼(내 데이터 삭제, 계정 삭제)은 이 페이지에만 존재
-  - 허브 JS 엔트리: `hub/main.js`
+  - 허브 JS 엔트리: `hub/main.js` (드로어/네비게이션), `hub/home.js` (홈 게임 렌더링)
   - 허브 i18n: `hub/i18n.js`, `hub/translations/{ko,en}.js`
   - 허브 언어 규칙: `?lang=ko|en` → LocalStorage(`clicksurvivor_lang`) → `navigator.language` fallback
+  - 게임 레지스트리: `hub/games.registry.js` (단일 소스, status: playable/comingSoon/hidden)
   - 로고: `seoulsurvival/assets/images/logo.png` 이미지 사용
   - 네비게이션: 모든 뷰포트에서 햄버거 메뉴를 기본 네비게이션으로 사용 (PC/모바일 통일)
     - 헤더: 브랜드 + 햄버거 버튼만 표시 (nav와 actions는 기본 숨김)

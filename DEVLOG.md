@@ -3,6 +3,91 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## [2025-01-XX] [hub] Steam 스타일 게임 스토어 페이지 구현
+
+### 작업 내용
+1. **레지스트리 확장**
+   - `hub/games.registry.js`에 Steam 스토어 페이지에 필요한 필드 추가
+   - keyFeatures, about, support, screenshots, patchNotePreview 등 상세 콘텐츠 필드 추가
+   - 다국어 지원 구조 개선 (tags를 객체 배열로 변경)
+
+2. **/games/ 페이지 Steam 스타일 재구현**
+   - Featured Hero 섹션: 레지스트리 기반 동적 렌더링
+   - Browse 섹션: playable/comingSoon 탭 필터 + 검색 기능
+   - All Titles 그리드: 반응형 카드 레이아웃 (1~4열)
+   - 카드 CTA: playable → "자세히 보기" + "지금 플레이", comingSoon → "자세히 보기"만
+
+3. **/games/seoulsurvival/ Steam 스토어 페이지 스타일 구현**
+   - 2컬럼 레이아웃: Left(메인 콘텐츠) + Right(사이드바)
+   - Left: Hero media → Screenshots 갤러리 → About → Key Features → Updates preview → Support
+   - Right: Title/Tags/Summary/CTA + 지원 환경 요약
+   - 레지스트리 기반 동적 렌더링 (하드코딩 금지)
+   - 모바일: 1컬럼 스택
+
+4. **SEO/OG 메타태그**
+   - 모든 신규 페이지에 canonical/og:url/og:title/og:description/og:image 설정
+   - og:image는 coverImage 사용
+
+### 변경된 파일
+- `hub/games.registry.js`: 레지스트리 확장 (keyFeatures, about, support, screenshots, patchNotePreview 추가)
+- `games/index.html`, `games/main.js`: Steam 스타일 스토어 페이지로 재구현
+- `games/seoulsurvival/index.html`, `games/seoulsurvival/main.js`: Steam 스토어 페이지 스타일로 재구현
+
+### 주의사항
+- 레지스트리는 단일 소스 원칙: 모든 게임 정보는 `hub/games.registry.js`에서만 관리
+- 향후 게임 추가 시 `/games/seoulsurvival/` 페이지를 템플릿으로 복제 가능
+- base: './' 전제에서 상대 경로 링크가 깨지지 않도록 테스트 완료
+- 이미지 lazy-loading 및 aspect-ratio로 CLS 방지
+
+---
+
+## [2025-01-XX] [hub] 다게임 허브 IA + 기본 UI 구현
+
+### 작업 내용
+1. **게임 레지스트리 시스템 구축**
+   - `hub/games.registry.js` 생성: 단일 소스로 모든 게임 정보 관리
+   - 필드: slug, title(ko/en), tagline, status(playable/comingSoon/hidden), featured, playPath, storePath, coverImage, tags, updatedAt
+   - 유틸 함수: getGame, getPlayableGames, getComingSoonGames, getVisibleGames, getFeaturedGame, getRecentlyUpdatedGames
+
+2. **신규 페이지 3개 추가**
+   - `/games/`: 게임 카탈로그 (검색/필터, 카드 리스트)
+   - `/patch-notes/`: 전역 패치노트 (RELEASE_NOTES.md 기반, 정적 MVP)
+   - `/games/seoulsurvival/`: 게임 상세 페이지 (스크린샷, 기능, 패치노트 요약)
+
+3. **허브 홈 리디자인**
+   - 히어로: 레지스트리 기반 Featured 게임 동적 렌더링
+   - All Games 섹션: 최대 6개 게임 카드 (가로 스크롤)
+   - Recently Updated 섹션: 최대 3개 게임 카드 (updatedAt 기준)
+   - `hub/home.js` 추가: 게임 렌더링 로직 분리
+
+4. **드로어 네비게이션 정리**
+   - 게임 목록, 패치노트 링크 추가
+   - 푸터 링크 정리 (게임 목록, 패치노트 추가)
+
+5. **SEO/OG 메타태그**
+   - 신규 페이지 모두 canonical/og:url/og:image 설정
+   - OG 이미지 캐시 파라미터 규칙 준수 (v=YYYY-MM-DD)
+
+6. **Vite 빌드 설정**
+   - `vite.config.js`에 신규 엔트리 추가 (games, games-seoulsurvival, patch-notes)
+
+### 변경된 파일
+- `hub/games.registry.js`: 게임 레지스트리 (신규)
+- `hub/home.js`: 홈 게임 렌더링 (신규)
+- `games/index.html`, `games/main.js`: 게임 카탈로그 (신규)
+- `games/seoulsurvival/index.html`, `games/seoulsurvival/main.js`: 게임 상세 (신규)
+- `patch-notes/index.html`, `patch-notes/main.js`: 패치노트 (신규)
+- `index.html`: 허브 홈 리디자인 (Featured/All Games/Recently Updated 섹션 추가)
+- `vite.config.js`: 신규 엔트리 추가
+
+### 주의사항
+- 게임 레지스트리는 단일 소스 원칙: 모든 게임 정보는 `hub/games.registry.js`에서만 관리
+- status=hidden 게임은 허브/카탈로그 어디에도 노출되지 않음
+- base: './' 전제에서 상대 경로 링크가 깨지지 않도록 테스트 필요
+- 향후 게임 추가 시 `/games/seoulsurvival/` 페이지를 템플릿으로 복제 가능
+
+---
+
 ## [2025-01-XX] 글로벌 유니크 닉네임 시스템 완성 (v1.2.0)
 
 ### 작업 내용

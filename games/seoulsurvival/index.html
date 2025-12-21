@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="canonical" href="https://clicksurvivor.com/games/seoulsurvival/" />
+  <meta name="description" content="Capital Clicker: SeoulSurvivor - 서울에서 노동→투자→자본 루프로 생존하는 증분 클릭 게임. 지금 플레이하세요." />
+
+  <meta property="og:site_name" content="ClickSurvivor" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://clicksurvivor.com/games/seoulsurvival/" />
+  <meta property="og:locale" content="ko_KR" />
+  <meta property="og:title" content="Capital Clicker: SeoulSurvivor | ClickSurvivor" />
+  <meta property="og:description" content="서울에서 노동→투자→자본 루프로 생존하는 증분 클릭 게임" />
+  <meta property="og:image" content="https://clicksurvivor.com/og/seoulsurvivor-1200x630.png?v=2025-12-21" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Capital Clicker: SeoulSurvivor | ClickSurvivor" />
+  <meta name="twitter:description" content="서울에서 노동→투자→자본 루프로 생존하는 증분 클릭 게임" />
+  <meta name="twitter:image" content="https://clicksurvivor.com/og/seoulsurvivor-1200x630.png?v=2025-12-21" />
+
+  <meta name="theme-color" content="#0b0f19" />
+
+  <link rel="icon" type="image/png" href="../../seoulsurvival/assets/images/logo.png" />
+  <link rel="apple-touch-icon" href="../../seoulsurvival/assets/images/logo.png" />
+  <title>Capital Clicker: SeoulSurvivor | ClickSurvivor</title>
+
+  <style>
+    :root{
+      --bg:#070b14;
+      --surface: rgba(15,23,42,.55);
+      --surface-2: rgba(11,18,32,.62);
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --border: rgba(148,163,184,.18);
+      --accent:#60a5fa;
+      --accent-2:#5eead4;
+      --danger:#ef4444;
+      --radius: 18px;
+      --shadow: 0 14px 48px rgba(0,0,0,.40);
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 48px;
+      --space-9: 64px;
+      --font-xs: 12px;
+      --font-sm: 13px;
+      --font-md: 14px;
+      --font-lg: 16px;
+      --font-xl: 18px;
+      --font-2xl: clamp(28px, 3.4vw, 44px);
+      --weight-bold: 800;
+      --weight-black: 900;
+      --headerH: 64px;
+    }
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior: smooth; overflow-x: hidden; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(900px 560px at 20% -10%, rgba(96,165,250,.18), transparent 60%),
+        radial-gradient(720px 520px at 65% 30%, rgba(167,139,250,.10), transparent 55%),
+        var(--bg);
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+    a{ color:inherit; text-decoration:none; }
+    ::selection{ background: rgba(96,165,250,.28); }
+    :where(a, button, input, select, textarea, summary):focus-visible{
+      outline: 2px solid rgba(96,165,250,.95);
+      outline-offset: 3px;
+    }
+
+    .wrap{ max-width: 1200px; margin: 0 auto; padding: 0 18px 70px; }
+    .topbar{
+      position: sticky; top: 0; z-index: 30;
+      height: var(--headerH);
+      display:flex; align-items:center; justify-content:space-between; gap: 14px;
+      padding: 0 18px;
+      background: linear-gradient(180deg, rgba(7,11,20,.94), rgba(7,11,20,.72));
+      border-bottom: 1px solid rgba(148,163,184,.18);
+      backdrop-filter: blur(10px);
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .topbar-inner{ max-width: 1200px; margin: 0 auto; width: 100%; display:flex; align-items:center; justify-content:space-between; gap: 14px; box-sizing: border-box; }
+    .brand{ display:flex; align-items:center; gap: 12px; min-width: 0; flex: 0 1 auto; }
+    .logo{
+      width: 38px; height: 38px; border-radius: 12px;
+      background: rgba(7,11,20,.45);
+      display:grid; place-items:center;
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 10px 25px rgba(0,0,0,.35);
+      user-select: none;
+      overflow: hidden;
+    }
+    .brandtxt{ display:flex; flex-direction:column; gap: 2px; min-width: 0; }
+    .brandname{ font-size: 16px; font-weight: 900; letter-spacing: .2px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brandtag{ font-size: 12px; color: var(--muted); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hamburger-btn{
+      display: flex;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid rgba(148,163,184,.25);
+      background: rgba(15,23,42,.55);
+      border-radius: 999px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 4px;
+      transition: all .15s ease;
+    }
+    .hamburger-btn:hover{
+      background: rgba(15,23,42,.75);
+      border-color: rgba(148,163,184,.35);
+    }
+    .hamburger-btn span{
+      display: block;
+      width: 18px;
+      height: 2px;
+      background: var(--text);
+      border-radius: 2px;
+      transition: all .2s ease;
+    }
+
+    /* Store Page Layout */
+    .store-page{
+      margin-top: var(--space-8);
+    }
+    .store-layout{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+    }
+    @media (min-width: 880px){
+      .store-layout{
+        grid-template-columns: 1fr 300px;
+      }
+    }
+
+    /* Left Column: Main Content */
+    .store-main{
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    /* Hero Media */
+    .hero-media{
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .hero-media img{
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Screenshots Gallery */
+    .screenshots-gallery{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-3);
+    }
+    @media (min-width: 640px){
+      .screenshots-gallery{
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .screenshot-item{
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+    .screenshot-item:hover{
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+    .screenshot-item img{
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Content Sections */
+    .content-section{
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: var(--space-6);
+    }
+    .section-title{
+      font-size: var(--font-xl);
+      font-weight: 950;
+      margin: 0 0 var(--space-4);
+      letter-spacing: -.2px;
+    }
+    .section-content{
+      color: var(--text);
+      font-size: var(--font-md);
+      line-height: 1.7;
+    }
+    .section-content p{
+      margin: 0 0 var(--space-4);
+    }
+    .section-content ul{
+      margin: var(--space-3) 0;
+      padding-left: var(--space-6);
+    }
+    .section-content li{
+      margin: var(--space-2) 0;
+    }
+    .section-content strong{
+      font-weight: 950;
+      color: var(--accent);
+    }
+
+    /* Right Column: Sidebar */
+    .store-sidebar{
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+    .sidebar-card{
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: var(--space-5);
+    }
+    .game-title-main{
+      font-size: var(--font-xl);
+      font-weight: 950;
+      margin: 0 0 var(--space-3);
+      letter-spacing: -.2px;
+    }
+    .game-tagline{
+      color: var(--muted);
+      font-size: var(--font-sm);
+      margin: 0 0 var(--space-4);
+      line-height: 1.6;
+    }
+    .game-tags{
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+    .game-tag{
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: rgba(96,165,250,.12);
+      color: rgba(96,165,250,.95);
+      font-size: var(--font-xs);
+      font-weight: 900;
+    }
+    .cta-primary{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 48px;
+      padding: 14px 24px;
+      border-radius: 12px;
+      background: rgba(96,165,250,.92);
+      color: white;
+      font-weight: 950;
+      font-size: var(--font-md);
+      border: 0;
+      cursor: pointer;
+      transition: all .15s ease;
+      text-decoration: none;
+      margin-bottom: var(--space-3);
+    }
+    .cta-primary:hover{
+      background: rgba(96,165,250,.98);
+      box-shadow: 0 12px 34px rgba(96,165,250,.22);
+    }
+    .cta-secondary{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 44px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      font-weight: 950;
+      font-size: var(--font-sm);
+      cursor: pointer;
+      transition: all .15s ease;
+      text-decoration: none;
+    }
+    .cta-secondary:hover{
+      background: rgba(255,255,255,.05);
+      border-color: rgba(148,163,184,.28);
+    }
+    .support-list{
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .support-list li{
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--border);
+      font-size: var(--font-sm);
+      color: var(--muted);
+    }
+    .support-list li:last-child{
+      border-bottom: 0;
+    }
+
+    /* Patch Note Preview */
+    .patch-preview{
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: var(--radius);
+      padding: var(--space-4);
+      margin-top: var(--space-4);
+    }
+    .patch-preview-header{
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+    .patch-preview-version{
+      font-size: var(--font-lg);
+      font-weight: 950;
+      color: var(--accent);
+    }
+    .patch-preview-date{
+      color: var(--muted);
+      font-size: var(--font-xs);
+    }
+    .patch-preview-title{
+      font-size: var(--font-md);
+      font-weight: 950;
+      margin: 0 0 var(--space-2);
+    }
+    .patch-preview-body{
+      color: var(--text);
+      font-size: var(--font-sm);
+      line-height: 1.6;
+      margin-bottom: var(--space-3);
+    }
+    .patch-preview-link{
+      display: inline-block;
+      color: var(--accent);
+      font-size: var(--font-sm);
+      font-weight: 900;
+      text-decoration: none;
+    }
+    .patch-preview-link:hover{
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../../" aria-label="ClickSurvivor 홈으로">
+        <div class="logo">
+          <img src="../../seoulsurvival/assets/images/logo.png" alt="ClickSurvivor" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;" />
+        </div>
+        <div class="brandtxt">
+          <div class="brandname">ClickSurvivor</div>
+          <div class="brandtag">오늘도 서울에서 살아남기</div>
+        </div>
+      </a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="메뉴 열기">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="store-page">
+      <div class="store-layout">
+        <!-- Left Column: Main Content -->
+        <div class="store-main" id="storeMain">
+          <!-- 동적 렌더링 -->
+        </div>
+
+        <!-- Right Column: Sidebar -->
+        <div class="store-sidebar" id="storeSidebar">
+          <!-- 동적 렌더링 -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
