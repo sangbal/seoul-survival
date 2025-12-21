@@ -231,6 +231,183 @@ deploy.bat
 .\deploy.ps1
 ```
 
+## 🔍 SEO & 공유 프리뷰 운영 가이드
+
+이 섹션은 레포 구조에 맞춘 SEO 및 SNS 공유 프리뷰 관리 방법을 정리합니다.
+
+### 레포 구조 기반 파일 위치
+
+**멀티페이지 엔트리 (Vite 빌드 입력)**:
+- 허브 홈: `index.html` (루트)
+- 게임: `seoulsurvival/index.html`
+- 계정 관리: `account/index.html`
+- 약관/개인정보: `terms.html`, `privacy.html`
+
+**Vite 설정**: `vite.config.js`의 `rollupOptions.input`에 정의된 페이지만 빌드됩니다.
+
+**정적 리소스**:
+- OG 이미지: `public/og/*.png` → 빌드 시 `dist/og/*.png`로 복사
+- 파비콘: `seoulsurvival/assets/images/logo.png` (게임), 허브는 동일 경로 참조
+- `public/` 폴더의 모든 파일은 빌드 시 `dist/` 루트로 그대로 복사됨
+
+### 현재 페이지별 메타태그 위치
+
+#### 허브 홈 (`index.html`)
+
+**파일 경로**: 루트 `index.html`의 `<head>` 섹션
+
+**필수 메타태그**:
+```html
+<link rel="canonical" href="https://clicksurvivor.com/" />
+<meta name="description" content="..." />
+
+<meta property="og:site_name" content="ClickSurvivor" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://clicksurvivor.com/" />
+<meta property="og:title" content="..." />
+<meta property="og:description" content="..." />
+<meta property="og:image" content="https://clicksurvivor.com/og/clicksurvivor-home-1200x630.png?v=2025-12-21" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="..." />
+<meta name="twitter:description" content="..." />
+<meta name="twitter:image" content="https://clicksurvivor.com/og/clicksurvivor-home-1200x630.png?v=2025-12-21" />
+
+<meta name="theme-color" content="#0b0f19" />
+```
+
+#### 게임 페이지 (`seoulsurvival/index.html`)
+
+**파일 경로**: `seoulsurvival/index.html`의 `<head>` 섹션
+
+**필수 메타태그**: 허브와 동일한 구조, URL과 이미지 경로만 변경
+- `og:url`: `https://clicksurvivor.com/seoulsurvival/`
+- `og:image`: `https://clicksurvivor.com/og/seoulsurvivor-1200x630.png?v=2025-12-21`
+- `canonical`: `https://clicksurvivor.com/seoulsurvival/`
+
+### OG 이미지 관리
+
+**파일 위치**:
+- 소스: `public/og/*.png`
+- 빌드 후: `dist/og/*.png`
+- 배포 URL: `https://clicksurvivor.com/og/*.png`
+
+**규격**:
+- 크기: 1200x630px (OG 표준)
+- 형식: PNG (또는 JPG)
+- 파일명: `{페이지명}-1200x630.png`
+
+**현재 파일**:
+- `public/og/clicksurvivor-home-1200x630.png` (허브 홈)
+- `public/og/seoulsurvivor-1200x630.png` (게임)
+
+**캐시 무효화**: 이미지 URL에 버전 쿼리(`?v=YYYY-MM-DD`)를 추가하여 SNS 캐시를 우회합니다.
+
+### URL 정책
+
+**Canonical URL**:
+- 모든 페이지의 `<head>`에 `<link rel="canonical">` 필수
+- 절대 URL 사용: `https://clicksurvivor.com/` 또는 `https://clicksurvivor.com/seoulsurvival/`
+- trailing slash 유지: 현재 정책은 슬래시 포함 (`/`, `/seoulsurvival/`)
+
+**OG URL**:
+- `og:url`은 `canonical`과 정확히 일치해야 함
+
+### 빌드 후 검증
+
+**로컬 확인**:
+```bash
+npm run build
+# dist/index.html, dist/seoulsurvival/index.html의 <head> 확인
+```
+
+**배포 후 확인**:
+1. 브라우저에서 "페이지 소스 보기" (View Source)
+2. `<head>` 섹션에 메타태그가 포함되어 있는지 확인
+3. OG 이미지 URL 직접 접속: `https://clicksurvivor.com/og/*.png` (200 OK 확인)
+
+**SNS 프리뷰 검증 도구**:
+- Facebook Sharing Debugger: https://developers.facebook.com/tools/debug/
+- Twitter Card Validator: https://cards-dev.twitter.com/validator
+- LinkedIn Post Inspector: https://www.linkedin.com/post-inspector/
+
+각 도구에 URL을 입력하고 "Scrape Again" 또는 "Refresh"를 실행하여 프리뷰를 확인합니다.
+
+### 새 페이지 추가 시 체크리스트
+
+새 서브홈/페이지를 추가할 때 다음을 수행하세요:
+
+1. **HTML 파일 생성**
+   - 예: `games/newgame/index.html` 또는 `games/newgame.html`
+   - `<head>` 섹션에 기본 메타태그 추가
+
+2. **Vite 설정 업데이트**
+   - `vite.config.js`의 `rollupOptions.input`에 새 페이지 추가:
+   ```js
+   input: {
+     main: resolve(__dirname, 'index.html'),
+     seoulsurvival: resolve(__dirname, 'seoulsurvival/index.html'),
+     newgame: resolve(__dirname, 'games/newgame/index.html'), // 추가
+   }
+   ```
+
+3. **SEO 최소 요건**
+   - `<title>` 태그 (브라우저 탭 제목)
+   - `<meta name="description">` (검색 결과 요약)
+   - `<link rel="canonical">` (절대 URL)
+   - OG 메타태그 세트 (og:title, og:description, og:url, og:image, og:image:width, og:image:height)
+   - Twitter Card 메타태그 (twitter:card, twitter:title, twitter:description, twitter:image)
+   - `<meta name="theme-color">` (모바일 브라우저 테마 색상)
+
+4. **OG 이미지 준비**
+   - `public/og/{페이지명}-1200x630.png` 생성
+   - 메타태그의 `og:image` URL에 절대 경로 지정
+
+5. **빌드 및 검증**
+   ```bash
+   npm run build
+   # dist/ 폴더에 새 HTML이 생성되었는지 확인
+   # 메타태그가 포함되었는지 View Source로 확인
+   ```
+
+### robots.txt / sitemap.xml (선택사항)
+
+현재 레포에는 `robots.txt`와 `sitemap.xml`이 없습니다. 필요 시:
+
+**추가 방법**:
+- `public/robots.txt` 생성 → 빌드 시 `dist/robots.txt`로 복사
+- `public/sitemap.xml` 생성 → 빌드 시 `dist/sitemap.xml`로 복사
+
+**예시 `public/robots.txt`**:
+```
+User-agent: *
+Allow: /
+Sitemap: https://clicksurvivor.com/sitemap.xml
+```
+
+**예시 `public/sitemap.xml`**:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://clicksurvivor.com/</loc>
+    <lastmod>2025-12-21</lastmod>
+  </url>
+  <url>
+    <loc>https://clicksurvivor.com/seoulsurvival/</loc>
+    <lastmod>2025-12-21</lastmod>
+  </url>
+</urlset>
+```
+
+### 주의사항
+
+- **SPA 라우팅과 OG**: 현재는 정적 HTML 엔트리만 사용하므로 문제 없음. 향후 SPA 라우팅을 도입할 경우 서버 사이드 렌더링(SSR) 또는 정적 HTML 프리렌더링 필요
+- **이미지 캐시**: OG 이미지를 업데이트한 후 버전 쿼리(`?v=YYYY-MM-DD`)를 변경하거나 파일명을 변경해야 SNS 캐시가 갱신됨
+- **절대 URL 필수**: `og:image`, `og:url`, `canonical`은 반드시 절대 URL(`https://...`) 사용
+
 ## 🧾 버전 관리 / 릴리즈 노트
 
 ### 버전 규칙 (SemVer: MAJOR.MINOR.PATCH)
