@@ -290,6 +290,11 @@ export default {
   'settings.nickname.change.needRename': 'Your nickname is duplicated and needs to be changed.',
   'settings.nickname.migrationConflict.title': 'Nickname Change Required',
   'settings.nickname.migrationConflict.message': 'Your nickname is duplicated and needs to be changed.\nPlease set a new nickname to be reflected on the leaderboard.',
+  'settings.nickname.modal.title': 'Change Nickname',
+  'settings.nickname.modal.message': '1-6 characters, no spaces\nBanned words and duplicate nicknames cannot be used.',
+  'settings.nickname.modal.placeholder': '2-6 character nickname',
+  'settings.nickname.modal.cancel': 'Cancel',
+  'settings.nickname.modal.submit': 'Change',
   
   // Stats tab additional
   'stats.totalEarningsTitle': 'Total Earnings',

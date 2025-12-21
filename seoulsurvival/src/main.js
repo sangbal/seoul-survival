@@ -11,6 +11,7 @@ import { getUser, onAuthStateChange, signInWithOAuth } from '../../shared/auth/c
 import { isSupabaseConfigured } from '../../shared/auth/config.js';
 import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname, validateNickname, claimNickname, getMyRank } from '../../shared/leaderboard.js';
 import { t, applyI18nToDOM, setLang, getLang, getInitialLang } from './i18n/index.js';
+import { GAME_VERSION } from './version.js';
 
 // 노동 직급별 배경 이미지 (Vite asset import로 번들링 시 경로 안정화)
 import workBg01 from '../assets/images/work_bg_01_alba_night.png';
@@ -4874,30 +4875,27 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateUI(){
       // 전체 함수를 try-catch로 감싸서 안전하게 처리
       try {
+        // 게임 버전 표시 업데이트 (package.json 동기화)
+        const gameVersionDisplay = document.getElementById('gameVersionDisplay');
+        if (gameVersionDisplay) {
+          gameVersionDisplay.textContent = `v${GAME_VERSION}`;
+        }
+        
         // --- (A) 커리어 진행률 갱신을 최우선으로 ---
         try {
           // 닉네임 표시 업데이트
         const nicknameLabel = document.getElementById('playerNicknameLabel');
         const nicknameInfoItem = document.getElementById('nicknameInfoItem');
-        const nicknameChangeContainer = document.getElementById('nicknameChangeContainer');
-        const nicknameChangeInput = document.getElementById('nicknameChangeInput');
         if (nicknameLabel) {
           nicknameLabel.textContent = playerNickname || '-';
         }
         if (nicknameInfoItem) {
           nicknameInfoItem.style.display = playerNickname ? 'flex' : 'none';
         }
-        // 닉네임 변경 UI 표시/숨김 및 기본값 설정
-        if (nicknameChangeContainer) {
-          nicknameChangeContainer.style.display = playerNickname ? 'block' : 'none';
-        }
-        if (nicknameChangeInput && playerNickname) {
-          // 현재 닉네임을 기본값으로 설정 (값이 없을 때만)
-          if (!nicknameChangeInput.value) {
-            nicknameChangeInput.value = playerNickname;
-          }
-          // placeholder 업데이트
-          nicknameChangeInput.placeholder = t('settings.nickname.change.placeholder');
+        // 닉네임 변경 버튼 표시/숨김
+        const nicknameChangeButtonContainer = document.getElementById('nicknameChangeButtonContainer');
+        if (nicknameChangeButtonContainer) {
+          nicknameChangeButtonContainer.style.display = playerNickname ? 'block' : 'none';
         }
         
         // 마이그레이션 충돌 배너 표시
@@ -6126,18 +6124,26 @@ document.addEventListener('DOMContentLoaded', () => {
       if (titleIcon) titleIcon.textContent = options.icon || '✏️';
       if (titleText) titleText.textContent = title;
       
-      // 입력 필드 생성
-      let inputEl = elModalMessage.querySelector('.game-modal-input');
-      if (!inputEl) {
-        inputEl = document.createElement('input');
-        inputEl.type = 'text';
-        inputEl.className = 'game-modal-input';
-        elModalMessage.innerHTML = '';
-        elModalMessage.appendChild(inputEl);
-      } else {
-        inputEl.value = '';
+      // 모달 메시지 영역 완전 초기화 (중복 렌더링 방지)
+      elModalMessage.innerHTML = '';
+      
+      // 메시지 텍스트 추가 (있는 경우) - input보다 먼저 추가
+      if (message) {
+        const msgText = document.createElement('div');
+        msgText.className = 'game-modal-message-text';
+        msgText.textContent = message;
+        msgText.style.marginBottom = '10px';
+        msgText.style.color = 'var(--muted)';
+        msgText.style.fontSize = '13px';
+        elModalMessage.appendChild(msgText);
       }
-
+      
+      // 입력 필드 생성
+      const inputEl = document.createElement('input');
+      inputEl.type = 'text';
+      inputEl.className = 'game-modal-input';
+      inputEl.value = options.defaultValue || '';
+      
       // placeholder / maxLength 적용
       inputEl.placeholder = options.placeholder || inputEl.placeholder || t('modal.nickname.placeholder');
       if (typeof options.maxLength === 'number') {
@@ -6146,14 +6152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inputEl.maxLength = 20;
       }
       
-      // 메시지 텍스트 추가 (있는 경우)
-      if (message) {
-        const msgText = document.createElement('div');
-        msgText.textContent = message;
-        msgText.style.marginBottom = '10px';
-        msgText.style.color = 'var(--muted)';
-        elModalMessage.insertBefore(msgText, inputEl);
-      }
+      elModalMessage.appendChild(inputEl);
 
       if (options.secondaryLabel) {
         elModalSecondary.style.display = 'inline-flex';
@@ -6163,15 +6162,34 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       elModalPrimary.textContent = options.primaryLabel || t('ui.confirm');
 
-      // Enter 키로 확인
-      const handleEnter = (e) => {
+      // Enter 키로 확인, ESC로 닫기
+      const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           elModalPrimary.click();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          if (options.secondaryLabel && elModalSecondary.onclick) {
+            elModalSecondary.click();
+          } else {
+            closeModal();
+          }
         }
       };
-      inputEl.addEventListener('keydown', handleEnter);
+      
+      // 이벤트 리스너 중복 등록 방지 (기존 리스너 제거 후 추가)
+      const existingHandler = inputEl.dataset.keydownHandler;
+      if (existingHandler) {
+        inputEl.removeEventListener('keydown', window[existingHandler]);
+      }
+      const handlerId = 'modalKeyDown_' + Date.now();
+      inputEl.dataset.keydownHandler = handlerId;
+      window[handlerId] = handleKeyDown;
+      inputEl.addEventListener('keydown', handleKeyDown);
+      
+      // 자동 포커스 및 전체 선택
       inputEl.focus();
+      inputEl.select();
 
       elModalPrimary.onclick = () => {
         const value = inputEl.value.trim();
@@ -6182,7 +6200,13 @@ document.addEventListener('DOMContentLoaded', () => {
           }, 1000);
           return;
         }
-        inputEl.removeEventListener('keydown', handleEnter);
+        // 이벤트 리스너 정리
+        const handlerId = inputEl.dataset.keydownHandler;
+        if (handlerId && window[handlerId]) {
+          inputEl.removeEventListener('keydown', window[handlerId]);
+          delete window[handlerId];
+          delete inputEl.dataset.keydownHandler;
+        }
         closeModal();
         if (typeof onConfirm === 'function') {
           onConfirm(value || options.defaultValue || '익명');
@@ -6191,7 +6215,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // secondary 버튼은 options.secondaryLabel이 있을 때만 의미 있음
       if (options.secondaryLabel) {
         elModalSecondary.onclick = () => {
-          inputEl.removeEventListener('keydown', handleEnter);
+          // 이벤트 리스너 정리
+          const handlerId = inputEl.dataset.keydownHandler;
+          if (handlerId && window[handlerId]) {
+            inputEl.removeEventListener('keydown', window[handlerId]);
+            delete window[handlerId];
+            delete inputEl.dataset.keydownHandler;
+          }
           closeModal();
           // onCancel 콜백이 있으면 호출
           if (options.onCancel && typeof options.onCancel === 'function') {
@@ -7488,7 +7518,14 @@ document.addEventListener('DOMContentLoaded', () => {
           const toggleIcon = e.target.closest('.toggle-icon');
           if (toggle || toggleIcon) {
             const section = (toggle || toggleIcon).closest('.stats-section');
+            // 업적 섹션은 접기 기능 제거 (항상 펼침 고정)
             if (section && section.classList.contains('collapsible')) {
+              // 업적 섹션 체크: achievementGrid가 있으면 스킵
+              const achievementGrid = section.querySelector('#achievementGrid');
+              if (achievementGrid) {
+                // 업적 섹션은 토글하지 않음
+                return;
+              }
               section.classList.toggle('collapsed');
               e.preventDefault();
               e.stopPropagation();
@@ -9104,14 +9141,22 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             const needsChange = localStorage.getItem('clicksurvivor_needsNicknameChange') === 'true';
             if (needsChange) {
-              // 닉네임 변경 모달 자동 오픈
-              setTimeout(() => {
-                openInfoModal(
-                  t('settings.nickname.migrationConflict.title'),
-                  t('settings.nickname.migrationConflict.message'),
-                  '⚠️'
-                );
-              }, 300); // 탭 전환 애니메이션 후 표시
+              // 세션 단위 가드: 같은 세션에서 이미 자동 오픈했으면 스킵
+              const autoOpenKey = 'clicksurvivor_nicknameModalAutoOpened';
+              const alreadyOpened = sessionStorage.getItem(autoOpenKey) === 'true';
+              
+              if (!alreadyOpened) {
+                // 닉네임 변경 입력 모달 자동 오픈
+                setTimeout(() => {
+                  openNicknameChangeModal();
+                  // 세션 플래그 설정 (이 세션에서 한 번만 자동 오픈)
+                  try {
+                    sessionStorage.setItem(autoOpenKey, 'true');
+                  } catch (e) {
+                    // sessionStorage 실패 시 무시
+                  }
+                }, 300); // 탭 전환 애니메이션 후 표시
+              }
             }
           } catch (e) {
             // 무시
@@ -9211,9 +9256,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateUpgradeList(); // 초기 업그레이드 리스트 생성
     
-    // 닉네임 변경 기능 (유니크 강제 시스템)
+    // 닉네임 변경 기능 (유니크 강제 시스템) - 모달 방식
     const nicknameChangeBtn = document.getElementById('nicknameChangeBtn');
-    const nicknameChangeInput = document.getElementById('nicknameChangeInput');
+    const nicknameConflictChangeBtn = document.getElementById('nicknameConflictChangeBtn');
     
     // 쿨타임 상수 (30초)
     const NICKNAME_CHANGE_COOLDOWN_MS = 30000;
@@ -9258,26 +9303,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     /**
-     * 쿨타임 UI 업데이트
+     * 닉네임 변경 모달 열기
      */
-    function updateNicknameCooldownUI() {
-      if (!nicknameChangeBtn) return;
-      
-      const { allowed, remainingSeconds } = checkNicknameCooldown();
-      
-      if (allowed) {
-        nicknameChangeBtn.disabled = false;
-        nicknameChangeBtn.textContent = t('settings.nickname.change.button');
-      } else {
-        nicknameChangeBtn.disabled = true;
-        nicknameChangeBtn.textContent = t('settings.nickname.change.cooldown', { seconds: remainingSeconds || 0 });
+    function openNicknameChangeModal() {
+      // 쿨타임 체크
+      const cooldown = checkNicknameCooldown();
+      if (!cooldown.allowed) {
+        openInfoModal(
+          t('modal.error.nicknameLength.title'),
+          t('settings.nickname.change.cooldown', { seconds: cooldown.remainingSeconds || 0 }),
+          '⏱️'
+        );
+        return;
       }
+      
+      // 현재 닉네임을 기본값으로 설정
+      const currentNickname = playerNickname || '';
+      
+      openInputModal(
+        t('settings.nickname.modal.title'),
+        t('settings.nickname.modal.message'),
+        handleNicknameChangeFromModal,
+        {
+          icon: '✏️',
+          primaryLabel: t('settings.nickname.modal.submit'),
+          secondaryLabel: t('settings.nickname.modal.cancel'),
+          placeholder: t('settings.nickname.modal.placeholder'),
+          maxLength: 6,
+          defaultValue: currentNickname,
+          required: true
+        }
+      );
     }
     
-    async function handleNicknameChange() {
-      if (!nicknameChangeInput) return;
-      
-      const raw = nicknameChangeInput.value;
+    /**
+     * 모달에서 닉네임 변경 처리
+     */
+    async function handleNicknameChangeFromModal(raw) {
       
       // 1. 로컬 유효성 검사
       const validation = validateNickname(raw);
@@ -9318,18 +9380,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      // 2. 쿨타임 체크
-      const cooldown = checkNicknameCooldown();
-      if (!cooldown.allowed) {
-        openInfoModal(
-          t('modal.error.nicknameLength.title'),
-          t('settings.nickname.change.cooldown', { seconds: cooldown.remainingSeconds || 0 }),
-          '⏱️'
-        );
-        return;
-      }
-      
-      // 3. 로그인 체크
+      // 1. 로그인 체크
       const user = await getUser();
       if (!user) {
         // 비로그인: 로컬만 저장, 리더보드 스킵
@@ -9353,7 +9404,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!claimResult.success) {
           // 실패 처리
           if (claimResult.error === 'taken') {
+            // taken 에러: 에러 모달 표시 후 입력 모달 재오픈 (재입력 가능)
             openInfoModal(t('modal.error.nicknameTaken.title'), t('settings.nickname.change.taken'), '⚠️');
+            // 에러 모달이 닫힌 후 입력 모달 재오픈 (기존 입력값 유지)
+            setTimeout(() => {
+              openNicknameChangeModal();
+            }, 500);
           } else {
             openInfoModal(
               t('modal.error.nicknameLength.title'),
@@ -9392,13 +9448,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // 마이그레이션 충돌 플래그 해제
         try {
           localStorage.removeItem('clicksurvivor_needsNicknameChange');
+          // 자동 오픈 세션 플래그도 해제
+          sessionStorage.removeItem('clicksurvivor_nicknameModalAutoOpened');
         } catch (e) {
           // 무시
         }
         
         // 쿨타임 저장
         saveNicknameCooldown();
-        updateNicknameCooldownUI();
         
         // UI 업데이트
         updateUI();
@@ -9419,27 +9476,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
+    // 버튼 클릭 이벤트 리스너
     if (nicknameChangeBtn) {
-      nicknameChangeBtn.addEventListener('click', handleNicknameChange);
-      
-      // 쿨타임 UI 초기화 및 주기적 업데이트
-      updateNicknameCooldownUI();
-      setInterval(updateNicknameCooldownUI, 1000); // 1초마다 업데이트
+      nicknameChangeBtn.addEventListener('click', openNicknameChangeModal);
     }
     
-    if (nicknameChangeInput) {
-      // Enter 키로 저장
-      nicknameChangeInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          handleNicknameChange();
-        }
-      });
-      
-      // placeholder 업데이트
-      nicknameChangeInput.placeholder = t('settings.nickname.change.placeholder');
-      
-      // maxlength 속성 업데이트 (6자)
-      nicknameChangeInput.maxLength = 6;
+    if (nicknameConflictChangeBtn) {
+      nicknameConflictChangeBtn.addEventListener('click', openNicknameChangeModal);
     }
     
     // 디버깅: 업그레이드 시스템 상태 확인

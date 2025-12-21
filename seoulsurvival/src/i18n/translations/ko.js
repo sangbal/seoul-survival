@@ -279,6 +279,11 @@ export default {
   'settings.nickname.change.needRename': '닉네임이 중복되어 변경이 필요합니다.',
   'settings.nickname.migrationConflict.title': '닉네임 변경 필요',
   'settings.nickname.migrationConflict.message': '닉네임이 중복되어 변경이 필요합니다.\n리더보드에 반영되려면 새 닉네임을 설정해주세요.',
+  'settings.nickname.modal.title': '닉네임 변경',
+  'settings.nickname.modal.message': '1~6자, 공백 불가\n금칙어 및 중복 닉네임은 사용할 수 없습니다.',
+  'settings.nickname.modal.placeholder': '2~6자 닉네임',
+  'settings.nickname.modal.cancel': '취소',
+  'settings.nickname.modal.submit': '변경',
   
   // 통계 탭 추가
   'stats.totalEarningsTitle': '전체 수익',

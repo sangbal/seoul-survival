@@ -1629,6 +1629,17 @@
       -webkit-overflow-scrolling: touch;
     }
     
+    /* 업적 섹션은 항상 펼침 (접기 기능 제거) */
+    #rankingTab .stats-section:has(#achievementGrid) .stats-content {
+      max-height: none;
+      transition: none;
+    }
+    
+    /* 업적 그리드 높이 안정화 (스크롤 튐 방지) */
+    #rankingTab .achievement-grid {
+      min-height: clamp(320px, 45vh, 520px);
+    }
+    
     .stats-section.collapsed .stats-content {
       max-height: 0;
       opacity: 0;
@@ -2907,8 +2918,8 @@
         </div>
 
         <!-- 업적 그리드 (통계 탭에서 이동) -->
-        <div class="stats-section collapsible">
-          <h3 class="stats-toggle"><span data-i18n="ranking.achievements">🏆 업적</span> (<span id="achievementProgress">0/0</span>) <span class="toggle-icon">▼</span></h3>
+        <div class="stats-section">
+          <h3><span data-i18n="ranking.achievements">🏆 업적</span> (<span id="achievementProgress">0/0</span>)</h3>
           <div class="stats-content">
             <div class="achievement-grid" id="achievementGrid">
               <!-- JavaScript로 동적 생성 -->
@@ -2940,7 +2951,7 @@
             </div>
             <div class="stat-item">
               <span class="stat-label" data-i18n="settings.version">버전</span>
-              <span class="stat-value">v1.0</span>
+              <span class="stat-value" id="gameVersionDisplay">v1.2.0</span>
             </div>
           </div>
           <div class="settings-link-group" style="margin-top: 16px;">
@@ -3031,27 +3042,25 @@
           <!-- 닉네임 중복 안내 배너 (마이그레이션 충돌 시 표시) -->
           <div class="settings-warning" id="nicknameConflictBanner" style="display: none; margin-top: 8px; padding: 8px; background: var(--warning); color: var(--text); border-radius: 4px;">
             <span data-i18n="settings.nickname.change.needRename">닉네임이 중복되어 변경이 필요합니다.</span>
+            <button 
+              id="nicknameConflictChangeBtn" 
+              class="btn settings-btn" 
+              style="margin-left: 8px; background: var(--primary); color: white; padding: 4px 12px; font-size: 12px;"
+              data-i18n="settings.nickname.change.button"
+            >
+              지금 변경
+            </button>
           </div>
-          <!-- 닉네임 변경 UI -->
-          <div class="settings-nickname-change" id="nicknameChangeContainer" style="margin-top: 12px; display: none;">
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <input 
-                type="text" 
-                id="nicknameChangeInput" 
-                class="settings-input" 
-                placeholder="" 
-                maxlength="6"
-                style="flex: 1; min-width: 120px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--muted); border-radius: 4px; color: var(--text); font-size: 14px;"
-              />
-              <button 
-                id="nicknameChangeBtn" 
-                class="btn settings-btn" 
-                style="background: var(--primary); color: white; min-width: 100px; padding: 8px 16px;"
-                data-i18n="settings.nickname.change.button"
-              >
-                닉네임 변경
-              </button>
-            </div>
+          <!-- 닉네임 변경 버튼 -->
+          <div class="settings-button-group" id="nicknameChangeButtonContainer" style="margin-top: 12px; display: none;">
+            <button 
+              id="nicknameChangeBtn" 
+              class="btn settings-btn" 
+              style="background: var(--primary); color: white; min-width: 160px;"
+              data-i18n="settings.nickname.change.button"
+            >
+              닉네임 변경
+            </button>
           </div>
           <div class="settings-button-group" style="margin-top: 10px;">
             <div id="authProviderButtons" style="display:flex; gap: 10px; flex-wrap: wrap;">

@@ -201,8 +201,12 @@
 - 분리가 필요한 시점(예):
   - 게임이 3~5개 이상으로 늘어 `ARCHITECTURE.md`가 과도하게 길어짐
   - 게임별로 빌드/배포/데이터 스키마가 크게 달라짐
-- 그때의 분리안(추천):
-  - 루트는 요약만 유지: `ARCHITECTURE.md`(허브 + 공통) + `DEVLOG.md`(전체)
-  - 게임별 상세는 폴더로: `docs/games/<slug>/ARCHITECTURE.md` (필요 시 `BALANCE_NOTES.md`도 게임별로)
+  - 그때의 분리안(추천):
+    - 루트는 요약만 유지: `ARCHITECTURE.md`(허브 + 공통) + `DEVLOG.md`(전체)
+    - 게임별 상세는 폴더로: `docs/games/<slug>/ARCHITECTURE.md` (필요 시 `BALANCE_NOTES.md`도 게임별로)
+
+## 버전 관리
+
+- **버전 표시 규칙**: `package.json`의 `version` 필드를 source of truth로 사용하며, Vite 빌드 시 `__APP_VERSION__`으로 주입되어 게임 내 버전 표시가 자동으로 동기화됩니다.
 
 
