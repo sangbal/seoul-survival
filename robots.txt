@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /account/
+Disallow: /dist/
+
+Sitemap: https://clicksurvivor.com/sitemap.xml
+
