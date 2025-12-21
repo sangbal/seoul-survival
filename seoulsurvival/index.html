@@ -412,6 +412,15 @@
       animation: fallDown 2s ease-in forwards;
     }
     
+    /* 떨어지는 서울타워 애니메이션 */
+    .falling-tower {
+      position: fixed;
+      pointer-events: none;
+      z-index: 10001;
+      font-size: 32px;
+      animation: fallDown 2s ease-in forwards;
+    }
+    
     @keyframes fallDown {
       0% {
         transform: translateY(-100px) rotate(0deg) scale(1);
@@ -2006,11 +2015,17 @@
       white-space: nowrap;
     }
     .leaderboard-table .col-nickname {
-      min-width: 5ch;
-      width: 5ch;
-      max-width: 5ch;
-      overflow: visible;
-      text-overflow: clip;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .leaderboard-table .col-tower {
+      width: 40px;
+      min-width: 40px;
+      max-width: 40px;
+      text-align: center;
+      font-size: 14px;
       white-space: nowrap;
     }
     .leaderboard-table .col-assets {
@@ -2308,8 +2323,8 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/seoulsurvival-BJd80Jrz.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/authBoot-BnOC8kKe.js">
+  <script type="module" crossorigin src="../assets/seoulsurvival-BY3P3a6-.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/authBoot-Cma-J07W.js">
 </head>
 <body>
   <div class="app">
@@ -3006,6 +3021,31 @@
               <span class="settings-info-value" id="playerNicknameLabel">-</span>
             </div>
           </div>
+          <!-- 닉네임 중복 안내 배너 (마이그레이션 충돌 시 표시) -->
+          <div class="settings-warning" id="nicknameConflictBanner" style="display: none; margin-top: 8px; padding: 8px; background: var(--warning); color: var(--text); border-radius: 4px;">
+            <span data-i18n="settings.nickname.change.needRename">닉네임이 중복되어 변경이 필요합니다.</span>
+          </div>
+          <!-- 닉네임 변경 UI -->
+          <div class="settings-nickname-change" id="nicknameChangeContainer" style="margin-top: 12px; display: none;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <input 
+                type="text" 
+                id="nicknameChangeInput" 
+                class="settings-input" 
+                placeholder="" 
+                maxlength="6"
+                style="flex: 1; min-width: 120px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--muted); border-radius: 4px; color: var(--text); font-size: 14px;"
+              />
+              <button 
+                id="nicknameChangeBtn" 
+                class="btn settings-btn" 
+                style="background: var(--primary); color: white; min-width: 100px; padding: 8px 16px;"
+                data-i18n="settings.nickname.change.button"
+              >
+                닉네임 변경
+              </button>
+            </div>
+          </div>
           <div class="settings-button-group" style="margin-top: 10px;">
             <div id="authProviderButtons" style="display:flex; gap: 10px; flex-wrap: wrap;">
               <button class="btn settings-btn" data-auth-provider="google" style="background: var(--primary); color: white; min-width: 160px;" data-i18n="settings.loginGoogle">🔐 Google로 로그인</button>
@@ -3092,7 +3132,7 @@
               🔄 게임 새로 시작
             </button>
             <div class="settings-warning" data-i18n="settings.resetWarning">
-              ⚠️ 게임을 새로 시작하면 모든 진행 상황이 삭제되며 복구할 수 없습니다.
+              ⚠️ 이번 런을 초기화합니다. 🗼 누적 기록과 ⏱ 누적 시간은 유지됩니다.
             </div>
           </div>
         </div>
