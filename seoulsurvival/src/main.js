@@ -8711,9 +8711,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // 업적 그리드 업데이트
+    // 스크롤 중 DOM 업데이트 방지를 위한 플래그
+    let __achievementScrollActive = false;
+    let __achievementUpdatePending = false;
+    let __achievementScrollDebounceTimer = null;
+    
     function updateAchievementGrid() {
       const achievementGrid = document.getElementById('achievementGrid');
       if (!achievementGrid) return;
+      
+      // 스크롤 중이면 업데이트를 지연 (디바운스)
+      const statsContent = achievementGrid.closest('.stats-content');
+      if (statsContent && __achievementScrollActive) {
+        __achievementUpdatePending = true;
+        if (__achievementScrollDebounceTimer) {
+          clearTimeout(__achievementScrollDebounceTimer);
+        }
+        __achievementScrollDebounceTimer = setTimeout(() => {
+          __achievementScrollActive = false;
+          if (__achievementUpdatePending) {
+            __achievementUpdatePending = false;
+            updateAchievementGrid();
+          }
+        }, 300); // 스크롤 종료 후 300ms 대기
+        return;
+      }
       
       // ======= 업적 툴팁(포털) 시스템 =======
       // - 툴팁 DOM은 1개만 사용 (겹침/누수/overflow 문제 방지)
@@ -9099,11 +9121,74 @@ document.addEventListener('DOMContentLoaded', () => {
         // 랭킹 탭 전용 리더보드 폴링 제어
         if (targetTab === 'rankingTab') {
           startLeaderboardPolling();
+          // 업적 영역 스크롤 이벤트 계측 및 최적화
+          setupAchievementScrollOptimization();
         } else {
           stopLeaderboardPolling();
         }
       });
     });
+    
+    // 업적 영역 스크롤 최적화 설정
+    function setupAchievementScrollOptimization() {
+      const achievementGrid = document.getElementById('achievementGrid');
+      if (!achievementGrid) return;
+      
+      const statsContent = achievementGrid.closest('.stats-content');
+      if (!statsContent) return;
+      
+      // 이미 설정되어 있으면 스킵
+      if (statsContent.dataset.scrollOptimized === 'true') return;
+      statsContent.dataset.scrollOptimized = 'true';
+      
+      let lastScrollTop = statsContent.scrollTop;
+      let lastScrollHeight = statsContent.scrollHeight;
+      let scrollThrottleTimer = null;
+      
+      // 스크롤 이벤트 리스너
+      statsContent.addEventListener('scroll', () => {
+        const currentScrollTop = statsContent.scrollTop;
+        const currentScrollHeight = statsContent.scrollHeight;
+        const clientHeight = statsContent.clientHeight;
+        
+        // 스크롤 활성 플래그 설정
+        __achievementScrollActive = true;
+        
+        // 스크롤 종료 디바운스
+        if (__achievementScrollDebounceTimer) {
+          clearTimeout(__achievementScrollDebounceTimer);
+        }
+        __achievementScrollDebounceTimer = setTimeout(() => {
+          __achievementScrollActive = false;
+          if (__achievementUpdatePending) {
+            __achievementUpdatePending = false;
+            updateAchievementGrid();
+          }
+        }, 300);
+        
+        // DEV 모드에서만 계측 (200ms throttle)
+        if (__IS_DEV__) {
+          if (scrollThrottleTimer) return;
+          scrollThrottleTimer = setTimeout(() => {
+            scrollThrottleTimer = null;
+            
+            // scrollHeight 변화 감지
+            if (currentScrollHeight !== lastScrollHeight) {
+              console.warn('[Achievement Scroll] scrollHeight changed during scroll:', {
+                before: lastScrollHeight,
+                after: currentScrollHeight,
+                scrollTop: currentScrollTop,
+                clientHeight: clientHeight,
+                reason: 'Layout change during scroll (likely cause of jank)'
+              });
+            }
+            
+            lastScrollTop = currentScrollTop;
+            lastScrollHeight = currentScrollHeight;
+          }, 200);
+        }
+      }, { passive: true });
+    }
     
     updateUI(); // 초기 UI 업데이트
     updateProductLockStates(); // 초기 잠금 상태 업데이트

@@ -1620,6 +1620,15 @@
       opacity: 1;
     }
     
+    /* 업적 영역 스크롤 최적화 (jank 방지) */
+    #rankingTab .stats-content {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      overflow-anchor: none;
+      contain: layout paint;
+      -webkit-overflow-scrolling: touch;
+    }
+    
     .stats-section.collapsed .stats-content {
       max-height: 0;
       opacity: 0;
