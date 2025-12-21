@@ -3,6 +3,125 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## [2025-01-XX] 글로벌 유니크 닉네임 시스템 완성 (v1.2.0)
+
+### 작업 내용
+1. **닉네임 회수(Release) 정책 적용**
+   - `releaseNickname()` 함수 구현 (`shared/leaderboard.js`)
+   - `release_nickname` RPC 함수 추가 (`supabase/nickname_registry.sql`)
+   - 계정 탈퇴 시 자동 닉네임 회수 (`shared/auth/deleteAccount.js`)
+
+2. **마이그레이션 충돌 UX 강제**
+   - `needsNicknameChange` 플래그 시스템 구현 (`localStorage`)
+   - 설정 탭 진입 시 충돌 감지 시 닉네임 변경 모달 자동 오픈
+   - 충돌 배너 표시 (`seoulsurvival/index.html`, `seoulsurvival/src/main.js`)
+
+3. **문서 정리**
+   - README.md: 닉네임 정책 섹션 추가
+   - ARCHITECTURE.md: Nickname System 섹션 추가 (테이블/RPC/플로우 설명)
+
+4. **릴리즈 노트 및 버전 업데이트**
+   - 버전: 1.0.0 → 1.2.0 (MINOR 상승)
+   - RELEASE_NOTES.md: v1.2.0 섹션 추가
+
+### 변경된 파일
+- `supabase/nickname_registry.sql`: `release_nickname` RPC 함수 추가
+- `shared/leaderboard.js`: `releaseNickname()` 함수 추가
+- `shared/auth/deleteAccount.js`: 계정 탈퇴 시 닉네임 회수 호출
+- `seoulsurvival/src/main.js`: 마이그레이션 충돌 UX 강제 로직 추가
+- `seoulsurvival/src/i18n/translations/ko.js`, `en.js`: 마이그레이션 충돌 메시지 추가
+- `README.md`: 닉네임 정책 섹션 추가
+- `ARCHITECTURE.md`: Nickname System 섹션 추가
+- `RELEASE_NOTES.md`: v1.2.0 섹션 추가
+- `package.json`: 버전 1.2.0으로 업데이트
+
+### 주의사항
+- **Supabase SQL 실행 필요**: `supabase/nickname_registry.sql`을 실행하여 `release_nickname` RPC 함수를 추가해야 합니다
+- **기존 사용자 영향**: 일부 사용자는 닉네임이 중복되어 변경이 필요할 수 있습니다 (마이그레이션 충돌 UX로 안내)
+
+---
+
+## 2025-12-21 (설정 탭 게임 새로 시작 오류 수정: 컨텍스트 독립 프레스티지)
+- **[seoulsurvival] 설정 탭 게임 새로 시작 오류 수정**
+  - 문제: 설정 > 게임 새로 시작 클릭 시 "게임 초기화 중 오류가 발생했습니다" 팝업 표시
+  - 원인: `performAutoPrestige()`가 모달이 닫히는 과정에서 DOM 접근 시 충돌 발생 가능성
+  - 해결:
+    - `performAutoPrestige(source)` 파라미터 추가로 호출 경로 추적 (엔딩/설정 구분)
+    - 모달이 완전히 닫힌 후 프레스티지 실행 (setTimeout 100ms로 DOM 안정화 대기)
+    - `performAutoPrestige()` 내부에 try-catch 추가하여 UI 업데이트/저장 실패 시에도 게임 상태는 초기화되도록 보장
+    - `updateUI()` 전체를 try-catch로 감싸서 DOM 접근 오류 안전 처리
+  - 에러 처리 개선: console.error로 실제 원인과 스택 출력, 치명적 오류만 사용자에게 알림
+  - 컨텍스트 독립성: 엔딩 경로와 설정 경로 모두에서 안전하게 동작하도록 보장
+
+## 2025-12-21 (설정 탭 게임 새로 시작 기능을 A안(수동 프레스티지)으로 고정)
+- **[seoulsurvival] 설정 탭 게임 새로 시작 기능을 A안(수동 프레스티지)으로 변경**
+  - 기존 동작: `resetGame()`이 localStorage를 완전히 삭제하고 페이지 새로고침 → 모든 데이터 삭제
+  - 변경 후: `resetGame()`이 `performAutoPrestige()`를 호출하여 런 상태만 초기화, 누적 데이터 유지
+  - 초기화 대상: 자산/보유 수량/이번 런 플레이 시간/towers_run
+  - 유지 대상: towers_lifetime, 누적 플레이 시간(totalPlayTime), 닉네임, 계정/로그인 상태, 언어/설정값
+  - Confirm 모달 문구 수정: "모든 진행 상황 삭제" → "이번 런 초기화, 🗼누적 기록과 ⏱누적 시간 유지" (KO/EN)
+  - 설정 탭 경고 문구 수정: "모든 진행 상황 삭제" → "이번 런 초기화, 누적 데이터 유지" (KO/EN)
+  - 저장/클라우드 정합성: `performAutoPrestige()` 내부에서 `saveGame()` 호출로 즉시 저장 반영
+  - UI 갱신: `updateUI()` 호출로 모든 탭이 초기 상태로 반영됨
+
+## 2025-12-21 (프레스티지 초기화 버그 근본 해결: 상품 정의 기반 일괄 초기화)
+- **[seoulsurvival] 프레스티지 보유 수량 초기화 버그 근본 해결**
+  - 문제: 프레스티지 후 코인~빌딩 보유 수량이 유지되는 버그 (예금~국내주식은 정상 초기화)
+  - 원인: 하드코딩 나열 방식으로 초기화하여 일부 변수 누락 가능성 및 상품 추가 시 수정 필요
+  - 해결: `resetRunHoldings()` 함수 생성 - 상품 정의 리스트(FINANCIAL_INCOME, BASE_COSTS)를 순회하여 모든 보유 수량 일괄 초기화
+  - 구현 방식:
+    - 금융상품: FINANCIAL_INCOME 키(deposit, savings, bond, usStock, crypto) → 변수명(deposits, savings, bonds, usStocks, cryptos) 매핑
+    - 부동산: BASE_COSTS 키(villa, officetel, apartment, shop, building) → 변수명(villas, officetels, apartments, shops, buildings) 매핑
+    - 상품 추가/삭제 시 초기화 코드 수정 최소화 (상수 정의만 수정하면 자동 반영)
+  - `performAutoPrestige()`에서 `resetRunHoldings()` 호출로 모든 보유 수량 초기화 보장
+  - 저장/로드 정합성: `saveGame()`에서 모든 보유 수량이 0으로 저장되도록 보장
+
+## 2025-12-21 (QA 이슈 수정: 모달 번역/리더보드 UI/프레스티지 초기화)
+- **[seoulsurvival] 클라우드 불러오기 모달 번역 키 추가**
+  - `seoulsurvival/src/i18n/translations/ko.js`에 `modal.confirm.cloudLoad.title` 및 `modal.confirm.cloudLoad.message` 추가
+  - 원인: 영어 번역 파일에는 존재하나 한국어 번역 파일에 누락되어 키 문자열이 그대로 노출됨
+  - 해결: 한국어 번역 추가로 모달 제목/본문이 정상적으로 번역되어 표시됨
+- **[seoulsurvival] 리더보드 테이블 컬럼 겹침 수정**
+  - CSS 수정: `col-nickname`을 유연하게(width: auto), `col-tower`를 고정 폭(40px)으로 조정
+  - 타워 컬럼 헤더 텍스트 제거: `<th class="col-tower" aria-label="서울타워"></th>`로 변경하여 공란 표시
+  - 테이블 레이아웃: `table-layout: auto`로 변경하여 닉네임 컬럼이 최대한 잘리지 않도록 개선
+- **[seoulsurvival] 서울타워 가격 표시 수정**
+  - 가격 포맷 함수 변경: `formatPropertyPrice()` → `formatNumberForLang()` 사용
+  - 결과: "10,000억" → "1조"로 정상 표시 (한국어), 영어는 "1T"로 표시
+- **[seoulsurvival] 엔딩 이펙트 z-index 및 가시성 개선**
+  - z-index 상향: 1000 → 10001 (모달 오버레이 z-index: 9999보다 위)
+  - 이모지 개수 증가: 15개 → 30개
+  - 생성 간격 단축: 50ms → 40ms로 더 빠르게 생성
+- **[seoulsurvival] 엔딩 모달 자동 타이머 제거**
+  - 3초 후 자동 프레스티지 실행 로직 제거
+  - 버튼 클릭으로만 프레스티지 실행: 버튼 텍스트를 "새로운 시작"으로 변경 (`button.newStart` 번역 키 추가)
+  - 모달은 유저가 버튼을 누를 때까지 유지되어 여운 제공
+- **[seoulsurvival] 프레스티지 초기화 범위 확장**
+  - `performAutoPrestige()` 함수에 `bonds = 0` 추가 (국내주식 초기화 누락 수정)
+  - 모든 금융 상품(예금/적금/국내주식/미국주식/코인) 및 부동산(빌라~서울타워) 보유 수량이 0으로 초기화됨을 확인
+
+## 2025-12-20 (프레스티지 시스템 개편: 자동 프레스티지 + 리더보드 지속 업데이트)
+- **[seoulsurvival] 프레스티지 시스템 개편: 자동 프레스티지 구현**
+  - 데이터 모델 변경: `towers` → `towers_run` (현재 런) + `towers_lifetime` (계정 누적) 분리
+  - 엔딩 모달 개편: 선택지([새로 시작]/[나중에]) 제거, 자동 프레스티지 실행으로 변경
+  - 엔딩 연출: 서울타워 이모지가 하늘에서 떨어지는 애니메이션 추가 (`createTowerFallEffect()`)
+  - 자동 프레스티지 함수: `performAutoPrestige()` 구현, `towers_lifetime` 유지, `towers_run` 및 자산/보유 초기화
+  - 타이머 기반 자동 진행: 엔딩 모달 3초 후 자동 프레스티지 실행
+- **[seoulsurvival] 리더보드 지속 업데이트 구현**
+  - 리더보드 업데이트 중단 로직 제거: `updateLeaderboardEntry()`에서 `towers > 0` 체크 삭제
+  - 엔딩 이후에도 계속 업데이트: `towers_lifetime` 기준으로 자산/플레이타임 갱신 지속
+  - 리더보드 테이블에 타워 컬럼 추가: 닉네임 오른편에 별도 컬럼(`col-tower`) 추가, "🗼x3" 형태로 표시
+  - 저장/로드 마이그레이션: 기존 `towers` 데이터를 `towers_lifetime`으로 자동 변환
+- **[seoulsurvival] UI/UX 개선**
+  - 헤더 배지: `towers_lifetime` 기준으로 표시
+  - 투자 섹션: 현재 런(`towers_run`)과 누적(`towers_lifetime`) 구분 표시
+  - 리더보드 테이블: 타워 컬럼 CSS 스타일 추가 (중앙 정렬, 48px 폭)
+  - 서울타워 이펙트: `prefers-reduced-motion` 지원, 최대 15개 이모지, 2초 애니메이션
+- **주의사항**
+  - 프레스티지 시 `towers_lifetime`은 절대 초기화되지 않음 (계정 누적 데이터)
+  - 닉네임 변경 시에도 `towers_lifetime` 유지 (리더보드 기준)
+  - 리더보드는 항상 `towers_lifetime`을 사용하여 업데이트/표시/정렬
+
 ## 2025-12-20 (다국어 지원 시스템 구현)
 - **[seoulsurvival] 다국어 지원(i18n) 시스템 구축**
   - i18n 인프라: `seoulsurvival/src/i18n/index.js`에 핵심 함수 구현 (`STORAGE_KEY`, `translations`, `resolveLang`, `getLangFromUrl`, `getInitialLang`, `t`, `setLang`, `getLang`, `applyI18nToDOM`)

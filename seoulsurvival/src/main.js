@@ -9,7 +9,7 @@ import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
 import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
 import { getUser, onAuthStateChange, signInWithOAuth } from '../../shared/auth/core.js';
 import { isSupabaseConfigured } from '../../shared/auth/config.js';
-import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname, getMyRank } from '../../shared/leaderboard.js';
+import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname, validateNickname, claimNickname, getMyRank } from '../../shared/leaderboard.js';
 import { t, applyI18nToDOM, setLang, getLang, getInitialLang } from './i18n/index.js';
 
 // 노동 직급별 배경 이미지 (Vite asset import로 번들링 시 경로 안정화)
@@ -27,7 +27,8 @@ import workBg10 from '../assets/images/work_bg_10_ceo_night.png';
 // 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
 // - Vite 빌드/개발서버: import.meta.env.DEV 사용
 // - GitHub Pages처럼 번들 없이 ESM으로 직접 로드하는 경우: import.meta.env가 없을 수 있음
-const __IS_DEV__ = (import.meta.env?.DEV) || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+// DEV 모드 체크 (Vite 기준, optional chaining 사용)
+const __IS_DEV__ = !!(import.meta?.env?.DEV);
 if (!__IS_DEV__) {
   console.log = () => {};
   console.warn = () => {};
@@ -716,8 +717,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // 통계 섹션에서는 항상 짧은 숫자 형식 사용
       // 짧은 숫자 형식 (천의자리 콤마 포함)
       if (num >= 1000000000000) {
-        const value = (num / 1000000000000).toFixed(1);
-        return parseFloat(value).toLocaleString('ko-KR') + '조';
+        const value = num / 1000000000000;
+        const formatted = value % 1 === 0 ? value.toLocaleString('ko-KR') : value.toFixed(1);
+        return parseFloat(formatted).toLocaleString('ko-KR') + '조';
       } else if (num >= 100000000) {
         const value = (num / 100000000).toFixed(1);
         return parseFloat(value).toLocaleString('ko-KR') + '억';
@@ -1922,7 +1924,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let apartments = 0;   // 아파트
     let shops = 0;        // 상가
     let buildings = 0;    // 빌딩
-    let towers = 0;       // 서울타워 (프레스티지)
+    let towers_run = 0;       // 서울타워 (현재 런에서 획득)
+    let towers_lifetime = 0;  // 서울타워 (계정 누적, 프레스티지 유지)
     
     // 해금 상태 추적 (버그 수정: 중복 해금 알림 방지)
     const unlockedProducts = {
@@ -3683,7 +3686,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'apartment': apartments,
         'shop': shops,
         'building': buildings,
-        'tower': towers
+        'tower': towers_run
       };
       
       // 이미 보유하고 있으면 해금 로그를 출력하지 않음 (타워는 수량 상품이지만 체크)
@@ -4376,7 +4379,8 @@ document.addEventListener('DOMContentLoaded', () => {
         apartments: apartments,
         shops: shops,
         buildings: buildings,
-        towers: towers,
+        towers_run: towers_run,
+        towers_lifetime: towers_lifetime,
         // 부동산 누적 생산량
         villasLifetime: villasLifetime,
         officetelsLifetime: officetelsLifetime,
@@ -4492,48 +4496,102 @@ document.addEventListener('DOMContentLoaded', () => {
       
       setTimeout(() => {
         const handleConfirm = async (nickname) => {
-          const raw = normalizeNickname(nickname);
-          const key = raw.toLowerCase();
-
-          // 닉네임 유효성 검사: 1~5자, 공백/특수문자(%, _) 불가
-          if (raw.length < 1 || raw.length > 5) {
-            openInfoModal(t('modal.error.nicknameLength.title'), t('modal.error.nicknameLength.message'), '⚠️');
-            __nicknameModalShown = false;
-            ensureNicknameModal();
-            return;
-          }
-          if (/\s/.test(raw)) {
-            openInfoModal(t('modal.error.nicknameFormat.title'), t('modal.error.nicknameFormat.message'), '⚠️');
-            __nicknameModalShown = false;
-            ensureNicknameModal();
-            return;
-          }
-          if (/[%_]/.test(raw)) {
-            openInfoModal(t('modal.error.nicknameFormatInvalid.title'), t('modal.error.nicknameFormatInvalid.message'), '⚠️');
-            __nicknameModalShown = false;
-            ensureNicknameModal();
-            return;
-          }
-
-          // 닉네임 중복 여부 확인 (대소문자 구분 없음)
-          const { taken } = await isNicknameTaken(raw);
-          if (taken) {
-            openInfoModal(t('modal.error.nicknameTaken.title'), t('modal.error.nicknameTaken.message'), '⚠️');
+          // 1. 로컬 유효성 검사 (새 정책: 1~6자, 공백 불허)
+          const validation = validateNickname(nickname);
+          if (!validation.ok) {
+            let errorMessage = '';
+            switch (validation.reasonKey) {
+              case 'empty':
+                errorMessage = t('settings.nickname.change.empty');
+                break;
+              case 'tooShort':
+                errorMessage = t('settings.nickname.change.tooShort');
+                break;
+              case 'tooLong':
+                errorMessage = t('settings.nickname.change.tooLong');
+                break;
+              case 'invalid':
+                errorMessage = t('settings.nickname.change.invalid');
+                break;
+              case 'banned':
+                errorMessage = t('settings.nickname.change.banned');
+                break;
+              default:
+                errorMessage = t('settings.nickname.change.invalid');
+            }
+            openInfoModal(t('modal.error.nicknameFormat.title'), errorMessage, '⚠️');
             __nicknameModalShown = false;
             ensureNicknameModal();
             return;
           }
 
-          // 닉네임 결정 완료 → 클라우드 복구 차단 해제
+          // 정규화
+          const { raw: normalized, key } = normalizeNickname(nickname);
+          
+          // 2. 로그인 체크
+          const user = await getUser();
+          if (!user) {
+            // 비로그인: 로컬만 저장
+            playerNickname = normalized;
+            saveGame();
+            addLog(t('msg.nicknameSet', { nickname: playerNickname }));
+            addLog(t('settings.nickname.change.loginRequired'));
+            
+            // 클라우드 복구 차단 해제
+            try {
+              sessionStorage.removeItem(CLOUD_RESTORE_BLOCK_KEY);
+            } catch (e) {
+              console.warn('sessionStorage remove 실패:', e);
+            }
+            return;
+          }
+
+          // 3. 로그인 상태: claimNickname 수행
           try {
-            sessionStorage.removeItem(CLOUD_RESTORE_BLOCK_KEY);
-          } catch (e) {
-            console.warn('sessionStorage remove 실패:', e);
+            const claimResult = await claimNickname(normalized, user.id);
+            
+            if (!claimResult.success) {
+              if (claimResult.error === 'taken') {
+                openInfoModal(t('modal.error.nicknameTaken.title'), t('settings.nickname.change.taken'), '⚠️');
+              } else {
+                openInfoModal(t('modal.error.nicknameFormat.title'), t('settings.nickname.change.claimFailed'), '⚠️');
+              }
+              __nicknameModalShown = false;
+              ensureNicknameModal();
+              return;
+            }
+            
+            // 성공
+            playerNickname = normalized;
+            saveGame();
+            addLog(t('msg.nicknameSet', { nickname: playerNickname }));
+            
+            // 마이그레이션 충돌 플래그 해제
+            try {
+              localStorage.removeItem('clicksurvivor_needsNicknameChange');
+            } catch (e) {
+              // 무시
+            }
+            
+            // 리더보드 즉시 업데이트
+            try {
+              await updateLeaderboardEntry(true);
+            } catch (error) {
+              console.error('리더보드 업데이트 실패:', error);
+            }
+            
+            // 클라우드 복구 차단 해제
+            try {
+              sessionStorage.removeItem(CLOUD_RESTORE_BLOCK_KEY);
+            } catch (e) {
+              console.warn('sessionStorage remove 실패:', e);
+            }
+          } catch (error) {
+            console.error('닉네임 설정 실패:', error);
+            openInfoModal(t('modal.error.nicknameFormat.title'), t('settings.nickname.change.claimFailed'), '⚠️');
+            __nicknameModalShown = false;
+            ensureNicknameModal();
           }
-
-          playerNickname = raw;
-          saveGame(); // 닉네임 저장
-          addLog(t('msg.nicknameSet', { nickname: playerNickname }));
         };
 
         openInputModal(
@@ -4544,7 +4602,7 @@ document.addEventListener('DOMContentLoaded', () => {
             icon: '✏️',
             primaryLabel: t('button.confirm'),
             placeholder: t('modal.nickname.placeholder'),
-            maxLength: 5,
+            maxLength: 6,
             defaultValue: '',
             required: true,
           }
@@ -4598,7 +4656,8 @@ document.addEventListener('DOMContentLoaded', () => {
         apartments = data.apartments || 0;
         shops = data.shops || 0;
         buildings = data.buildings || 0;
-        towers = data.towers || 0;
+        towers_run = data.towers_run || 0;
+        towers_lifetime = data.towers_lifetime || (data.towers || 0); // 마이그레이션: 기존 towers를 lifetime으로
         
         // 부동산 누적 생산량 복원
         villasLifetime = data.villasLifetime || 0;
@@ -4650,9 +4709,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 닉네임 복원
         playerNickname = data.nickname || '';
         if (data.sessionStartTime) {
-          // 이전 세션의 플레이시간을 누적
-          const previousSessionTime = Date.now() - data.sessionStartTime;
-          totalPlayTime += previousSessionTime;
+          // 이전 세션의 플레이시간을 누적 (정수로 보정)
+          const previousSessionTime = Math.max(0, Math.floor(Date.now() - data.sessionStartTime));
+          totalPlayTime = Math.max(0, Math.floor(totalPlayTime + previousSessionTime));
           console.log('🕐 이전 세션 플레이시간 누적:', previousSessionTime, 'ms');
         }
         // 새 세션 시작
@@ -4668,37 +4727,33 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // 게임 초기화 함수
+    // 게임 초기화 함수 (A안: 수동 프레스티지 - 런 상태만 초기화, 누적 데이터 유지)
     function resetGame() {
-      console.log('🔄 resetGame function called'); // 디버깅용
+      console.log('🔄 resetGame function called (A안: 수동 프레스티지)'); // 디버깅용
 
       openConfirmModal(t('modal.confirm.reset.title'), t('modal.confirm.reset.message'), () => {
-        try {
-          // 초기화 진행 메시지
-          addLog(t('msg.gameReset'));
-          console.log('✅ User confirmed reset'); // 디버깅용
-          
-          // 저장 데이터 삭제
-          localStorage.removeItem(SAVE_KEY);
-          console.log('✅ LocalStorage cleared'); // 디버깅용
-          
-          // reset 직후 첫 부팅에서는 클라우드 복구 제안을 1회 스킵하고,
-          // 닉네임 결정이 끝날 때까지 클라우드 복구를 세션 단위로 차단
+        // 모달이 완전히 닫힌 후 프레스티지 실행 (DOM 안정화 대기)
+        setTimeout(async () => {
           try {
-            sessionStorage.setItem(CLOUD_RESTORE_SKIP_KEY, '1');
-            sessionStorage.setItem(CLOUD_RESTORE_BLOCK_KEY, '1');
-          } catch (e) {
-            console.warn('sessionStorage set 실패:', e);
+            // 초기화 진행 메시지
+            addLog(t('msg.gameReset'));
+            console.log('✅ User confirmed reset (A안: 수동 프레스티지)'); // 디버깅용
+            
+            // A안: performAutoPrestige() 호출로 런 상태만 초기화
+            // - towers_lifetime, totalPlayTime 등 누적 데이터는 유지됨
+            // - 닉네임도 유지됨 (performAutoPrestige에서 건드리지 않음)
+            await performAutoPrestige('settings');
+            
+            if (__IS_DEV__) {
+              console.log('✅ 수동 프레스티지 완료 (누적 데이터 유지)');
+            }
+          } catch (error) {
+            console.error('❌ Error in resetGame:', error);
+            console.error('에러 스택:', error.stack);
+            // 실제 치명적 오류만 사용자에게 알림
+            openInfoModal(t('modal.error.resetError.title'), t('modal.error.resetError.message'), '⚠️');
           }
-          
-          // 즉시 페이지 새로고침
-          // reload 후 ensureNicknameModal()이 닉네임 입력을 처리함
-          console.log('✅ Reloading page...'); // 디버깅용
-          location.reload();
-        } catch (error) {
-          console.error('❌ Error in resetGame:', error);
-          openInfoModal(t('modal.error.resetError.title'), t('modal.error.resetError.message'), '⚠️');
-        }
+        }, 100); // 모달 닫힘 애니메이션 대기
       }, {
         icon: '🔄',
         primaryLabel: t('modal.confirm.reset.primaryLabel'),
@@ -4817,16 +4872,52 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateUI(){
-      // --- (A) 커리어 진행률 갱신을 최우선으로 ---
+      // 전체 함수를 try-catch로 감싸서 안전하게 처리
       try {
-        // 닉네임 표시 업데이트
+        // --- (A) 커리어 진행률 갱신을 최우선으로 ---
+        try {
+          // 닉네임 표시 업데이트
         const nicknameLabel = document.getElementById('playerNicknameLabel');
         const nicknameInfoItem = document.getElementById('nicknameInfoItem');
+        const nicknameChangeContainer = document.getElementById('nicknameChangeContainer');
+        const nicknameChangeInput = document.getElementById('nicknameChangeInput');
         if (nicknameLabel) {
           nicknameLabel.textContent = playerNickname || '-';
         }
         if (nicknameInfoItem) {
           nicknameInfoItem.style.display = playerNickname ? 'flex' : 'none';
+        }
+        // 닉네임 변경 UI 표시/숨김 및 기본값 설정
+        if (nicknameChangeContainer) {
+          nicknameChangeContainer.style.display = playerNickname ? 'block' : 'none';
+        }
+        if (nicknameChangeInput && playerNickname) {
+          // 현재 닉네임을 기본값으로 설정 (값이 없을 때만)
+          if (!nicknameChangeInput.value) {
+            nicknameChangeInput.value = playerNickname;
+          }
+          // placeholder 업데이트
+          nicknameChangeInput.placeholder = t('settings.nickname.change.placeholder');
+        }
+        
+        // 마이그레이션 충돌 배너 표시
+        const nicknameConflictBanner = document.getElementById('nicknameConflictBanner');
+        if (nicknameConflictBanner) {
+          try {
+            const needsChange = localStorage.getItem('clicksurvivor_needsNicknameChange') === 'true';
+            if (needsChange) {
+              nicknameConflictBanner.style.display = 'block';
+              // 배너 내용 업데이트
+              const bannerText = nicknameConflictBanner.querySelector('span');
+              if (bannerText) {
+                bannerText.textContent = t('settings.nickname.migrationConflict.message');
+              }
+            } else {
+              nicknameConflictBanner.style.display = 'none';
+            }
+          } catch (e) {
+            nicknameConflictBanner.style.display = 'none';
+          }
         }
 
         // Supabase 진단 배지는 프로덕션에서는 표시하지 않음 (디버그 코드 제거)
@@ -4896,17 +4987,17 @@ document.addEventListener('DOMContentLoaded', () => {
             safeText(elCareerRemaining, '최고 직급 달성');
           }
         }
-      } catch (e) {
-        console.error('Career UI update failed:', e);
-        console.error('Error details:', {
-          totalClicks,
-          careerLevel,
-          currentCareer: getCurrentCareer(),
-          nextCareer: getNextCareer()
-        });
-      }
-      
-      // --- (B) 나머지 UI 갱신 (금융/부동산/업그레이드 등) ---
+        } catch (e) {
+          console.error('Career UI update failed:', e);
+          console.error('Error details:', {
+            totalClicks,
+            careerLevel,
+            currentCareer: getCurrentCareer(),
+            nextCareer: getNextCareer()
+          });
+        }
+        
+        // --- (B) 나머지 UI 갱신 (금융/부동산/업그레이드 등) ---
       // 일기장 헤더 메타(yyyy.mm.dd(N일차))는 로그가 없어도 항상 갱신
       {
         const elCompact = document.getElementById('diaryHeaderMeta');
@@ -4951,9 +5042,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const towerBadge = document.getElementById('towerBadge');
       const towerCountHeader = document.getElementById('towerCountHeader');
       if (towerBadge && towerCountHeader) {
-        if (towers > 0) {
+        if (towers_lifetime > 0) {
           towerBadge.style.display = 'flex';
-          towerCountHeader.textContent = towers;
+          towerCountHeader.textContent = towers_lifetime;
         } else {
           towerBadge.style.display = 'none';
         }
@@ -5442,7 +5533,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 서울타워 (프레스티지, 수익 없음)
       const towerName = getProductName('tower');
       const towerUnit = t('ui.unit.count');
-      const towerPrice = formatPropertyPrice(BASE_COSTS.tower);
+      const towerPrice = formatNumberForLang(BASE_COSTS.tower, getLang());
       
       // 상품 이름 업데이트
       const towerTitleEl = document.querySelector('#towerItem .title');
@@ -5452,13 +5543,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const towerDescEls = document.querySelectorAll('#towerItem .desc');
       if (towerDescEls.length >= 4) {
         towerDescEls[0].innerHTML = `• ${t('tower.desc.prestige')}`;
-        towerDescEls[1].innerHTML = `• ${t('tower.desc.owned', { count: towers })}`;
-        towerDescEls[2].innerHTML = `• ${t('tower.desc.leaderboard', { count: towers })}`;
+        towerDescEls[1].innerHTML = `• ${t('tower.desc.owned', { count: towers_run })}`;
+        towerDescEls[2].innerHTML = `• ${t('tower.desc.leaderboard', { count: towers_lifetime })}`;
         towerDescEls[3].innerHTML = `${t('product.desc.currentPrice', { price: towerPrice })}`;
       }
       
-      if (elTowerCountDisplay) elTowerCountDisplay.textContent = towers;
-      if (elTowerCountBadge) elTowerCountBadge.textContent = towers;
+      if (elTowerCountDisplay) elTowerCountDisplay.textContent = towers_lifetime;
+      if (elTowerCountBadge) elTowerCountBadge.textContent = towers_lifetime;
       if (elTowerCurrentPrice) {
         elTowerCurrentPrice.textContent = towerPrice;
       }
@@ -5487,6 +5578,11 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // 통계 탭 업데이트
       updateStatsTab();
+      } catch (uiError) {
+        console.error('❌ updateUI() 전체 실행 중 오류:', uiError);
+        console.error('에러 스택:', uiError.stack);
+        // UI 업데이트 실패해도 게임은 계속 진행 가능
+      }
     }
 
     // [투자] 섹션 각 상품에 현재 시장 이벤트 배수(xN.N) 배지 + 행 하이라이트를 표시합니다.
@@ -6443,23 +6539,33 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 구매 처리
         cash -= towerCost;
-        towers += 1;
+        towers_run += 1;
+        towers_lifetime += 1;
         
         // 타워 구매 시점의 자산 계산 (리더보드 업데이트용)
-        const totalAssetsAtPurchase = cash + calculateTotalAssetValue();
-        const currentSessionTime = Date.now() - sessionStartTime;
-        const totalPlayTimeMs = totalPlayTime + currentSessionTime;
+        // bigint 컬럼에 안전하게 저장하기 위해 정수로 변환 (0 바운딩)
+        const rawTotalAssetsAtPurchase = cash + calculateTotalAssetValue();
+        const totalAssetsAtPurchase = Math.max(0, Math.floor(rawTotalAssetsAtPurchase));
         
-        // 리더보드 업데이트 (타워 구매 시점 자산으로 고정)
+        const currentSessionTime = Math.max(0, Math.floor(Date.now() - sessionStartTime));
+        const rawTotalPlayTimeMs = totalPlayTime + currentSessionTime;
+        const totalPlayTimeMs = Math.max(0, Math.floor(rawTotalPlayTimeMs));
+        
+        const towerCount = Math.max(0, Math.floor(towers_lifetime || 0));
+        
+        // 리더보드 업데이트 (누적 타워 개수 사용, 즉시 업데이트)
         if (playerNickname) {
           try {
             await updateLeaderboard(
               playerNickname,
               totalAssetsAtPurchase,
               totalPlayTimeMs,
-              towers
+              towerCount,
+              true // forceImmediate: 서울타워 구매는 즉시 업데이트
             );
-            console.log('리더보드: 서울타워 구매 시점 자산으로 업데이트 완료');
+            if (__IS_DEV__) {
+              console.log('리더보드: 서울타워 구매 시점 자산으로 업데이트 완료 (누적 타워:', towers_lifetime, ')');
+            }
           } catch (error) {
             console.error('리더보드 업데이트 실패:', error);
           }
@@ -6468,8 +6574,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 일기장 기록
         addLog(`🗼 서울타워 완성.\n서울의 정상에 도달했다.\n이제야 진짜 시작인가?`);
         
-        // 엔딩 모달 표시
-        showEndingModal(towers);
+        // 서울타워 이펙트 (하늘에서 이모지 떨어지는 애니메이션)
+        createTowerFallEffect();
+        
+        // 엔딩 모달 표시 (자동 프레스티지 실행)
+        showEndingModal(towers_lifetime);
         
         // 파티클 애니메이션
         if (settings.particles) {
@@ -6481,35 +6590,220 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     
-    // 엔딩 모달 표시 함수
+    // 서울타워 이펙트: 하늘에서 이모지 떨어지는 애니메이션
+    function createTowerFallEffect() {
+      // prefers-reduced-motion 체크
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) {
+        return; // 애니메이션 생략
+      }
+      
+      const emojiCount = 30; // 이모지 개수 증가 (15 → 30)
+      const duration = 2000; // 2초
+      
+      for (let i = 0; i < emojiCount; i++) {
+        setTimeout(() => {
+          const tower = document.createElement('div');
+          tower.className = 'falling-tower';
+          tower.textContent = '🗼';
+          
+          // 화면 상단에서 랜덤하게 떨어뜨리기
+          tower.style.left = (Math.random() * window.innerWidth) + 'px';
+          tower.style.top = '-100px';
+          
+          // body에 직접 추가하여 모달 오버레이 위에 표시
+          document.body.appendChild(tower);
+          
+          // 애니메이션 완료 후 요소 제거
+          setTimeout(() => {
+            if (tower.parentNode) {
+              tower.parentNode.removeChild(tower);
+            }
+          }, duration);
+        }, i * 40); // 0.04초 간격으로 순차 생성 (더 빠르게)
+      }
+    }
+    
+    // 런(현재 게임) 보유 수량 일괄 초기화 함수
+    // 상품 정의 리스트(FINANCIAL_INCOME, BASE_COSTS)를 순회하여 모든 보유 수량을 0으로 초기화
+    // 상품 추가/삭제 시에도 이 함수만 수정하면 되도록 설계
+    function resetRunHoldings() {
+      // 금융상품 보유 수량 초기화 (FINANCIAL_INCOME 키 기반)
+      // 상수 키 → 변수명 매핑
+      const financialHoldings = {
+        deposit: () => { deposits = 0; },
+        savings: () => { savings = 0; },
+        bond: () => { bonds = 0; },
+        usStock: () => { usStocks = 0; },
+        crypto: () => { cryptos = 0; }
+      };
+      
+      // FINANCIAL_INCOME에 정의된 모든 키에 대해 초기화 실행
+      for (const key of Object.keys(FINANCIAL_INCOME)) {
+        if (financialHoldings[key]) {
+          financialHoldings[key]();
+        }
+      }
+      
+      // 부동산 보유 수량 초기화 (BASE_COSTS 키 기반, tower 제외)
+      // 상수 키 → 변수명 매핑
+      const propertyHoldings = {
+        villa: () => { if (typeof villas !== 'undefined') villas = 0; },
+        officetel: () => { if (typeof officetels !== 'undefined') officetels = 0; },
+        apartment: () => { if (typeof apartments !== 'undefined') apartments = 0; },
+        shop: () => { if (typeof shops !== 'undefined') shops = 0; },
+        building: () => { if (typeof buildings !== 'undefined') buildings = 0; }
+        // tower는 towers_run으로 별도 처리 (프레스티지 시 초기화, towers_lifetime은 유지)
+      };
+      
+      // BASE_COSTS에 정의된 모든 키에 대해 초기화 실행 (tower 제외)
+      const propertyKeys = Object.keys(BASE_COSTS).filter(key => key !== 'tower');
+      if (__IS_DEV__) {
+        console.debug('[resetRunHoldings] 부동산 초기화 대상:', propertyKeys);
+      }
+      
+      for (const key of propertyKeys) {
+        if (propertyHoldings[key]) {
+          try {
+            propertyHoldings[key]();
+          } catch (e) {
+            console.warn(`[resetRunHoldings] 부동산 ${key} 초기화 실패:`, e);
+          }
+        } else if (__IS_DEV__) {
+          console.warn(`[resetRunHoldings] 부동산 ${key}에 대한 매핑이 없습니다.`);
+        }
+      }
+      
+      // 추가 변수 초기화 (상수에 없는 변수들)
+      // 주의: domesticStocks는 존재하지 않음. 실제 변수는 bonds이며 위에서 이미 초기화됨
+      if (typeof towers_run !== 'undefined') {
+        towers_run = 0; // towers_lifetime은 유지
+      } else if (__IS_DEV__) {
+        console.warn('[resetRunHoldings] towers_run 변수가 정의되지 않았습니다.');
+      }
+      
+      // 누적 생산량 초기화 (Lifetime 변수들) - 방어 로직 추가
+      const lifetimeHoldings = {
+        depositsLifetime: () => { if (typeof depositsLifetime !== 'undefined') depositsLifetime = 0; },
+        savingsLifetime: () => { if (typeof savingsLifetime !== 'undefined') savingsLifetime = 0; },
+        bondsLifetime: () => { if (typeof bondsLifetime !== 'undefined') bondsLifetime = 0; },
+        usStocksLifetime: () => { if (typeof usStocksLifetime !== 'undefined') usStocksLifetime = 0; },
+        cryptosLifetime: () => { if (typeof cryptosLifetime !== 'undefined') cryptosLifetime = 0; },
+        villasLifetime: () => { if (typeof villasLifetime !== 'undefined') villasLifetime = 0; },
+        officetelsLifetime: () => { if (typeof officetelsLifetime !== 'undefined') officetelsLifetime = 0; },
+        apartmentsLifetime: () => { if (typeof apartmentsLifetime !== 'undefined') apartmentsLifetime = 0; },
+        shopsLifetime: () => { if (typeof shopsLifetime !== 'undefined') shopsLifetime = 0; },
+        buildingsLifetime: () => { if (typeof buildingsLifetime !== 'undefined') buildingsLifetime = 0; }
+      };
+      
+      if (__IS_DEV__) {
+        console.debug('[resetRunHoldings] Lifetime 변수 초기화 대상:', Object.keys(lifetimeHoldings));
+      }
+      
+      for (const [varName, resetFn] of Object.entries(lifetimeHoldings)) {
+        try {
+          resetFn();
+        } catch (e) {
+          console.warn(`[resetRunHoldings] Lifetime 변수 ${varName} 초기화 실패:`, e);
+        }
+      }
+      
+      if (__IS_DEV__) {
+        console.debug('[resetRunHoldings] 초기화 완료');
+      }
+    }
+    
+    // 자동 프레스티지 실행 함수 (컨텍스트 독립: 엔딩/설정 경로 모두 안전)
+    async function performAutoPrestige(source = 'unknown') {
+      console.log(`🔄 자동 프레스티지 실행 (source: ${source})`);
+      
+      try {
+        // towers_lifetime은 유지, towers_run은 초기화
+        // 자산/보유/진행도 초기화
+        cash = 1000; // 초기 자본
+        totalClicks = 0;
+        totalLaborIncome = 0;
+        careerLevel = 0;
+        
+        // 모든 보유 수량 일괄 초기화 (상품 정의 기반)
+        resetRunHoldings();
+        
+        // 업그레이드 초기화
+        for (const upgrade of Object.values(UPGRADES)) {
+          upgrade.unlocked = false;
+          upgrade.purchased = false;
+        }
+        
+        // 시장 이벤트 초기화
+        currentMarketEvent = null;
+        marketEventEndTime = 0;
+        marketMultiplier = 1.0;
+        
+        // 업적은 유지 (계정 누적)
+        
+        // 세션 시간 초기화
+        sessionStartTime = Date.now();
+        
+        // UI 업데이트 (안전하게)
+        try {
+          updateUI();
+        } catch (uiError) {
+          console.error('❌ UI 업데이트 중 오류:', uiError);
+          // UI 업데이트 실패해도 게임 상태는 초기화됨
+        }
+        
+        // 저장 (안전하게)
+        try {
+          saveGame();
+        } catch (saveError) {
+          console.error('❌ 게임 저장 중 오류:', saveError);
+          // 저장 실패해도 게임 상태는 초기화됨
+        }
+        
+        // 리더보드 즉시 업데이트 (프레스티지는 중요 이벤트)
+        if (playerNickname) {
+          try {
+            await updateLeaderboardEntry(true); // forceImmediate: 프레스티지는 즉시 업데이트
+          } catch (error) {
+            console.error('리더보드 업데이트 실패:', error);
+          }
+        }
+        
+        addLog('🗼 새로운 시작. 다시 한 번.');
+        if (__IS_DEV__) {
+          console.log('✅ 프레스티지 완료 (누적 데이터 유지)');
+        }
+      } catch (error) {
+        console.error('❌ 프레스티지 실행 중 치명적 오류:', error);
+        console.error('스택:', error.stack);
+        // 치명적 오류만 사용자에게 알림
+        throw error; // 상위 try-catch에서 처리
+      }
+    }
+    
+    // 엔딩 모달 표시 함수 (자동 프레스티지)
     function showEndingModal(towerCount) {
       const message = `🗼 서울타워 완성 🗼\n\n` +
         `알바에서 시작해 CEO까지.\n` +
         `예금에서 시작해 서울타워까지.\n\n` +
         `서울 한복판에 당신의 이름이 새겨졌다.\n\n` +
-        `"이제야 진짜 시작인가?"\n\n` +
-        `리더보드에 기록되었습니다: 🗼x${towerCount}`;
+        `서울타워 🗼 획득 (누적 ${towerCount}개)\n\n` +
+        `이제 새로운 시작을 합니다.`;
       
       openInfoModal('🎉 엔딩', message, '🗼');
       
-      // 모달 확인 버튼 클릭 시 새 게임 시작 옵션 제공
-      const originalOnClick = elModalPrimary.onclick;
+      // 모달 확인 버튼 클릭 시 자동 프레스티지 실행 (타이머 없음, 버튼 클릭만)
+      elModalPrimary.textContent = t('button.newStart') || '새로운 시작';
       elModalPrimary.onclick = () => {
         closeModal();
-        // 확인 다이얼로그로 새 게임 시작 여부 확인
-        openConfirmModal(
-          '🔄 새 게임 시작',
-          '서울타워를 완성했습니다!\n\n새 게임을 시작하시겠습니까?\n(현재 진행은 초기화됩니다)',
-          () => {
-            resetGame();
-            addLog('🗼 새로운 시작. 다시 한 번.');
-          },
-          {
-            icon: '🗼',
-            primaryLabel: '새 게임 시작',
-            secondaryLabel: t('button.later')
+        // 모달이 완전히 닫힌 후 프레스티지 실행 (DOM 안정화 대기)
+        setTimeout(async () => {
+          try {
+            await performAutoPrestige('ending');
+          } catch (error) {
+            console.error('❌ 프레스티지 실행 중 오류:', error);
           }
-        );
+        }, 100);
       };
     }
 
@@ -7036,8 +7330,84 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
       try {
         __currentUser = await getUser();
+        
+        // 마이그레이션: 로그인 시 현재 닉네임이 있으면 자동 claim 시도
+        if (__currentUser && playerNickname) {
+          try {
+            const { raw: normalized } = normalizeNickname(playerNickname);
+            const claimResult = await claimNickname(normalized, __currentUser.id);
+            
+            if (!claimResult.success && claimResult.error === 'taken') {
+              // 충돌: 다른 사용자가 이미 점유
+              if (__IS_DEV__) {
+                console.warn('[Nickname Migration] 충돌 감지:', playerNickname);
+              }
+              // needsNicknameChange 플래그 설정
+              try {
+                localStorage.setItem('clicksurvivor_needsNicknameChange', 'true');
+              } catch (e) {
+                console.warn('needsNicknameChange 플래그 저장 실패:', e);
+              }
+            } else if (claimResult.success) {
+              if (__IS_DEV__) {
+                console.log('[Nickname Migration] 자동 claim 성공:', playerNickname);
+              }
+              // 성공 시 플래그 해제
+              try {
+                localStorage.removeItem('clicksurvivor_needsNicknameChange');
+              } catch (e) {
+                // 무시
+              }
+            }
+          } catch (error) {
+            console.error('[Nickname Migration] 자동 claim 실패:', error);
+            // 마이그레이션 실패해도 게임 진행은 계속
+          }
+        }
+        
         onAuthStateChange(async (user) => {
           __currentUser = user;
+          
+          // 로그인 시 마이그레이션: 현재 닉네임이 있으면 자동 claim 시도
+          if (user && playerNickname) {
+            try {
+              const { raw: normalized } = normalizeNickname(playerNickname);
+              const claimResult = await claimNickname(normalized, user.id);
+              
+              if (!claimResult.success && claimResult.error === 'taken') {
+                // 충돌: 다른 사용자가 이미 점유
+                if (__IS_DEV__) {
+                  console.warn('[Nickname Migration] 로그인 후 충돌 감지:', playerNickname);
+                }
+                // needsNicknameChange 플래그 설정
+                try {
+                  localStorage.setItem('clicksurvivor_needsNicknameChange', 'true');
+                } catch (e) {
+                  console.warn('needsNicknameChange 플래그 저장 실패:', e);
+                }
+                // 설정 탭에 배너 표시를 위해 UI 업데이트
+                updateUI();
+              } else if (claimResult.success) {
+                if (__IS_DEV__) {
+                  console.log('[Nickname Migration] 로그인 후 자동 claim 성공:', playerNickname);
+                }
+                // 성공 시 플래그 해제
+                try {
+                  localStorage.removeItem('clicksurvivor_needsNicknameChange');
+                } catch (e) {
+                  // 무시
+                }
+                // 리더보드 즉시 업데이트
+                try {
+                  await updateLeaderboardEntry(true);
+                } catch (error) {
+                  console.error('리더보드 업데이트 실패:', error);
+                }
+              }
+            } catch (error) {
+              console.error('[Nickname Migration] 로그인 후 자동 claim 실패:', error);
+            }
+          }
           
           // 로그인 성공 시 저장 비교 (1회만)
           if (user && !window.__saveSyncChecked) {
@@ -7736,8 +8106,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <tr>
               <th class="col-rank">${t('ranking.table.rank')}</th>
               <th class="col-nickname">${t('ranking.table.nickname')}</th>
+              <th class="col-tower" aria-label="서울타워"></th>
               <th class="col-assets">${t('ranking.table.assets')}</th>
-              <th class="col-playtime">${t('ranking.table.playtime')}</th>
+              <th class="col-playtime" aria-label="${t('ranking.table.playtime.full')}">${t('ranking.table.playtime')}</th>
             </tr>
           `;
           table.appendChild(thead);
@@ -7755,14 +8126,16 @@ document.addEventListener('DOMContentLoaded', () => {
             rankTd.className = 'col-rank';
             rankTd.textContent = String(index + 1);
 
-            // 닉네임 셀 (타워 이모지 포함)
+            // 닉네임 셀
             const nickTd = document.createElement('td');
             nickTd.className = 'col-nickname';
+            nickTd.textContent = entry.nickname || '익명';
+
+            // 타워 셀
+            const towerTd = document.createElement('td');
+            towerTd.className = 'col-tower';
             const towerCount = entry.tower_count || 0;
-            const displayName = towerCount > 0
-              ? `${entry.nickname || '익명'} 🗼${towerCount > 1 ? `x${towerCount}` : ''}`
-              : (entry.nickname || '익명');
-            nickTd.textContent = displayName;
+            towerTd.textContent = towerCount > 0 ? `🗼${towerCount > 1 ? `x${towerCount}` : ''}` : '-';
 
             // 자산 셀 (만원/억 단위로 표시)
             const assetsTd = document.createElement('td');
@@ -7786,6 +8159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tr.appendChild(rankTd);
             tr.appendChild(nickTd);
+            tr.appendChild(towerTd);
             tr.appendChild(assetsTd);
             tr.appendChild(playtimeTd);
             tbody.appendChild(tr);
@@ -7836,7 +8210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="my-rank-assets">💰 ${formatLeaderboardAssets(myEntry.total_assets || 0)}</div>
                   </div>
                   <div class="my-rank-meta">
-                    <span class="my-rank-playtime">⏱️ ${playTimeText}</span>
+                    <span class="my-rank-playtime">⏱️ ${t('ranking.table.playtime.full')}: ${playTimeText}</span>
                     <span class="my-rank-note">TOP 10 내 순위</span>
                   </div>
                 </div>
@@ -7925,16 +8299,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 로그인 상태이고 닉네임이 있으면 리더보드 업데이트 시도
                     if (user && playerNickname) {
                       try {
-                        const totalAssets = cash + calculateTotalAssetValue();
-                        const currentSessionTime = Date.now() - sessionStartTime;
-                        const totalPlayTimeMs = totalPlayTime + currentSessionTime;
-                        console.log('[LB] 리더보드 업데이트 시도', { 
-                          nickname: playerNickname, 
-                          totalAssets, 
-                          totalPlayTimeMs,
-                          towerCount: towers 
-                        });
-                        const updateResult = await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs, towers);
+                        // bigint 컬럼에 안전하게 저장하기 위해 정수로 변환 (0 바운딩)
+                        const rawTotalAssets = cash + calculateTotalAssetValue();
+                        const totalAssets = Math.max(0, Math.floor(rawTotalAssets));
+                        
+                        const currentSessionTime = Math.max(0, Math.floor(Date.now() - sessionStartTime));
+                        const rawTotalPlayTimeMs = totalPlayTime + currentSessionTime;
+                        const totalPlayTimeMs = Math.max(0, Math.floor(rawTotalPlayTimeMs));
+                        
+                        const towerCount = Math.max(0, Math.floor(towers_lifetime || 0));
+                        
+                        if (__IS_DEV__) {
+                          console.log('[LB] 리더보드 업데이트 시도', { 
+                            nickname: playerNickname, 
+                            totalAssets: { raw: rawTotalAssets, safe: totalAssets },
+                            totalPlayTimeMs: { raw: rawTotalPlayTimeMs, safe: totalPlayTimeMs },
+                            towerCount: { raw: towers_lifetime, safe: towerCount }
+                          });
+                        }
+                        const updateResult = await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs, towerCount);
                         if (updateResult.success) {
                           console.log('[LB] 리더보드 업데이트 성공, 다시 조회');
                           // 업데이트 성공 후 다시 조회
@@ -7957,7 +8340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                   <div class="my-rank-assets">💰 ${formatLeaderboardAssets(me.total_assets || 0)}</div>
                                 </div>
                                 <div class="my-rank-meta">
-                                  <span class="my-rank-playtime">⏱️ ${playTimeText}</span>
+                                  <span class="my-rank-playtime">⏱️ ${t('ranking.table.playtime.full')}: ${playTimeText}</span>
                                   <span class="my-rank-note">내 실제 순위</span>
                                 </div>
                               </div>
@@ -8025,7 +8408,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="my-rank-assets">💰 ${formatLeaderboardAssets(me.total_assets || 0)}</div>
                       </div>
                       <div class="my-rank-meta">
-                        <span class="my-rank-playtime">⏱️ ${playTimeText}</span>
+                        <span class="my-rank-playtime">⏱️ ${t('ranking.table.playtime.full')}: ${playTimeText}</span>
                         <span class="my-rank-note">내 실제 순위</span>
                       </div>
                     </div>
@@ -8054,41 +8437,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // 리더보드 업데이트 함수 (게임 저장 시 호출)
-    async function updateLeaderboardEntry() {
+    async function updateLeaderboardEntry(forceImmediate = false) {
       if (!playerNickname) {
-        console.log('[LB] 리더보드 업데이트 스킵: 닉네임 없음');
+        if (__IS_DEV__) {
+          console.log('[LB] 리더보드 업데이트 스킵: 닉네임 없음');
+        }
         return; // 닉네임이 없으면 업데이트 안 함
       }
       
-      // 타워가 1개 이상이면 자동 업데이트 중단 (타워 구매 시점 자산으로 고정)
-      if (towers > 0) {
-        console.log('[LB] 리더보드 업데이트 스킵: 타워 달성 후 자동 업데이트 중단');
-        return;
-      }
-      
+      // 엔딩 이후에도 계속 업데이트 (towers_lifetime 사용)
       try {
         // 로그인 상태 확인
         const user = await getUser();
         if (!user) {
-          console.log('[LB] 리더보드 업데이트 스킵: 로그인되지 않음');
+          if (__IS_DEV__) {
+            console.log('[LB] 리더보드 업데이트 스킵: 로그인되지 않음');
+          }
           return;
         }
         
-        const totalAssets = cash + calculateTotalAssetValue();
-        const currentSessionTime = Date.now() - sessionStartTime;
-        const totalPlayTimeMs = totalPlayTime + currentSessionTime;
+        // bigint 컬럼에 안전하게 저장하기 위해 정수로 변환 (0 바운딩)
+        const rawTotalAssets = cash + calculateTotalAssetValue();
+        const totalAssets = Math.max(0, Math.floor(rawTotalAssets));
         
-        console.log('[LB] 리더보드 업데이트 시도', { 
-          nickname: playerNickname, 
-          totalAssets, 
-          totalPlayTimeMs,
-          towerCount: towers,
-          userId: user.id 
-        });
+        const currentSessionTime = Math.max(0, Math.floor(Date.now() - sessionStartTime));
+        const rawTotalPlayTimeMs = totalPlayTime + currentSessionTime;
+        const totalPlayTimeMs = Math.max(0, Math.floor(rawTotalPlayTimeMs));
         
-        const result = await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs, towers);
+        const towerCount = Math.max(0, Math.floor(towers_lifetime || 0));
+        
+        if (__IS_DEV__) {
+          console.log('[LB] 리더보드 업데이트 시도', { 
+            nickname: playerNickname, 
+            totalAssets: { raw: rawTotalAssets, safe: totalAssets },
+            totalPlayTimeMs: { raw: rawTotalPlayTimeMs, safe: totalPlayTimeMs },
+            towerCount: { raw: towers_lifetime, safe: towerCount },
+            userId: user.id,
+            forceImmediate
+          });
+        }
+        
+        const result = await updateLeaderboard(playerNickname, totalAssets, totalPlayTimeMs, towerCount, forceImmediate);
         if (result.success) {
-          console.log('[LB] 리더보드 업데이트 성공');
+          if (__IS_DEV__) {
+            console.log('[LB] 리더보드 업데이트 성공', result.skipped ? '(skipped)' : '');
+          }
         } else {
           console.error('[LB] 리더보드 업데이트 실패', result.error);
         }
@@ -8234,7 +8627,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const apartments = Number(saveData.apartments || 0);
       const shops = Number(saveData.shops || 0);
       const buildings = Number(saveData.buildings || 0);
-      const towers = Number(saveData.towers || 0);
+      const towers_run = Number(saveData.towers_run || 0);
       
       for (let i = 0; i < villas; i++) {
         totalValue += getPropertyCost('villa', i);
@@ -8251,7 +8644,7 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let i = 0; i < buildings; i++) {
         totalValue += getPropertyCost('building', i);
       }
-      for (let i = 0; i < towers; i++) {
+      for (let i = 0; i < towers_run; i++) {
         totalValue += getPropertyCost('tower', i);
       }
       
@@ -8455,36 +8848,68 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('resize', () => hideTooltip(), true);
       }
 
-      // 이미 생성되어 있으면 업데이트만
+      // 이미 생성되어 있으면 업데이트만 (깜빡임 방지: innerHTML 사용 안 함)
       if (achievementGrid.children.length > 0) {
         let unlockedCount = 0;
+        let hasChanges = false;
+        
         Object.values(ACHIEVEMENTS).forEach(ach => {
           const icon = document.getElementById('ach_' + ach.id);
-          if (!icon) return;
+          if (!icon) {
+            hasChanges = true; // 아이콘이 없으면 재생성 필요
+            return;
+          }
 
-          if (ach.unlocked) {
-            icon.classList.add('unlocked');
-            icon.classList.remove('locked');
+          const wasUnlocked = icon.classList.contains('unlocked');
+          const isUnlocked = ach.unlocked;
+          
+          // 상태가 변경된 경우에만 DOM 조작 (깜빡임 최소화)
+          if (wasUnlocked !== isUnlocked) {
+            hasChanges = true;
+            if (isUnlocked) {
+              icon.classList.add('unlocked');
+              icon.classList.remove('locked');
+            } else {
+              icon.classList.add('locked');
+              icon.classList.remove('unlocked');
+            }
+          }
+          
+          if (isUnlocked) {
             unlockedCount++;
-          } else {
-            icon.classList.add('locked');
-            icon.classList.remove('unlocked');
           }
 
           // 네이티브 title은 항상 최신으로 유지 (툴팁 대체/접근성)
           const achievementName = t(`achievement.${ach.id}.name`, {}, ach.name);
           const achievementDesc = t(`achievement.${ach.id}.desc`, {}, ach.desc);
-          const statusText = ach.unlocked ? t('achievement.status.unlocked') : t('achievement.status.locked');
-          icon.title = `${achievementName}\n${achievementDesc}\n${statusText}`;
+          const statusText = isUnlocked ? t('achievement.status.unlocked') : t('achievement.status.locked');
+          const newTitle = `${achievementName}\n${achievementDesc}\n${statusText}`;
+          
+          // title이 변경된 경우에만 업데이트 (불필요한 DOM 조작 방지)
+          if (icon.title !== newTitle) {
+            icon.title = newTitle;
+          }
         });
         
         const totalAchievements = Object.keys(ACHIEVEMENTS).length;
-        safeText(document.getElementById('achievementProgress'), `${unlockedCount}/${totalAchievements}`);
-        return;
+        const progressEl = document.getElementById('achievementProgress');
+        if (progressEl) {
+          const newProgressText = `${unlockedCount}/${totalAchievements}`;
+          if (progressEl.textContent !== newProgressText) {
+            safeText(progressEl, newProgressText);
+          }
+        }
+        
+        // 변경사항이 없으면 재렌더링 스킵 (깜빡임 방지)
+        if (!hasChanges) {
+          return;
+        }
       }
       
-      // 처음 생성
-      achievementGrid.innerHTML = '';
+      // 처음 생성 또는 재생성 필요 시에만 innerHTML 사용
+      if (achievementGrid.children.length === 0) {
+        achievementGrid.innerHTML = '';
+      }
       let unlockedCount = 0;
       const totalAchievements = Object.keys(ACHIEVEMENTS).length;
       
@@ -8515,6 +8940,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ======= 리더보드 폴링 제어 (랭킹 탭 전용) =======
     let __lbInterval = null;
     let __lbObserver = null;
+    let __lbPollingStarted = false; // 중복 실행 방지 플래그
     
     function isDesktopLayout() {
       return window.matchMedia && window.matchMedia('(min-width: 769px)').matches;
@@ -8527,8 +8953,16 @@ document.addEventListener('DOMContentLoaded', () => {
       // 모바일(탭형)에서는 active 탭일 때만 폴링
       if (!isDesktopLayout() && !rankingTab.classList.contains('active')) return;
       
-      // 이미 폴링 중이면 스킵
-      if (__lbInterval) return;
+      // 이미 폴링 중이면 스킵 (강화된 가드)
+      if (__lbPollingStarted && __lbInterval) {
+        if (__IS_DEV__) {
+          console.debug('[LB] 폴링이 이미 시작되어 있음, 스킵');
+        }
+        return;
+      }
+      
+      // 플래그 설정 (타이머 설정 전에 설정하여 중복 방지)
+      __lbPollingStarted = true;
       
       // 즉시 1회 업데이트
       updateLeaderboardUI(true);
@@ -8554,6 +8988,8 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(__lbInterval);
         __lbInterval = null;
       }
+      // 플래그도 리셋 (다시 시작할 수 있도록)
+      __lbPollingStarted = false;
     }
     
     function setupLeaderboardObserver() {
@@ -8570,23 +9006,50 @@ document.addEventListener('DOMContentLoaded', () => {
         __lbObserver.disconnect();
       }
       
+      // IntersectionObserver 콜백이 중복 호출되지 않도록 디바운싱
+      let __lbObserverLastState = null;
+      let __lbObserverDebounceTimer = null;
+      
       __lbObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          const isVisible = entry.isIntersecting;
-          const rankingActive = rankingTab.classList.contains('active');
-          
-          // 데스크톱: 보이면 폴링 시작, 안 보이면 중단
-          // 모바일: active + visible일 때만 시작
-          const shouldStart = isDesktopLayout()
-            ? isVisible
-            : isVisible && rankingActive;
-          
-          if (shouldStart) {
-            startLeaderboardPolling();
-          } else {
-            stopLeaderboardPolling();
-          }
-        });
+        // 디바운싱: 연속 호출 방지 (100ms)
+        if (__lbObserverDebounceTimer) {
+          clearTimeout(__lbObserverDebounceTimer);
+        }
+        
+        __lbObserverDebounceTimer = setTimeout(() => {
+          entries.forEach(entry => {
+            const isVisible = entry.isIntersecting;
+            const rankingActive = rankingTab.classList.contains('active');
+            
+            // 상태가 변경되지 않았으면 스킵 (중복 호출 방지)
+            const currentState = isVisible ? 'visible' : 'hidden';
+            if (__lbObserverLastState === currentState) {
+              if (__IS_DEV__) {
+                console.debug('[LB] Observer 상태 변경 없음, 스킵:', currentState);
+              }
+              return;
+            }
+            __lbObserverLastState = currentState;
+            
+            // 데스크톱: 보이면 폴링 시작, 안 보이면 중단
+            // 모바일: active + visible일 때만 시작
+            const shouldStart = isDesktopLayout()
+              ? isVisible
+              : isVisible && rankingActive;
+            
+            if (shouldStart) {
+              if (__IS_DEV__) {
+                console.debug('[LB] Observer: 폴링 시작');
+              }
+              startLeaderboardPolling();
+            } else {
+              if (__IS_DEV__) {
+                console.debug('[LB] Observer: 폴링 중단');
+              }
+              stopLeaderboardPolling();
+            }
+          });
+        }, 100); // 100ms 디바운싱
       }, {
         root: null,
         threshold: 0.1
@@ -8613,6 +9076,25 @@ document.addEventListener('DOMContentLoaded', () => {
           tabEl.classList.add('active');
         }
         btn.classList.add('active');
+        
+        // 설정 탭 진입 시 마이그레이션 충돌 체크
+        if (targetTab === 'settingsTab') {
+          try {
+            const needsChange = localStorage.getItem('clicksurvivor_needsNicknameChange') === 'true';
+            if (needsChange) {
+              // 닉네임 변경 모달 자동 오픈
+              setTimeout(() => {
+                openInfoModal(
+                  t('settings.nickname.migrationConflict.title'),
+                  t('settings.nickname.migrationConflict.message'),
+                  '⚠️'
+                );
+              }, 300); // 탭 전환 애니메이션 후 표시
+            }
+          } catch (e) {
+            // 무시
+          }
+        }
         
         // 랭킹 탭 전용 리더보드 폴링 제어
         if (targetTab === 'rankingTab') {
@@ -8643,6 +9125,237 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     updateUpgradeList(); // 초기 업그레이드 리스트 생성
+    
+    // 닉네임 변경 기능 (유니크 강제 시스템)
+    const nicknameChangeBtn = document.getElementById('nicknameChangeBtn');
+    const nicknameChangeInput = document.getElementById('nicknameChangeInput');
+    
+    // 쿨타임 상수 (30초)
+    const NICKNAME_CHANGE_COOLDOWN_MS = 30000;
+    const NICKNAME_CHANGE_COOLDOWN_KEY = 'clicksurvivor_lastNicknameChangeAt';
+    
+    /**
+     * 쿨타임 체크
+     * @returns {{ allowed: boolean, remainingSeconds?: number }}
+     */
+    function checkNicknameCooldown() {
+      try {
+        const lastChangeAt = localStorage.getItem(NICKNAME_CHANGE_COOLDOWN_KEY);
+        if (!lastChangeAt) {
+          return { allowed: true };
+        }
+        
+        const lastChangeTime = parseInt(lastChangeAt, 10);
+        const now = Date.now();
+        const elapsed = now - lastChangeTime;
+        
+        if (elapsed >= NICKNAME_CHANGE_COOLDOWN_MS) {
+          return { allowed: true };
+        }
+        
+        const remaining = Math.ceil((NICKNAME_CHANGE_COOLDOWN_MS - elapsed) / 1000);
+        return { allowed: false, remainingSeconds: remaining };
+      } catch (e) {
+        // localStorage 오류 시 허용 (쿨타임 실패해도 진행)
+        return { allowed: true };
+      }
+    }
+    
+    /**
+     * 쿨타임 저장
+     */
+    function saveNicknameCooldown() {
+      try {
+        localStorage.setItem(NICKNAME_CHANGE_COOLDOWN_KEY, String(Date.now()));
+      } catch (e) {
+        console.warn('쿨타임 저장 실패:', e);
+      }
+    }
+    
+    /**
+     * 쿨타임 UI 업데이트
+     */
+    function updateNicknameCooldownUI() {
+      if (!nicknameChangeBtn) return;
+      
+      const { allowed, remainingSeconds } = checkNicknameCooldown();
+      
+      if (allowed) {
+        nicknameChangeBtn.disabled = false;
+        nicknameChangeBtn.textContent = t('settings.nickname.change.button');
+      } else {
+        nicknameChangeBtn.disabled = true;
+        nicknameChangeBtn.textContent = t('settings.nickname.change.cooldown', { seconds: remainingSeconds || 0 });
+      }
+    }
+    
+    async function handleNicknameChange() {
+      if (!nicknameChangeInput) return;
+      
+      const raw = nicknameChangeInput.value;
+      
+      // 1. 로컬 유효성 검사
+      const validation = validateNickname(raw);
+      if (!validation.ok) {
+        let errorMessage = '';
+        switch (validation.reasonKey) {
+          case 'empty':
+            errorMessage = t('settings.nickname.change.empty');
+            break;
+          case 'tooShort':
+            errorMessage = t('settings.nickname.change.tooShort');
+            break;
+          case 'tooLong':
+            errorMessage = t('settings.nickname.change.tooLong');
+            break;
+          case 'invalid':
+            errorMessage = t('settings.nickname.change.invalid');
+            break;
+          case 'banned':
+            errorMessage = t('settings.nickname.change.banned');
+            break;
+          default:
+            errorMessage = t('settings.nickname.change.invalid');
+        }
+        openInfoModal(t('modal.error.nicknameFormat.title'), errorMessage, '⚠️');
+        return;
+      }
+      
+      // 정규화
+      const { raw: normalized, key } = normalizeNickname(raw);
+      
+      // 현재 닉네임과 동일하면 스킵
+      const currentNormalized = normalizeNickname(playerNickname || '');
+      if (key === currentNormalized.key) {
+        if (__IS_DEV__) {
+          console.log('[Nickname] 변경 없음: 동일한 닉네임');
+        }
+        return;
+      }
+      
+      // 2. 쿨타임 체크
+      const cooldown = checkNicknameCooldown();
+      if (!cooldown.allowed) {
+        openInfoModal(
+          t('modal.error.nicknameLength.title'),
+          t('settings.nickname.change.cooldown', { seconds: cooldown.remainingSeconds || 0 }),
+          '⏱️'
+        );
+        return;
+      }
+      
+      // 3. 로그인 체크
+      const user = await getUser();
+      if (!user) {
+        // 비로그인: 로컬만 저장, 리더보드 스킵
+        const oldNickname = playerNickname;
+        playerNickname = normalized;
+        saveGame();
+        updateUI();
+        addLog(t('settings.nickname.change.success'));
+        addLog(t('settings.nickname.change.loginRequired'));
+        
+        if (__IS_DEV__) {
+          console.log(`[Nickname] 로컬 저장 완료 (비로그인): "${oldNickname}" → "${playerNickname}"`);
+        }
+        return;
+      }
+      
+      // 4. 로그인 상태: claimNickname 수행 (서버 유니크 보장)
+      try {
+        const claimResult = await claimNickname(normalized, user.id);
+        
+        if (!claimResult.success) {
+          // 실패 처리
+          if (claimResult.error === 'taken') {
+            openInfoModal(t('modal.error.nicknameTaken.title'), t('settings.nickname.change.taken'), '⚠️');
+          } else {
+            openInfoModal(
+              t('modal.error.nicknameLength.title'),
+              t('settings.nickname.change.claimFailed'),
+              '⚠️'
+            );
+          }
+          return;
+        }
+        
+        // 성공: 닉네임 업데이트
+        const oldNickname = playerNickname;
+        playerNickname = normalized;
+        
+        // 저장
+        saveGame();
+        
+        // 클라우드 저장
+        try {
+          const saveObj = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+          await upsertCloudSave('seoulsurvival', saveObj);
+          if (__IS_DEV__) {
+            console.log('[Nickname] 클라우드 저장 완료');
+          }
+        } catch (error) {
+          console.error('클라우드 저장 실패:', error);
+        }
+        
+        // 리더보드 즉시 업데이트
+        try {
+          await updateLeaderboardEntry(true); // forceImmediate: 닉네임 변경은 즉시 업데이트
+        } catch (error) {
+          console.error('리더보드 업데이트 실패:', error);
+        }
+        
+        // 마이그레이션 충돌 플래그 해제
+        try {
+          localStorage.removeItem('clicksurvivor_needsNicknameChange');
+        } catch (e) {
+          // 무시
+        }
+        
+        // 쿨타임 저장
+        saveNicknameCooldown();
+        updateNicknameCooldownUI();
+        
+        // UI 업데이트
+        updateUI();
+        
+        // 성공 메시지
+        addLog(t('settings.nickname.change.success'));
+        
+        if (__IS_DEV__) {
+          console.log(`[Nickname] 변경 완료: "${oldNickname}" → "${playerNickname}"`);
+        }
+      } catch (error) {
+        console.error('닉네임 변경 실패:', error);
+        openInfoModal(
+          t('modal.error.nicknameLength.title'),
+          t('settings.nickname.change.claimFailed'),
+          '⚠️'
+        );
+      }
+    }
+    
+    if (nicknameChangeBtn) {
+      nicknameChangeBtn.addEventListener('click', handleNicknameChange);
+      
+      // 쿨타임 UI 초기화 및 주기적 업데이트
+      updateNicknameCooldownUI();
+      setInterval(updateNicknameCooldownUI, 1000); // 1초마다 업데이트
+    }
+    
+    if (nicknameChangeInput) {
+      // Enter 키로 저장
+      nicknameChangeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleNicknameChange();
+        }
+      });
+      
+      // placeholder 업데이트
+      nicknameChangeInput.placeholder = t('settings.nickname.change.placeholder');
+      
+      // maxlength 속성 업데이트 (6자)
+      nicknameChangeInput.maxLength = 6;
+    }
     
     // 디버깅: 업그레이드 시스템 상태 확인
     console.log('=== UPGRADE SYSTEM DEBUG ===');

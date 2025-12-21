@@ -64,6 +64,33 @@
   - 조회: **랭킹 탭**에서만 업데이트 (로딩 상태 관리, 1분 간격 폴링, 타임아웃 처리, IntersectionObserver 기반 가시성 체크)
   - 순위 정렬: 타워 개수 우선 → 자산 순 (타워 개수가 같으면 자산 많은 순)
   - 스키마: `supabase/leaderboard.sql`에 `tower_count` 컬럼 및 복합 인덱스 포함, `get_my_rank` RPC 함수로 순위 조회
+- **공통(Nickname System)**: `shared/leaderboard.js` + `supabase/nickname_registry.sql`
+  - 글로벌 유니크 닉네임 시스템: 리더보드에서 닉네임은 고유 식별자로 사용되며, 게임 전체에서 중복 불가
+  - 테이블: `nickname_registry` (테이블/RLS는 `supabase/nickname_registry.sql`로 관리)
+    - 컬럼: `game_slug`, `nickname_key` (NFC + lowercase 비교용), `nickname_raw` (표시용), `user_id`
+    - 제약: `UNIQUE (game_slug, nickname_key)` (닉네임 전역 유니크), `UNIQUE (game_slug, user_id)` (유저당 1개 점유)
+  - RPC 함수:
+    - `claim_nickname(p_game_slug, p_nickname_key, p_nickname_raw, p_user_id)`: 닉네임 클레임 (원자적 연산, 레이스 컨디션 방지)
+    - `release_nickname(p_game_slug, p_user_id)`: 닉네임 회수 (계정 탈퇴 시 사용)
+  - 클라이언트 함수:
+    - `normalizeNickname(raw)`: NFC 정규화 + key 생성 (대소문자 구분 없음)
+    - `validateNickname(raw)`: 유효성 검사 (길이 1~6자, 허용 문자, 금칙어 필터)
+    - `claimNickname(raw, userId)`: 닉네임 클레임 (서버 유니크 보장)
+    - `releaseNickname(userId, gameSlug)`: 닉네임 회수 (계정 탈퇴 시 호출)
+  - 닉네임 정책:
+    - 길이: 1~6자
+    - 허용 문자: 한글/영문/숫자/밑줄만 (공백 불허)
+    - 정규화: NFC + 대소문자 구분 없음 (예: "Steve"와 "steve"는 동일)
+    - 금칙어 필터: 욕설/비하/시스템 키워드 포함 닉네임은 사용 불가
+    - 변경 쿨타임: 30초 (스팸 방지)
+  - 마이그레이션 충돌 처리:
+    - 로그인 시 현재 닉네임이 있으면 자동 `claimNickname()` 시도
+    - 충돌 시 (`error === 'taken'`): `localStorage.setItem('clicksurvivor_needsNicknameChange', 'true')` 플래그 설정
+    - 설정 탭 진입 시: 플래그가 있으면 닉네임 변경 모달 자동 오픈 + 배너 표시
+    - 닉네임 변경 성공 시: 플래그 해제 (`localStorage.removeItem('clicksurvivor_needsNicknameChange')`)
+  - 닉네임 회수 정책:
+    - 계정 탈퇴 시: `deleteAccount()` 호출 전에 `releaseNickname()` 자동 호출
+    - 단순 로그아웃 또는 게임 데이터 초기화는 회수 대상이 아님
 - **게임 UI/마크업(Seoul Survival)**: `seoulsurvival/index.html`
   - 실제 게임 화면(HTML/CSS) 본체.
   - `<script type="module" src="./src/main.js">`로 **`seoulsurvival/src/main.js`**를 로드해 게임 로직을 실행.
@@ -107,7 +134,7 @@
 ## 핵심 데이터/테이블 위치
 - **직급(승진)**: `seoulsurvival/src/main.js`의 `CAREER_LEVELS`
 - **업그레이드**: `seoulsurvival/src/main.js`의 `UPGRADES`
-- **서울타워**: `seoulsurvival/src/main.js`의 `towers` 변수
+- **서울타워**: `seoulsurvival/src/main.js`의 `towers_run` (현재 런) + `towers_lifetime` (계정 누적) 변수
 - **기본 수익 테이블**
   - 금융: `FINANCIAL_INCOME`
   - 부동산: `BASE_RENT`
@@ -121,9 +148,20 @@
   - `isProductUnlocked(...)`, `checkNewUnlocks(...)` in `seoulsurvival/src/main.js`
   - 서울타워 해금 조건: CEO(`careerLevel >= 9`) + 빌딩 1개 이상
 - **프레스티지 시스템**:
-  - 서울타워: 최종 엔드게임 콘텐츠, 구매 시 엔딩 모달 표시
-  - 리더보드 통합: 타워 개수는 리더보드에 이모지(🗼)로 표시, 순위 정렬에 우선 반영
-  - 게임 상태: 타워 구매 후 `shouldUpdateLeaderboard = false`로 설정하여 자산 변화가 리더보드에 반영되지 않음
+  - 서울타워: 최종 엔드게임 콘텐츠, 구매 시 엔딩 모달 표시 + 자동 프레스티지 실행
+  - 데이터 모델: `towers_run` (현재 런) + `towers_lifetime` (계정 누적) 분리
+  - 리더보드 통합: 타워 개수는 리더보드에 별도 컬럼(`col-tower`)으로 표시, 순위 정렬에 우선 반영
+  - 게임 상태: 엔딩 이후에도 리더보드 업데이트 지속 (`towers_lifetime` 기준)
+  - 자동 프레스티지: 엔딩 모달에서 선택지 제거, 버튼 클릭으로만 실행 (타이머 자동 실행 제거)
+  - 수동 프레스티지(A안): 설정 탭의 "게임 새로 시작" 버튼이 `performAutoPrestige()`를 호출하여 런 상태만 초기화
+    - 초기화 대상: 자산/보유 수량/이번 런 플레이 시간/towers_run
+    - 유지 대상: towers_lifetime, 누적 플레이 시간(totalPlayTime), 닉네임, 계정/로그인 상태, 언어/설정값
+  - 프레스티지 시: `towers_lifetime` 유지, `towers_run` 및 모든 상품 보유 수량 초기화
+  - 초기화 방식: `resetRunHoldings()` 함수가 상품 정의 리스트(FINANCIAL_INCOME, BASE_COSTS)를 순회하여 일괄 초기화
+    - 금융상품: deposits, savings, bonds, usStocks, cryptos
+    - 부동산: villas, officetels, apartments, shops, buildings
+    - 상품 추가/삭제 시 초기화 코드 수정 최소화 (상수 정의만 수정하면 자동 반영)
+  - 엔딩 이펙트: 서울타워 이모지 30개가 z-index 10001로 모달 위에 떨어지는 애니메이션
 
 ## UI 구조 메모(자주 수정되는 곳)
 - 노동 탭(`workTab`)
@@ -136,7 +174,8 @@
   - 상단: 내 순위(닉네임/자산/플레이타임/순위 표시, Top10 밖인 경우 RPC 기반 순위 조회)
     - 비로그인 상태: 간단한 안내 문구 + Google 로그인 버튼만 표시 (카드/헤더 제거)
     - 로그인 버튼 클릭 시 설정 탭으로 이동하지 않고 바로 `signInWithOAuth('google')` 실행
-  - 중단: 글로벌 리더보드 TOP 10 (닉네임/자산/플레이타임, 내 닉네임은 행 하이라이트)
+  - 중단: 글로벌 리더보드 TOP 10 (순위/닉네임/타워/자산/플레이타임, 내 닉네임은 행 하이라이트)
+    - 타워 컬럼: 닉네임 오른편에 별도 컬럼으로 표시, "🗼x3" 형태 또는 "-" (0개)
   - 하단: 통계 탭에서 옮겨온 업적 그리드(`achievementGrid`)
 - 인앱 브라우저 안내:
   - `detectInAppBrowser()`: 카카오톡/인스타그램/페이스북/라인/위챗 등 인앱 브라우저 감지

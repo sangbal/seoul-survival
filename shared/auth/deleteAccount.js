@@ -2,6 +2,7 @@
 import { getSupabaseClient } from './supabaseClient.js';
 import { getUser } from './core.js';
 import { SUPABASE_URL } from './config.js';
+import { releaseNickname } from '../leaderboard.js';
 
 /**
  * Delete user account via Edge Function
@@ -16,6 +17,21 @@ export async function deleteAccount() {
   const user = await getUser();
   if (!user) {
     return { ok: false, status: 'AUTH_FAILED', reason: 'not_signed_in' };
+  }
+
+  // Release nickname before account deletion
+  // This allows the nickname to be claimed by other users after account deletion
+  try {
+    const releaseResult = await releaseNickname(user.id, 'seoulsurvival');
+    if (releaseResult.success) {
+      console.log('[DeleteAccount] Nickname released successfully');
+    } else {
+      // Log but don't fail account deletion if nickname release fails
+      console.warn('[DeleteAccount] Nickname release failed:', releaseResult.message);
+    }
+  } catch (error) {
+    // Log but don't fail account deletion if nickname release fails
+    console.warn('[DeleteAccount] Nickname release exception:', error);
   }
 
   // Get current session token

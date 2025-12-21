@@ -89,10 +89,9 @@ export function updateStatsTab(deps) {
     safeText(document.getElementById('totalClicksStats'), state.totalClicks.toLocaleString(locale) + timesUnit);
     safeText(document.getElementById('laborIncomeStats'), formatCashDisplay(state.totalLaborIncome));
 
-    // 플레이 시간(누적)
+    // 플레이 시간(이번 런)
     const currentSessionTime = now() - state.sessionStartTime;
-    const totalPlayTimeMs = state.totalPlayTime + currentSessionTime;
-    const playTimeMinutes = Math.floor(totalPlayTimeMs / 60000);
+    const playTimeMinutes = Math.floor(currentSessionTime / 60000);
     const playTimeHours = Math.floor(playTimeMinutes / 60);
     const remainingMinutes = playTimeMinutes % 60;
     const hourUnit = t('stats.unit.hour');
