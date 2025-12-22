@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="canonical" href="https://clicksurvivor.com/support/" />
+  <meta name="description" content="ClickSurvivor 지원 센터 — FAQ, 문의, 버그 리포트, 저장/계정/랭킹 안내" />
+
+  <meta property="og:site_name" content="ClickSurvivor" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://clicksurvivor.com/support/" />
+  <meta property="og:locale" content="ko_KR" />
+  <meta property="og:title" content="지원 센터 | ClickSurvivor" />
+  <meta property="og:description" content="ClickSurvivor 지원 센터 — FAQ, 문의, 버그 리포트, 저장/계정/랭킹 안내" />
+  <meta property="og:image" content="https://clicksurvivor.com/og/clicksurvivor-home-1200x630.png?v=2025-12-21" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="지원 센터 | ClickSurvivor" />
+  <meta name="twitter:description" content="ClickSurvivor 지원 센터 — FAQ, 문의, 버그 리포트, 저장/계정/랭킹 안내" />
+  <meta name="twitter:image" content="https://clicksurvivor.com/og/clicksurvivor-home-1200x630.png?v=2025-12-21" />
+
+  <meta name="theme-color" content="#0b0f19" />
+
+  <link rel="icon" type="image/png" href="../assets/logo-CaUs9YDr.png" />
+  <link rel="apple-touch-icon" href="../assets/logo-CaUs9YDr.png" />
+  <title>지원 센터 | ClickSurvivor</title>
+
+  <style>
+    :root{
+      --bg:#070b14;
+      --surface: rgba(15,23,42,.55);
+      --surface-2: rgba(11,18,32,.62);
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --border: rgba(148,163,184,.18);
+      --accent:#60a5fa;
+      --accent-2:#5eead4;
+      --danger:#ef4444;
+      --radius: 18px;
+      --shadow: 0 14px 48px rgba(0,0,0,.40);
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 48px;
+      --space-9: 64px;
+      --font-xs: 12px;
+      --font-sm: 13px;
+      --font-md: 14px;
+      --font-lg: 16px;
+      --font-xl: 18px;
+      --font-2xl: clamp(28px, 3.4vw, 44px);
+      --weight-bold: 800;
+      --weight-black: 900;
+      --headerH: 64px;
+    }
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior: smooth; overflow-x: hidden; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(900px 560px at 20% -10%, rgba(96,165,250,.18), transparent 60%),
+        radial-gradient(720px 520px at 65% 30%, rgba(167,139,250,.10), transparent 55%),
+        var(--bg);
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+    a{ color:inherit; text-decoration:none; }
+    ::selection{ background: rgba(96,165,250,.28); }
+    :where(a, button, input, select, textarea, summary):focus-visible{
+      outline: 2px solid rgba(96,165,250,.95);
+      outline-offset: 3px;
+    }
+
+    .wrap{ max-width: 1080px; margin: 0 auto; padding: 0 18px 70px; }
+    
+    /* Quick Links */
+    .quick-links{
+      margin-top: var(--space-8);
+      margin-bottom: var(--space-8);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+    @media (min-width: 640px){
+      .quick-links{
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .quick-link-card{
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: var(--space-5);
+      transition: all .2s ease;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+    }
+    .quick-link-card:hover{
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+      border-color: rgba(148,163,184,.28);
+    }
+    .quick-link-icon{
+      font-size: 32px;
+      margin-bottom: var(--space-3);
+    }
+    .quick-link-title{
+      font-size: var(--font-lg);
+      font-weight: 950;
+      margin: 0 0 var(--space-2);
+      letter-spacing: -.1px;
+    }
+    .quick-link-desc{
+      color: var(--muted);
+      font-size: var(--font-sm);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* FAQ Sections */
+    .faq-section{
+      margin-bottom: var(--space-8);
+    }
+    .section-title{
+      font-size: var(--font-xl);
+      font-weight: 950;
+      margin: 0 0 var(--space-5);
+      letter-spacing: -.2px;
+      scroll-margin-top: calc(var(--headerH) + 16px);
+    }
+    .faq-item{
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius);
+      margin-bottom: var(--space-4);
+      overflow: hidden;
+    }
+    .faq-question{
+      padding: var(--space-5);
+      font-size: var(--font-md);
+      font-weight: 950;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      transition: all .15s ease;
+    }
+    .faq-question:hover{
+      background: rgba(148,163,184,.05);
+    }
+    .faq-question::after{
+      content: '+';
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--accent);
+      transition: transform .2s ease;
+      flex-shrink: 0;
+    }
+    .faq-item[open] .faq-question::after{
+      transform: rotate(45deg);
+    }
+    .faq-answer{
+      padding: 0 var(--space-5) var(--space-5);
+      color: var(--muted);
+      font-size: var(--font-md);
+      line-height: 1.7;
+    }
+    .faq-answer p{
+      margin: 0 0 var(--space-3);
+    }
+    .faq-answer p:last-child{
+      margin-bottom: 0;
+    }
+    .faq-answer ul{
+      margin: var(--space-3) 0;
+      padding-left: var(--space-6);
+    }
+    .faq-answer li{
+      margin: var(--space-2) 0;
+    }
+    .faq-answer a{
+      color: var(--accent);
+      text-decoration: underline;
+    }
+    .faq-answer a:hover{
+      color: var(--accent-2);
+    }
+    .faq-answer code{
+      background: rgba(15,23,42,.8);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: var(--font-xs);
+    }
+    .faq-warning{
+      background: rgba(239,68,68,.12);
+      border: 1px solid rgba(239,68,68,.25);
+      border-radius: 12px;
+      padding: var(--space-4);
+      margin: var(--space-3) 0;
+    }
+    .faq-warning strong{
+      color: var(--danger);
+      font-weight: 950;
+    }
+
+    /* Contact Section */
+    .contact-section{
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: var(--space-6);
+      margin-bottom: var(--space-8);
+    }
+    .contact-form{
+      margin-top: var(--space-5);
+    }
+    .form-group{
+      margin-bottom: var(--space-4);
+    }
+    .form-label{
+      display: block;
+      font-size: var(--font-sm);
+      font-weight: 900;
+      margin-bottom: var(--space-2);
+      color: var(--text);
+    }
+    .form-input,
+    .form-textarea{
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,.55);
+      color: var(--text);
+      font-size: var(--font-md);
+      font-family: inherit;
+    }
+    .form-textarea{
+      min-height: 120px;
+      resize: vertical;
+    }
+    .form-input:focus,
+    .form-textarea:focus{
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-color: var(--accent);
+    }
+    .form-hint{
+      font-size: var(--font-xs);
+      color: var(--muted);
+      margin-top: var(--space-2);
+    }
+    .btn-submit{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: white;
+      font-weight: 950;
+      font-size: var(--font-md);
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .btn-submit:hover{
+      background: rgba(96,165,250,.98);
+      box-shadow: 0 10px 30px rgba(96,165,250,.18);
+    }
+  </style>
+  <script type="module" crossorigin src="../assets/support-CMFPiF7a.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="../assets/i18n-Bg2tVCd8.js">
+  <link rel="modulepreload" crossorigin href="../assets/authBoot-BV3fiOB2.js">
+  <link rel="modulepreload" crossorigin href="../assets/footer-DQtZeuej.js">
+</head>
+<body>
+  <!-- 공통 헤더 마운트 포인트 -->
+  <div id="commonHeaderMount"></div>
+
+  <main class="wrap" data-testid="support-root">
+    <h1 class="section-title" style="margin-top: var(--space-8);">지원 센터</h1>
+    <p style="color: var(--muted); font-size: var(--font-md); margin-bottom: var(--space-8);">
+      자주 묻는 질문과 문의 방법을 안내합니다. 문제가 해결되지 않으면 하단의 문의하기를 이용해주세요.
+    </p>
+
+    <!-- Quick Links -->
+    <div class="quick-links">
+      <a href="#saving-sync" class="quick-link-card">
+        <div class="quick-link-icon">💾</div>
+        <div class="quick-link-title">저장 & 동기화</div>
+        <div class="quick-link-desc">로컬/클라우드 저장 차이와 동기화 방법</div>
+      </a>
+      <a href="#account-data" class="quick-link-card">
+        <div class="quick-link-icon">⚙️</div>
+        <div class="quick-link-title">계정 & 데이터</div>
+        <div class="quick-link-desc">데이터 삭제, 계정 관리 안내</div>
+      </a>
+      <a href="#contact" class="quick-link-card">
+        <div class="quick-link-icon">📧</div>
+        <div class="quick-link-title">버그 리포트</div>
+        <div class="quick-link-desc">문제 신고 및 문의하기</div>
+      </a>
+    </div>
+
+    <!-- Getting Started -->
+    <section class="faq-section" id="getting-started">
+      <h2 class="section-title">시작하기</h2>
+      
+      <details class="faq-item">
+        <summary class="faq-question">플레이는 누구나 가능한가요?</summary>
+        <div class="faq-answer">
+          <p>네, 로그인 없이도 플레이할 수 있습니다. 게스트 모드로 플레이하면 브라우저에 로컬 저장이 됩니다.</p>
+          <p>로그인하면 클라우드 저장과 기기 간 동기화가 가능합니다. 여러 기기에서 같은 계정으로 접속하면 진행 상황을 이어갈 수 있습니다.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">로그인하면 무엇을 할 수 있나요?</summary>
+        <div class="faq-answer">
+          <p>로그인 시 다음 기능을 사용할 수 있습니다:</p>
+          <ul>
+            <li><strong>클라우드 저장:</strong> 여러 기기에서 진행 상황 동기화</li>
+            <li><strong>리더보드 참여:</strong> 글로벌 랭킹에 닉네임으로 참여</li>
+            <li><strong>업적 기록:</strong> 업적이 계정에 저장되어 유지</li>
+          </ul>
+          <p>로그인은 Google 계정으로 간단하게 할 수 있습니다.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- Saving & Sync -->
+    <section class="faq-section" id="saving-sync">
+      <h2 class="section-title">저장 & 동기화</h2>
+      
+      <details class="faq-item">
+        <summary class="faq-question">로컬 저장과 클라우드 저장의 차이는 무엇인가요?</summary>
+        <div class="faq-answer">
+          <p><strong>로컬 저장 (비로그인):</strong></p>
+          <ul>
+            <li>브라우저의 LocalStorage에 저장</li>
+            <li>5초마다 자동 저장</li>
+            <li>같은 브라우저/기기에서만 접근 가능</li>
+            <li>브라우저 데이터 삭제 시 저장 데이터도 삭제됨</li>
+          </ul>
+          <p><strong>클라우드 저장 (로그인):</strong></p>
+          <ul>
+            <li>Supabase 서버에 저장</li>
+            <li>로컬 저장(5초마다) + 클라우드 저장(탭 닫기 시 자동 플러시)</li>
+            <li>어떤 기기에서든 로그인하면 접근 가능</li>
+            <li>계정 삭제 전까지 데이터 유지</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">로그인/로그아웃 시 저장은 어떻게 되나요?</summary>
+        <div class="faq-answer">
+          <p><strong>로그인 시:</strong></p>
+          <ul>
+            <li>기존 로컬 저장 데이터가 있으면 클라우드에 업로드됩니다</li>
+            <li>이후부터는 로컬 + 클라우드 이중 저장이 됩니다</li>
+          </ul>
+          <p><strong>로그아웃 시:</strong></p>
+          <ul>
+            <li>클라우드 저장은 중단되지만, 로컬 저장은 계속됩니다</li>
+            <li>다시 로그인하면 클라우드 저장이 재개됩니다</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">저장 데이터를 수동으로 백업할 수 있나요?</summary>
+        <div class="faq-answer">
+          <p>현재는 자동 저장만 지원합니다. 수동 백업 기능은 추후 추가될 예정입니다.</p>
+          <p>로그인 사용자는 클라우드에 자동 저장되므로 별도 백업이 필요 없습니다.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- Achievements & Leaderboard -->
+    <section class="faq-section" id="achievements-leaderboard">
+      <h2 class="section-title">업적 & 리더보드</h2>
+      
+      <details class="faq-item">
+        <summary class="faq-question">닉네임은 어떻게 설정하나요?</summary>
+        <div class="faq-answer">
+          <p>게임 내 설정 탭에서 닉네임을 설정할 수 있습니다. 닉네임은:</p>
+          <ul>
+            <li>1~6자 (한글/영문/숫자/밑줄만 허용)</li>
+            <li>전역 유니크 (다른 유저와 중복 불가)</li>
+            <li>30초 쿨타임 (스팸 방지)</li>
+            <li>로그인 필수 (리더보드 참여용)</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">닉네임이 중복된다고 나옵니다</summary>
+        <div class="faq-answer">
+          <p>닉네임은 대소문자 구분 없이 비교됩니다. 예를 들어 "Steve"와 "steve"는 동일한 것으로 간주됩니다.</p>
+          <p>다른 유저가 이미 사용 중인 닉네임은 사용할 수 없습니다. 다른 닉네임을 시도해주세요.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">리더보드에 반영되는 타이밍은 언제인가요?</summary>
+        <div class="faq-answer">
+          <p>리더보드는 다음 시점에 업데이트됩니다:</p>
+          <ul>
+            <li>게임 저장 시 30초마다 자동 업데이트 (닉네임이 있을 때만)</li>
+            <li>첫 타워 구매 후에는 자동 업데이트가 중단됩니다</li>
+            <li>랭킹 탭에서 수동으로 조회할 수 있습니다</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- Account & Data -->
+    <section class="faq-section" id="account-data">
+      <h2 class="section-title">계정 & 데이터</h2>
+      
+      <details class="faq-item">
+        <summary class="faq-question">데이터 삭제와 계정 삭제의 차이는 무엇인가요?</summary>
+        <div class="faq-answer">
+          <p><strong>데이터 삭제 (내 데이터 삭제):</strong></p>
+          <ul>
+            <li>클라우드 저장 데이터와 리더보드 기록만 삭제</li>
+            <li>계정은 유지 (다시 로그인 가능)</li>
+            <li>로컬 저장도 함께 초기화됨</li>
+            <li>닉네임은 회수되어 다른 유저가 사용 가능</li>
+          </ul>
+          <p><strong>계정 삭제 (회원 탈퇴):</strong></p>
+          <ul>
+            <li>Supabase 계정 자체가 삭제됨</li>
+            <li>모든 데이터 삭제 (저장, 리더보드, 닉네임 등)</li>
+            <li>되돌릴 수 없음</li>
+            <li>다시 로그인 불가 (새 계정 생성 필요)</li>
+          </ul>
+          <div class="faq-warning">
+            <p><strong>⚠️ 주의:</strong> 계정 삭제는 되돌릴 수 없는 작업입니다. 신중하게 결정해주세요.</p>
+          </div>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">정말 삭제가 필요한가요?</summary>
+        <div class="faq-answer">
+          <p>데이터 삭제나 계정 삭제 전에 다음을 고려해보세요:</p>
+          <ul>
+            <li>게임을 새로 시작하고 싶다면: 설정 탭의 "게임 새로 시작" 버튼 사용</li>
+            <li>진행 상황만 초기화하고 싶다면: 데이터 삭제 (계정 유지)</li>
+            <li>완전히 탈퇴하고 싶다면: 계정 삭제</li>
+          </ul>
+          <p>더 자세한 안내는 <a href="../account/">계정 관리 페이지</a>를 참고하세요.</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">계정 삭제 후에도 로컬 저장 데이터가 남아있나요?</summary>
+        <div class="faq-answer">
+          <p>계정 삭제 시 클라우드 데이터는 즉시 삭제되지만, 브라우저의 로컬 저장 데이터는 자동으로 삭제되지 않습니다.</p>
+          <p>완전히 초기화하려면 브라우저의 개발자 도구에서 LocalStorage를 수동으로 삭제해야 합니다.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- Contact / Bug Report -->
+    <section class="faq-section" id="contact">
+      <h2 class="section-title">문의 & 버그 리포트</h2>
+      
+      <div class="contact-section">
+        <h3 style="font-size: var(--font-lg); font-weight: 950; margin: 0 0 var(--space-3);">버그 리포트 또는 문의하기</h3>
+        <p style="color: var(--muted); font-size: var(--font-sm); margin-bottom: var(--space-5);">
+          문제가 발생했거나 개선 사항이 있으면 아래 정보를 포함해 문의해주세요.
+        </p>
+
+        <div class="contact-form">
+          <div class="form-group">
+            <label class="form-label">문의 채널</label>
+            <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+              <a href="https://github.com/clicksurvivor/clicksurvivor/issues" target="_blank" rel="noopener noreferrer" class="btn-submit" style="text-decoration: none; display: inline-block; text-align: center;">
+                📋 GitHub Issues로 문의하기
+              </a>
+              <p class="form-hint">GitHub 계정이 필요합니다. 버그 리포트와 기능 요청을 받습니다.</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">버그 리포트 템플릿</label>
+            <p style="color: var(--muted); font-size: var(--font-sm); margin-bottom: var(--space-3);">
+              버그 리포트 시 아래 정보를 포함해주세요:
+            </p>
+            <div style="background: rgba(15,23,42,.8); padding: var(--space-4); border-radius: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--font-xs); line-height: 1.6; color: var(--muted);">
+              <strong style="color: var(--text);">재현 정보:</strong><br/>
+              - 브라우저: (예: Chrome 120, Firefox 121)<br/>
+              - 기기: (예: Windows 11, iPhone 15)<br/>
+              - 게임 버전: (설정 탭에서 확인)<br/>
+              - 재현 단계: (1. ... 2. ... 3. ...)<br/>
+              - 예상 동작: (...)<br/>
+              - 실제 동작: (...)<br/>
+              - 스크린샷: (가능하면 첨부)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <details class="faq-item">
+        <summary class="faq-question">알려진 이슈</summary>
+        <div class="faq-answer">
+          <p>현재 알려진 이슈:</p>
+          <ul>
+            <li><strong>인앱 브라우저:</strong> 카카오톡/인스타그램 등 인앱 브라우저에서는 Google 로그인이 제한될 수 있습니다. 외부 브라우저에서 접속해주세요.</li>
+            <li><strong>모바일 성능:</strong> 일부 저사양 기기에서 성능 저하가 발생할 수 있습니다.</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <!-- 공통 푸터 마운트 포인트 -->
+  <div id="commonFooterMount"></div>
+
+</body>
+</html>
+
+

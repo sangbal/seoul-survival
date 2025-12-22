@@ -180,6 +180,41 @@
       position: relative;
       z-index: 1;
     }
+    .auto-work-indicator {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: var(--accent);
+      background: rgba(15, 22, 40, 0.86);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(94, 234, 212, 0.35);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      display: none;
+      white-space: nowrap;
+    }
+    .work.auto-click-enabled .auto-work-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      animation: autoWorkPulse 1.4s ease-out infinite;
+    }
+    @keyframes autoWorkPulse {
+      0% { opacity: 0.0; transform: translate(-50%, 4px); }
+      20% { opacity: 1; transform: translate(-50%, 0); }
+      80% { opacity: 0.9; }
+      100% { opacity: 0.0; transform: translate(-50%, 4px); }
+    }
+    @keyframes autoClickPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.55); }
+      70% { transform: scale(1.03); box-shadow: 0 0 0 9px rgba(250, 204, 21, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+    }
+    #workBtn.auto-click-pulse {
+      animation: autoClickPulse 0.25s ease-out;
+    }
     .btn{
       cursor:pointer; 
       border:none; 
@@ -2347,12 +2382,12 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/seoulsurvival-CQSuz8nK.js"></script>
+  <script type="module" crossorigin src="../assets/seoulsurvival-882a3Ngj.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="modulepreload" crossorigin href="../assets/authBoot-DsIaacwO.js">
+  <link rel="modulepreload" crossorigin href="../assets/authBoot-BV3fiOB2.js">
 </head>
 <body>
-  <div class="app">
+  <div class="app" data-testid="seoulsurvival-root">
     <header>
       <div class="header-brand" aria-label="Capital Clicker: Seoul Survival">
         <img class="brand-icon" src="../assets/logo-CaUs9YDr.png" alt="" aria-hidden="true" />
@@ -2395,6 +2430,9 @@
         </div>
         <div class="work">
           <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼, 클릭당 수익" aria-describedby="clickIncomeButton"><span data-i18n="work.button">🛠️ 노동</span> +<span id="clickIncomeButton" aria-label="클릭당 수익 금액">1만</span><span data-i18n="ui.currencyShort">원</span></button>
+          <div class="auto-work-indicator" id="autoWorkIndicator">
+            <span>🤖 AI 업무 처리 중...</span>
+          </div>
         </div>
         <!-- 승진 진행 카드 -->
         <div class="career-progress-card" style="margin-top: 12px; padding: 12px; background: var(--bg2); border-radius: 8px;">

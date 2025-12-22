@@ -12,14 +12,14 @@
   <meta property="og:locale" content="ko_KR" />
   <meta property="og:title" content="Capital Clicker: SeoulSurvivor | ClickSurvivor" />
   <meta property="og:description" content="서울에서 노동→투자→자본 루프로 생존하는 증분 클릭 게임" />
-  <meta property="og:image" content="https://clicksurvivor.com/og/seoulsurvivor-1200x630.png?v=2025-12-21" />
+  <meta property="og:image" content="https://clicksurvivor.com/og/og-seoulsurvivor.png?v=2025-12-21" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Capital Clicker: SeoulSurvivor | ClickSurvivor" />
   <meta name="twitter:description" content="서울에서 노동→투자→자본 루프로 생존하는 증분 클릭 게임" />
-  <meta name="twitter:image" content="https://clicksurvivor.com/og/seoulsurvivor-1200x630.png?v=2025-12-21" />
+  <meta name="twitter:image" content="https://clicksurvivor.com/og/og-seoulsurvivor.png?v=2025-12-21" />
 
   <meta name="theme-color" content="#0b0f19" />
 
@@ -372,33 +372,31 @@
     .patch-preview-link:hover{
       text-decoration: underline;
     }
+
+    /* Mobile: CTA sticky (선택적) */
+    @media (max-width: 879px){
+      .store-sidebar{
+        position: sticky;
+        bottom: 0;
+        background: var(--bg);
+        padding-top: var(--space-4);
+        margin-top: var(--space-6);
+        border-top: 1px solid var(--border);
+      }
+    }
   </style>
-  <script type="module" crossorigin src="../../assets/games-seoulsurvival-CiYQbaUE.js"></script>
+  <script type="module" crossorigin src="../../assets/games-seoulsurvival-4twbsGgW.js"></script>
   <link rel="modulepreload" crossorigin href="../../assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="modulepreload" crossorigin href="../../assets/games.registry-bQ2oXXn0.js">
-  <link rel="modulepreload" crossorigin href="../../assets/i18n-4kQg4La1.js">
+  <link rel="modulepreload" crossorigin href="../../assets/games.registry-uDtpbbZ4.js">
+  <link rel="modulepreload" crossorigin href="../../assets/i18n-Bg2tVCd8.js">
+  <link rel="modulepreload" crossorigin href="../../assets/authBoot-BV3fiOB2.js">
+  <link rel="modulepreload" crossorigin href="../../assets/footer-DQtZeuej.js">
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a class="brand" href="../../" aria-label="ClickSurvivor 홈으로">
-        <div class="logo">
-          <img src="../../assets/logo-CaUs9YDr.png" alt="ClickSurvivor" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;" />
-        </div>
-        <div class="brandtxt">
-          <div class="brandname">ClickSurvivor</div>
-          <div class="brandtag">오늘도 서울에서 살아남기</div>
-        </div>
-      </a>
-      <button class="hamburger-btn" id="hamburgerBtn" aria-label="메뉴 열기">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-  </header>
+  <!-- 공통 헤더 마운트 포인트 -->
+  <div id="commonHeaderMount"></div>
 
-  <main class="wrap">
+  <main class="wrap" data-testid="game-store-root">
     <div class="store-page">
       <div class="store-layout">
         <!-- Left Column: Main Content -->
@@ -413,6 +411,9 @@
       </div>
     </div>
   </main>
+
+  <!-- 공통 푸터 마운트 포인트 -->
+  <div id="commonFooterMount"></div>
 
 </body>
 </html>
