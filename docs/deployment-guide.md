@@ -124,3 +124,7 @@ curl -X POST https://<PROJECT_REF>.supabase.co/functions/v1/delete-account \
 - ⚠️ 함수 배포 후 반드시 테스트 계정으로 검증하세요
 
 
+
+
+
+

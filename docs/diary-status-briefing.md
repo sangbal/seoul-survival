@@ -168,3 +168,7 @@
 - DOM 구조: `seoulsurvival/index.html` (라인 2344~2350)
 - 문서: `README.md` (라인 33)
 
+
+
+
+

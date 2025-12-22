@@ -37,6 +37,7 @@ export default defineConfig(({ mode }) => {
           games: resolve(__dirname, 'games/index.html'),
           'games-seoulsurvival': resolve(__dirname, 'games/seoulsurvival/index.html'),
           'patch-notes': resolve(__dirname, 'patch-notes/index.html'),
+          support: resolve(__dirname, 'support/index.html'),
           terms: resolve(__dirname, 'terms.html'),
           privacy: resolve(__dirname, 'privacy.html'),
         },

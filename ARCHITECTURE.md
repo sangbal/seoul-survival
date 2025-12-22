@@ -28,10 +28,11 @@
   - 폴더형 URL: `/account/` (Cloudflare Pages 호환)
   - 계정관리 전용 UI: Account Overview/Preferences/Privacy & Data/Danger Zone
   - 위험 버튼(내 데이터 삭제, 계정 삭제)은 이 페이지에만 존재
-  - 허브 JS 엔트리: `hub/main.js` (드로어/네비게이션), `hub/home.js` (홈 게임 렌더링)
-  - 허브 i18n: `hub/i18n.js`, `hub/translations/{ko,en}.js`
+  - 허브 JS 엔트리: `hub/main.js` (공통 헤더/푸터 렌더링), `hub/home.js` (홈 게임 렌더링)
+  - 허브 i18n: `hub/i18n.js`, `hub/translations/{ko,en}.js` (공용: `shared/i18n/lang.js`에서 재사용)
   - 허브 언어 규칙: `?lang=ko|en` → LocalStorage(`clicksurvivor_lang`) → `navigator.language` fallback
   - 게임 레지스트리: `hub/games.registry.js` (단일 소스, status: playable/comingSoon/hidden)
+  - 공통 Shell: `shared/shell/header.js`, `shared/shell/footer.js` (모든 페이지에서 재사용)
   - 로고: `seoulsurvival/assets/images/logo.png` 이미지 사용
   - 네비게이션: 모든 뷰포트에서 햄버거 메뉴를 기본 네비게이션으로 사용 (PC/모바일 통일)
     - 헤더: 브랜드 + 햄버거 버튼만 표시 (nav와 actions는 기본 숨김)
@@ -50,8 +51,15 @@
 - **공통(SSO/Auth)**: `shared/auth/*`
   - 허브/게임 공통 로그인 상태 공유(LocalStorage 키: `clicksurvivor-auth`)
   - Supabase Auth(OAuth) 기반, Google 로그인 지원 (GitHub 제거)
-  - 공통 부트스트랩: `shared/authBoot.js` (허브/게임 페이지에서 모두 로드)
+  - **Auth 상태머신**: `shared/auth/state.js` (단일 진실 소스)
+    - 상태: loading | guest | authed | error
+    - `getAuthState()`, `refreshAuth()`, `subscribeAuth()` 함수 제공
+    - publish/subscribe 구조로 상태 변경 시 자동 UI 업데이트
+  - 공통 부트스트랩: `shared/authBoot.js` (허브/게임 페이지에서 모두 로드, 상태머신 기반)
   - UI 관리: `shared/auth/ui.js`의 `setUI()` 함수에서 로그인 상태에 따라 버튼 표시/숨김 처리 (단일 소스)
+  - **공통 Shell**: `shared/shell/header.js`, `shared/shell/footer.js`
+    - 모든 페이지에서 동일한 헤더/푸터 제공
+    - Auth 상태머신 기반으로 로그인 상태 일관 표기
   - 허브 UI: 계정 섹션(Account Overview/Preferences/Privacy & Data/Danger Zone), 헤더 버튼 (`authLoginBtn`, `authLogoutBtn`), 드로어 메뉴
   - 게임 UI: 설정 탭 계정 섹션 (`authProviderButtons`, `logoutButtonContainer`)
   - 데이터 삭제: `shared/auth/deleteUserData.js`에서 Supabase `game_saves`, `leaderboard` 테이블 데이터 삭제, 로컬 저장소 초기화 후 로그아웃

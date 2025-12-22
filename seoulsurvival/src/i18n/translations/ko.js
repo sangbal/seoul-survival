@@ -561,7 +561,7 @@ export default {
   'upgrade.manager_hire.desc': '전체 임대 수익 +5%',
   'upgrade.financial_expert.name': '💼 금융 전문가 고용',
   'upgrade.financial_expert.desc': '모든 금융 수익 +20%',
-  'upgrade.auto_work_system.name': '📱 자동 업무 처리 시스템',
+  'upgrade.auto_work_system.name': '🤖 AI 업무 처리 시스템',
   'upgrade.auto_work_system.desc': '1초마다 자동으로 1회 클릭 (초당 수익 추가)',
 };
 

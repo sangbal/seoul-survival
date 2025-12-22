@@ -165,3 +165,7 @@ npx supabase functions list
 모든 단계 완료 후 E2E 테스트를 진행하세요!
 
 
+
+
+
+

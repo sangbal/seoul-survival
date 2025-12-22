@@ -3,6 +3,58 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## [2025-01-XX] [hub] Auth 상태머신 + 공통 Shell 통합 (모순 제거)
+
+### 작업 내용
+1. **Auth 상태머신 구현**
+   - `shared/auth/state.js` 생성: 단일 진실 소스 (loading | guest | authed | error)
+   - `getAuthState()`, `refreshAuth()`, `subscribeAuth()` 함수 제공
+   - publish/subscribe 구조로 상태 변경 시 자동 UI 업데이트
+
+2. **공통 i18n 유틸 공용화**
+   - `shared/i18n/lang.js` 생성: hub/i18n.js 재사용
+   - `getActiveLang()`, `t()`, `applyLang()` 함수 제공
+
+3. **공통 Shell 컴포넌트화**
+   - `shared/shell/header.js`: 공통 헤더/드로어 컴포넌트
+   - `shared/shell/footer.js`: 공통 푸터 컴포넌트
+   - 모든 페이지에서 동일한 헤더/푸터 사용
+
+4. **페이지별 공통 컴포넌트 적용**
+   - `index.html`: 헤더/푸터를 마운트 포인트로 변경
+   - `hub/main.js`: 공통 헤더/푸터 렌더링 로직 추가
+   - `account/index.html`: 헤더/푸터를 마운트 포인트로 변경
+   - `account/main.js` 생성: 공통 헤더/푸터 렌더링
+
+5. **Auth 상태머신 규칙 적용**
+   - loading: "Checking session…"만 노출
+   - guest: Login 버튼만 노출, Logout/로그인됨/Provider 정보 절대 노출 금지
+   - authed: Profile + Logout만 노출, Login 버튼 절대 노출 금지
+   - error: 재시도/지원 링크만
+
+6. **shared/authBoot.js 개선**
+   - 새로운 상태머신 기반으로 UI 업데이트
+   - 상태머신 규칙에 따라 버튼 표시/숨김 처리
+
+### 변경된 파일
+- `shared/auth/state.js`: Auth 상태머신 (신규)
+- `shared/i18n/lang.js`: 공용 i18n 유틸 (신규)
+- `shared/shell/header.js`: 공통 헤더 컴포넌트 (신규)
+- `shared/shell/footer.js`: 공통 푸터 컴포넌트 (신규)
+- `shared/authBoot.js`: 상태머신 기반으로 재작성
+- `hub/main.js`: 공통 컴포넌트 사용하도록 수정
+- `account/main.js`: 공통 컴포넌트 사용 (신규)
+- `index.html`: 헤더/푸터 마운트 포인트로 변경
+- `account/index.html`: 헤더/푸터 마운트 포인트로 변경
+
+### 주의사항
+- Auth 상태머신은 단일 진실 소스: 모든 페이지에서 동일한 상태 표기
+- 공통 헤더/푸터는 모든 페이지에서 재사용 가능
+- 접근성: 숨김 요소는 aria-hidden + tabindex=-1 처리
+- 드로어 포커스 복귀 규칙 유지
+
+---
+
 ## [2025-01-XX] [hub] Steam 스타일 게임 스토어 페이지 구현
 
 ### 작업 내용
@@ -515,6 +567,20 @@
 
 ## 버전 기록 룰(간단)
 - 배포/공개 전에 버전을 올렸다면, `vX.Y.Z`와 변경 요약(3~8줄)을 DEVLOG에 남긴다.
+
+## 2025-12-22 (허브 홈 SEO 구조 개선)
+- **[hub] 루트 허브 페이지 메타/OG 정리**
+  - `<title>`을 `ClickSurvivor 허브 | Capital Clicker: Seoul Survival` 형태로 정리해 브랜드+핵심 게임 키워드 포함
+  - `<meta name="description">`, `og:title`/`og:description`/`twitter:*`를 허브 역할(여러 게임 허브 + 계정/랭킹 연동) 중심 카피로 통일
+  - `canonical`을 `https://clicksurvivor.com/`로 명시하고, `og:url`과 일치시키도록 정렬
+  - OG 이미지를 `public/og/clicksurvivor-home-1200x630.png?v=2025-12-21`로 교체하고, `og:image:width`/`og:image:height` 추가
+  - `meta name="robots" content="index,follow"`와 `theme-color`를 명시해 기본 인덱싱/브라우저 테마 색상 명확화
+- **[hub] 허브용 구조화 데이터(JSON-LD) 추가**
+  - `Organization`/`WebSite`/`ItemList` 3개를 하나의 `@graph`로 추가, 허브 도메인/로고/검색 액션(`/games/?q=`)과 대표 게임(Seoul Survival)을 묶어 표현
+  - `ItemList` 내 첫 항목으로 `VideoGame`(Capital Clicker: Seoul Survival)을 등록해 허브-게임 관계를 검색엔진에 명시
+- **[hub] 허브 홈 시맨틱 H 계층 정리**
+  - 히어로 타이틀 `h1`은 유지하고, 섹션 타이틀(`소개/스크린샷/계정`)을 `div` → `h2`로 변경해 H1 1개 + H2 다수 구조로 단순화
+  - 기존 클래스/스타일을 그대로 유지하여 레이아웃을 깨지 않고 시맨틱 구조만 개선
 
 ### 리더보드 쓰기/읽기 정합성 메모
 - **쓰기(Write)**: 게임 진행 중 `saveGame()` 호출 시 `updateLeaderboardEntry()`가 불려, Supabase `leaderboard` 테이블에 `nickname / total_assets / play_time_ms`를 업서트한다.

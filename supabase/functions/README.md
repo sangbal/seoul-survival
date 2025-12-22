@@ -58,3 +58,7 @@ supabase functions deploy delete-account
 4. auth.users에서 사용자 삭제 (`admin.deleteUser()`)
 
 
+
+
+
+

@@ -468,3 +468,7 @@ function pickWithHistory(key, arr) {
 - 구현: `seoulsurvival/src/main.js` (라인 2182~2786)
 - 독백 풀 정의: 라인 2212~2785
 
+
+
+
+

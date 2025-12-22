@@ -163,3 +163,7 @@ Google Analytics 계정 소유권을 개인 계정에서 `clicksurvivor@gmail.co
 3. **대시보드 및 목표 설정**
    - 주요 지표 모니터링 대시보드 구성
 
+
+
+
+

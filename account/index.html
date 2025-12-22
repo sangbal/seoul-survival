@@ -366,77 +366,10 @@
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a class="brand" href="../" aria-label="ClickSurvivor 홈으로">
-        <div class="logo">
-          <img src="../seoulsurvival/assets/images/logo.png" alt="ClickSurvivor" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;" />
-        </div>
-        <div class="brandtxt">
-          <div class="brandname">ClickSurvivor</div>
-          <div class="brandtag" data-i18n="hub.brand.tag">오늘도 서울에서 살아남기</div>
-        </div>
-      </a>
+  <!-- 공통 헤더 마운트 포인트 -->
+  <div id="commonHeaderMount"></div>
 
-      <nav aria-label="허브 내비게이션">
-        <a class="navlink" href="../#about" data-i18n="hub.header.about">소개</a>
-        <a class="navlink" href="./" data-i18n="hub.header.account">계정</a>
-      </nav>
-
-      <div class="actions">
-        <select class="select" id="langSelect" aria-label="Language">
-          <option value="ko">KO</option>
-          <option value="en">EN</option>
-        </select>
-        <span class="userchip" id="authUserLabel" hidden>Guest</span>
-        <button class="ghostbtn" id="authLoginBtn" aria-disabled="false" data-i18n="hub.header.login" hidden>로그인</button>
-        <button class="ghostbtn" id="authLogoutBtn" hidden>Logout</button>
-      </div>
-
-      <button class="hamburger-btn" id="hamburgerBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="drawer">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-  </header>
-
-  <!-- 드로어 오버레이 -->
-  <div class="drawer-overlay" id="drawerOverlay" aria-hidden="true"></div>
-
-  <!-- 드로어 메뉴 -->
-  <aside class="drawer" id="drawer" aria-label="메뉴" aria-hidden="true">
-    <div class="drawer-header">
-      <div class="drawer-title" data-i18n="hub.drawer.title">메뉴</div>
-      <button class="drawer-close" id="drawerClose" aria-label="메뉴 닫기">×</button>
-    </div>
-    <div class="drawer-content">
-      <nav class="drawer-nav" aria-label="허브 내비게이션">
-        <a class="drawer-nav-link" href="../#about" data-i18n="hub.header.about">소개</a>
-        <a class="drawer-nav-link" href="./" data-i18n="hub.header.account">계정</a>
-      </nav>
-
-      <div class="drawer-actions">
-        <div class="drawer-actions-group">
-          <div class="drawer-actions-label" data-i18n="hub.drawer.language">언어</div>
-          <select class="drawer-select" id="drawerLangSelect" aria-label="Language">
-            <option value="ko">한국어 (KO)</option>
-            <option value="en">English (EN)</option>
-          </select>
-        </div>
-
-        <div class="drawer-actions-group">
-          <div class="drawer-actions-label" data-i18n="hub.drawer.account">계정</div>
-          <span class="drawer-userchip" id="drawerAuthUserLabel" hidden>Guest</span>
-          <button class="drawer-btn" id="drawerAuthLoginBtn" data-i18n="hub.header.login" hidden>로그인</button>
-          <button class="drawer-btn" id="drawerAuthLogoutBtn" hidden>Logout</button>
-          <a href="./" class="drawer-btn" style="margin-top: 8px; text-align: center; text-decoration: none;" onclick="document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); document.body.classList.remove('drawer-open');">⚙️ 계정 관리</a>
-        </div>
-      </div>
-    </div>
-  </aside>
-
-  <main class="wrap" id="top">
+  <main class="wrap" id="top" data-testid="account-root">
     <section id="account" aria-label="Account">
       <div class="sectionTitle" data-i18n="hub.account.title">계정 관리</div>
       
@@ -512,6 +445,9 @@
           </div>
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div>
+              <p style="font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.4;">
+                <a href="../support/#account-data" style="color: var(--accent); text-decoration: underline;">데이터 삭제와 계정 삭제의 차이를 확인하세요</a>
+              </p>
               <button class="btn" id="deleteDataBtn" style="background: rgba(251,113,133,.75); color: white; border: 1px solid rgba(251,113,133,.5); width: 100%; font-size: 13px;">🗑️ 내 데이터 삭제</button>
               <p class="muted" style="font-size: 11px; line-height: 1.4; margin-top: 8px;">
                 클라우드 세이브와 리더보드 기록이 삭제됩니다. 계정은 유지되며, 다시 게임을 시작할 수 있습니다.
@@ -531,8 +467,11 @@
         <div class="panel-inner">
           <div style="margin-bottom: 16px;">
             <h3 style="font-size: 15px; font-weight: 950; margin-bottom: 6px; color: rgba(239,68,68,.95);">⚠️ 위험 구역</h3>
-            <p class="muted" style="font-size: 12px; line-height: 1.5; margin-bottom: 16px; color: rgba(239,68,68,.8);">
+            <p class="muted" style="font-size: 12px; line-height: 1.5; margin-bottom: 8px; color: rgba(239,68,68,.8);">
               계정 삭제는 되돌릴 수 없는 작업입니다. 신중하게 결정해주세요.
+            </p>
+            <p style="font-size: 11px; margin-bottom: 16px;">
+              <a href="../support/#account-data" style="color: var(--accent); text-decoration: underline;">정말 삭제가 필요한가요? 지원 센터에서 자세한 안내를 확인하세요.</a>
             </p>
           </div>
           <div style="background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
@@ -553,7 +492,10 @@
     </section>
   </main>
 
-  <script type="module" src="../hub/main.js"></script>
+  <!-- 공통 푸터 마운트 포인트 -->
+  <div id="commonFooterMount"></div>
+
+  <script type="module" src="./main.js"></script>
   <script type="module" src="../shared/authBoot.js"></script>
 </body>
 </html>

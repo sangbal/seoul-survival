@@ -318,3 +318,7 @@ elLog.prepend(p); // 최신이 위로
 - DOM 구조: `seoulsurvival/index.html` (라인 2344~2350, 2322~2352)
 - 탭 구조: `seoulsurvival/index.html` (라인 2320~3000)
 
+
+
+
+

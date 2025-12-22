@@ -31,16 +31,28 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   if (!loginBtn && !drawerLoginBtn && providerButtons.length === 0) return;
 
-  await initAuthUI({
-    scope: detectScope(),
-    providerButtons,
-    defaultProvider: 'google',
-    loginBtn: loginBtn || drawerLoginBtn,
-    logoutBtn: logoutBtn || drawerLogoutBtn,
-    userLabel: userLabel || drawerUserLabel,
-    statusLabel,
-    toast,
-  });
+  // Auth 초기화에 timeout 적용 (2초, 무한 대기 방지)
+  try {
+    await Promise.race([
+      initAuthUI({
+        scope: detectScope(),
+        providerButtons,
+        defaultProvider: 'google',
+        loginBtn: loginBtn || drawerLoginBtn,
+        logoutBtn: logoutBtn || drawerLogoutBtn,
+        userLabel: userLabel || drawerUserLabel,
+        statusLabel,
+        toast,
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Auth init timeout')), 2000)
+      )
+    ]);
+  } catch (error) {
+    // timeout 또는 다른 에러 발생 시 guest 모드로 계속 진행
+    console.warn('[authBoot] Auth initialization failed or timed out, using guest mode:', error);
+    // UI는 이미 기본 상태(guest)로 렌더링되어 있으므로 추가 처리 불필요
+  }
 });
 
 

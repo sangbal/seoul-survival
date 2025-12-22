@@ -11,3 +11,7 @@
 // @ts-ignore - Vite define은 빌드 타임에 주입되므로 타입 체크에서 제외
 export const GAME_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0';
 
+
+
+
+

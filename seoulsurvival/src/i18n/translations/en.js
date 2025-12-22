@@ -575,7 +575,7 @@ export default {
   'upgrade.manager_hire.desc': 'Total rental income +5%',
   'upgrade.financial_expert.name': '💼 Financial Expert Hire',
   'upgrade.financial_expert.desc': 'All financial income +20%',
-  'upgrade.auto_work_system.name': '📱 Auto Work System',
-  'upgrade.auto_work_system.desc': 'Auto click once per second (adds per-second income)',
+  'upgrade.auto_work_system.name': '🤖 AI Work Automation',
+  'upgrade.auto_work_system.desc': 'Automatically clicks once per second (adds per-second income)',
 };
 
