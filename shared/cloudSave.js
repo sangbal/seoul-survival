@@ -1,5 +1,6 @@
 import { getSupabaseClient } from './auth/supabaseClient.js';
-import { getUser, isAuthEnabled } from './auth/core.js';
+import { getUser } from './auth/core.js';
+// isAuthEnabled는 동적 import로 변경 (config.js 로드 지연)
 
 const TABLE = 'game_saves';
 
@@ -15,8 +16,9 @@ function isMissingTable(err) {
 }
 
 export async function fetchCloudSave(gameSlug) {
-  if (!isAuthEnabled()) return { ok: false, reason: 'not_configured' };
-  const sb = getSupabaseClient();
+  const { isAuthEnabled } = await import('./auth/core.js');
+  if (!(await isAuthEnabled())) return { ok: false, reason: 'not_configured' };
+  const sb = await getSupabaseClient();
   if (!sb) return { ok: false, reason: 'not_configured' };
 
   const user = await getUser();
@@ -42,8 +44,9 @@ export async function fetchCloudSave(gameSlug) {
 }
 
 export async function upsertCloudSave(gameSlug, saveObj) {
-  if (!isAuthEnabled()) return { ok: false, reason: 'not_configured' };
-  const sb = getSupabaseClient();
+  const { isAuthEnabled } = await import('./auth/core.js');
+  if (!(await isAuthEnabled())) return { ok: false, reason: 'not_configured' };
+  const sb = await getSupabaseClient();
   if (!sb) return { ok: false, reason: 'not_configured' };
 
   const user = await getUser();

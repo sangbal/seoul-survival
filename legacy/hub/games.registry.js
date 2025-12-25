@@ -26,7 +26,7 @@ export const GAMES_REGISTRY = [
     featured: true,
     playPath: '/seoulsurvival/',
     storePath: '/games/seoulsurvival/',
-    coverImage: '/og/og-seoulsurvivor.png?v=2025-12-21',
+    coverImage: '/og/seoulsurvivor-1200x630.png?v=2025-12-21',
     heroMedia: {
       type: 'image',
       src: 'seoulsurvival/assets/images/work_bg_01_alba_night.png',

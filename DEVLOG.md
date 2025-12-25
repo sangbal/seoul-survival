@@ -3,6 +3,400 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## [2025-12-25] [hub] 허브 헤더 UI/UX 개선 및 통일
+
+### 작업 목표
+- 허브 홈 헤더를 SeoulSurvival 게임 헤더와 동일한 형식으로 통일
+- 로고 이미지, 즐겨찾기, 공유하기 버튼 추가
+- 로그인 상태 UI 개선 및 모든 페이지에서 일관성 유지
+
+### 주요 변경사항
+
+#### 헤더 컴포넌트 확장
+- **로고 이미지 추가**: `shared/shell/header.js`에 로고 이미지 추가 (SeoulSurvival과 동일한 형식)
+  - 경로: `./seoulsurvival/assets/images/logo.png` (동적 경로 설정)
+  - 현재 페이지 경로에 따라 상대 경로 자동 조정 (`account/`, `auth/callback/` 등)
+- **즐겨찾기 버튼 추가**: SeoulSurvival과 동일한 형식의 즐겨찾기 버튼 추가
+  - 기능: 모바일/데스크톱 환경에 맞는 안내 메시지 표시
+  - CSS 스타일: `shared/styles/header.css`에 추가
+- **공유하기 버튼 추가**: SeoulSurvival과 동일한 형식의 공유하기 버튼 추가
+  - 기능: Web Share API 사용 (지원하지 않는 경우 안내)
+  - SVG 아이콘 포함
+
+#### 로그인 UI 개선
+- **Login 버튼 스타일 통일**: Login 버튼을 즐겨찾기/공유 버튼과 동일한 스타일로 변경
+  - `login-btn` 클래스 추가, 호버/액티브 효과 적용
+- **닉네임 표시**: 로그인 시 `getUserProfile()` 함수를 사용하여 닉네임 조회 및 표시
+  - 닉네임이 없으면 이메일 또는 표시명을 폴백으로 사용
+  - `hub/main.js`와 `account/main.js` 모두 수정
+- **마우스오버 메뉴**: 닉네임 클릭 대신 마우스오버로 드롭다운 메뉴 표시
+  - `mouseenter`/`mouseleave` 이벤트로 구현
+  - 버튼과 드롭다운 사이 간격 문제 해결 (`margin-top: 2px`, CSS hover 규칙 추가)
+- **메뉴 서식 통일**: 계정 관리 링크와 로그아웃 버튼의 스타일 통일
+  - `account-menu-item` 클래스로 일관된 스타일 적용
+
+#### 페이지 간 일관성 개선
+- **홈 링크 경로 수정**: 현재 페이지 경로에 따라 동적으로 홈 링크 경로 결정
+  - `account/` 폴더: `../` (홈), `./` (계정 관리)
+  - `auth/callback/` 폴더: `../../` (홈), `../../account/` (계정 관리)
+  - 루트/기타 페이지: `./` (홈), `./account/` (계정 관리)
+- **헤더 CSS 링크 추가**: `terms.html`, `privacy.html`, `account/index.html`에 `header.css` 링크 추가
+- **인증 상태 동기화**: `terms.html`, `privacy.html` 등에서도 인증 UI 초기화 추가
+  - `shared/shell/header.js`의 자동 렌더링 블록에 인증 초기화 로직 추가
+  - 모든 페이지에서 로그인 상태가 일관되게 표시됨
+
+#### 초기 상태 및 UX 개선
+- **초기 상태 수정**: 드롭다운 메뉴가 초기 상태에서 닫혀있도록 수정
+  - `renderHeader()` 함수에서 초기화 시 `display: none` 설정
+- **마우스오버 간격 문제 해결**: 버튼과 드롭다운 사이 공간 때문에 메뉴가 사라지는 문제 수정
+  - 드롭다운 `margin-top`을 `8px` → `2px`로 축소
+  - `#headerAccountMenu` 전체에 마우스오버 이벤트 적용
+  - CSS에 `#headerAccountMenu:hover .account-dropdown` 규칙 추가
+
+### 변경된 파일
+- `shared/shell/header.js`: 로고 이미지, 즐겨찾기/공유 버튼 추가, 홈 링크 경로 동적 설정, 인증 초기화 추가
+- `shared/styles/header.css`: Login 버튼 스타일, 드롭다운 간격 조정, 마우스오버 CSS 추가
+- `hub/main.js`: 닉네임 조회 로직 추가, async/await 수정
+- `account/main.js`: 닉네임 조회 로직 추가, async/await 수정
+- `terms.html`: header.css 링크 추가
+- `privacy.html`: header.css 링크 추가
+- `account/index.html`: header.css 링크 추가
+- `RELEASE_NOTES.md`: v1.2.0 날짜를 2025-12-25로 업데이트
+
+### 검증 결과
+- ✅ 모든 허브 페이지에서 헤더 정상 표시
+- ✅ 로고 이미지, 즐겨찾기, 공유하기 버튼 정상 작동
+- ✅ 로그인 시 닉네임 정상 표시
+- ✅ 마우스오버 메뉴 정상 작동
+- ✅ 모든 페이지에서 홈 링크 정상 작동
+- ✅ 모든 페이지에서 로그인 상태 일관되게 유지
+
+### 주의사항
+- 헤더는 모든 허브 페이지(`index.html`, `account/index.html`, `terms.html`, `privacy.html` 등)에서 동일하게 적용됨
+- 홈 링크 경로는 현재 페이지 경로에 따라 자동으로 조정되므로, 새 페이지 추가 시 경로 로직 확인 필요
+- 로그인 상태는 `shared/auth/core.js`의 `getUser()` 및 `onAuthStateChange()`를 통해 모든 페이지에서 동기화됨
+
+---
+
+## [2025-01-XX] [hub] v0.35 배포/운영 설정 완성 + OAuth E2E 자동화
+
+### 작업 목표
+- 프로덕션 배포 설정 문서화
+- Edge Function 배포 준비 완료
+- OAuth E2E 자동화 (반자동 절차)
+- Supabase 활성화 및 Login 버튼 실제 작동 확인
+
+### 주요 변경사항
+
+#### Commit 1: docs/PROD_SETUP.md 추가
+- **프로덕션 설정 체크리스트**:
+  - Supabase Auth Redirect URLs (로컬/프로덕션)
+  - Google Cloud OAuth 설정 (Authorized JavaScript origins, Authorized redirect URIs)
+  - Edge Function 배포/시크릿 설정
+  - 운영 점검 항목 (로그인/닉네임/탈퇴)
+- **배포 명령 및 확인 방법**: curl 예시 포함
+
+#### Commit 2: delete-account 함수 배포 준비
+- **Edge Function 코드 개선**:
+  - `nickname_registry` 테이블 삭제 추가
+  - `reviews` 테이블 삭제 추가 (있는 경우)
+  - CORS 설정 개선 (환경 변수 `ALLOWED_ORIGIN` 지원)
+  - 에러 응답 일관성 개선
+- **로컬 검증 스크립트**: curl 기반 최소 검증 방법 제공
+
+#### Commit 3: OAuth E2E 자동화 + Supabase 활성화
+- **Supabase 활성화**:
+  - `shared/auth/config.js`의 `isSupabaseConfigured()` 함수 활성화
+  - 하드코딩된 `return false` 제거, 실제 환경 변수 체크 로직 활성화
+  - `.env.local.example` 템플릿 파일 생성
+  - `docs/SETUP_SUPABASE.md` 상세 설정 가이드 작성
+- **OAuth E2E 테스트**:
+  - Login 버튼 클릭 → Google OAuth 리다이렉트 확인 (자동화)
+  - 프로덕션 환경에서 로그인 성공 확인
+  - 반자동 절차: Google 계정 선택/승인만 수동 (1회), 이후 자동 진행
+- **E2E 테스트 리포트**: `docs/v0.35-e2e-test-report.md` 작성
+
+#### Commit 4: DEVLOG 업데이트 + 수동 테스트 문구 제거
+- DEVLOG.md에 v0.35 작업 내용 기록
+- "수동 테스트 필요" 문구를 반자동/자동 절차로 변경
+- OAuth E2E 절차 문서화
+
+### 검증 결과
+- ✅ 빌드 성공 (모든 커밋)
+- ✅ Supabase 환경 변수 로드 확인
+- ✅ Login 버튼 클릭 → Google OAuth 리다이렉트 확인
+- ✅ 프로덕션 환경 로그인 성공 확인 (Logout 버튼 표시)
+
+### 주의사항
+- **환경 변수 설정 필요**: `.env.local` 파일에 `VITE_SUPABASE_URL`과 `VITE_SUPABASE_ANON_KEY` 설정 필요
+- **Supabase Redirect URLs**: Supabase Dashboard에 `/auth/callback` URL 추가 필요
+- **Google OAuth 설정**: Google Cloud Console에 Authorized redirect URIs 설정 필요
+- **Edge Function 배포**: `supabase functions deploy delete-account` 실행 필요
+- **세션 공유**: 프로덕션과 로컬 환경은 별도 세션이므로 각각 로그인 필요 (정상 동작)
+
+### 다음 단계
+- 로컬 환경에서도 OAuth E2E 테스트 완료
+- Edge Function 배포 및 계정 삭제 플로우 전체 테스트
+- 닉네임 변경/로그아웃 기능 E2E 테스트
+
+---
+
+## [2025-01-XX] [hub] v0.3 Supabase OAuth 공통화 + /account 완성
+
+### 작업 목표
+- Supabase OAuth 표준화 (공통 콜백 엔드포인트)
+- `/account` 페이지 완성 (닉네임 변경, 쿨타임, 계정 삭제)
+- 계정 삭제 서버측 엔드포인트 개선
+
+### 주요 변경사항
+
+#### Commit 1: Auth 현황 리포트
+- `docs/v0.3-auth-status-report.md`: 현재 인증 구조 파악
+- `signInWithOAuth` 호출 위치, `redirectTo` 값, 콜백 처리 현황 정리
+- 개선 계획 수립
+
+#### Commit 2: shared/auth 모듈 생성 + 공통 사용
+- `shared/auth/core.js`:
+  - `signInGoogle(nextUrl)` 함수 추가 (Google 로그인 전용)
+  - `getUserProfile(gameSlug)` 함수 추가 (닉네임/유저ID 조회)
+  - `signInWithOAuth(provider, redirectTo)` 개선 (redirectTo 파라미터 추가)
+- `seoulsurvival/src/main.js`: 직접 호출 제거, `signInGoogle()` 사용
+- `shared/auth/ui.js`: Google 로그인 시 `signInGoogle` 사용
+
+#### Commit 3: /auth/callback 구현 + Redirect URL 정리
+- `auth/callback/index.html`: OAuth 콜백 페이지 생성
+- `auth/callback/main.js`: 세션 교환 + 원래 목적지로 리다이렉트
+- `shared/auth/core.js`: `signInGoogle()`의 redirectTo를 `/auth/callback`으로 통일
+- `docs/v0.3-redirect-urls.md`: Supabase/Google OAuth 설정 가이드
+
+#### Commit 4: /account 페이지 구현 개선
+- `account/index.html`:
+  - 현재 닉네임 표시 영역 추가
+  - 쿨타임 표시 영역 추가
+  - 에러 메시지 표시 영역 추가
+- `account/main.js`:
+  - `getUserProfile()` 사용하여 현재 닉네임 표시
+  - 30초 쿨타임 체크/표시 로직 추가
+  - 에러 메시지 개선 (유효성 검사, 쿨타임, 닉네임 변경 실패)
+
+#### Commit 5: 계정 삭제 서버측 엔드포인트 개선
+- `supabase/functions/delete-account/index.ts`:
+  - `nickname_registry` 테이블 삭제 추가
+  - `reviews` 테이블 삭제 추가 (있는 경우)
+  - 에러 처리 개선
+- `shared/auth/deleteAccount.js`: 주석 개선 (Edge Function에서도 처리)
+- `supabase/functions/README.md`: 삭제 순서 및 주의사항 문서화
+
+#### Commit 6: DEVLOG 업데이트 + 스모크 테스트
+- DEVLOG.md 업데이트 (이 항목)
+- 스모크 테스트 체크리스트 문서화
+
+### 검증 결과
+- ✅ 빌드 성공 (모든 커밋)
+- ✅ 콜백 페이지 정상 로드
+- ✅ `/account` 페이지 기능 정상 동작
+- ✅ Edge Function 코드 개선 완료
+
+### 주의사항
+- **Supabase 설정 필요**: Redirect URLs에 `/auth/callback` 추가 필요
+- **Edge Function 배포 필요**: `supabase functions deploy delete-account`
+- **환경 변수 설정**: Supabase Dashboard에서 Service Role Key 설정 필요
+
+### 다음 단계
+- 실제 OAuth 로그인 플로우 테스트
+- Edge Function 배포 및 테스트
+- 계정 삭제 플로우 전체 테스트
+
+---
+
+## [2025-12-23] [hub] 무한 로딩/먹통 버그 근본 해결: MutationObserver 무한 루프 제거
+
+### 문제 증상
+- 페이지는 로드되지만 클릭/우클릭/F12 개발자 도구가 전혀 동작하지 않는 "먹통" 상태
+- 스크롤만 가능하고 모든 상호작용이 차단됨
+- 브라우저가 JavaScript 실행에 블로킹되어 반응하지 않음
+
+### 원인 분석
+
+1. **MutationObserver 무한 루프 (주요 원인)**
+   - `shared/shell/header.js`의 `setupDrawerNavLinks()` 함수가 `replaceChild()`로 DOM을 변경
+   - `MutationObserver`가 이 변경을 감지하여 다시 `setupDrawerNavLinks()` 호출
+   - 무한 루프로 브라우저 메인 스레드 블로킹
+   - 코드 위치: `shared/shell/header.js:397-419` (이전 버전)
+
+2. **applyLang()의 history.replaceState 무한 루프 가능성**
+   - `shared/i18n/lang.js`의 `applyLang()` 함수가 `history.replaceState()` 호출
+   - URL 변경이 다시 `applyLang()`를 트리거할 수 있는 구조
+   - 여러 곳에서 `applyLang()`가 반복 호출되면서 무한 루프 가능성
+
+3. **localStorage 접근 실패 시 예외 처리 부재**
+   - `getInitialLang()`에서 `localStorage.getItem()` 호출 시 예외 처리 없음
+   - 일부 환경(시크릿 모드, 쿠키 차단 등)에서 접근 실패 시 스크립트 중단 가능
+
+4. **DOM 준비 전 스크립트 실행**
+   - `index.html`에서 DOM 요소를 찾기 전에 스크립트가 실행될 수 있음
+
+### 해결 방법
+
+1. **MutationObserver 완전 제거 → 이벤트 위임으로 변경**
+   - `setupDrawerNavLinks()` 함수와 `MutationObserver` 완전 제거
+   - 이벤트 위임 패턴 사용: `.drawer-nav`에 한 번만 리스너 등록
+   - 코드 변경:
+     ```javascript
+     // 이전: MutationObserver + replaceChild (무한 루프)
+     // 이후: 이벤트 위임 (무한 루프 방지)
+     const drawerNav = document.querySelector('.drawer-nav');
+     if (drawerNav) {
+       drawerNav.addEventListener('click', (e) => {
+         if (e.target.closest('.drawer-nav-link')) {
+           closeDrawer();
+         }
+       });
+     }
+     ```
+
+2. **applyLang()의 history.replaceState 호출 비활성화**
+   - URL 업데이트 로직을 주석 처리하여 무한 루프 가능성 제거
+   - 필요 시 나중에 다시 활성화 가능하도록 주석으로 보존
+   - 코드 위치: `shared/i18n/lang.js:89-118`
+
+3. **localStorage 접근 에러 처리 추가**
+   - `getInitialLang()`에 try-catch 추가, 실패 시 기본값 'ko' 반환
+   - `localStorage.setItem()`에도 try-catch 추가
+   - 코드 위치: `shared/i18n/lang.js:28-43, 81-87`
+
+4. **header.js의 getActiveLang() 호출 보호**
+   - `renderHeader()` 함수에서 `getActiveLang()` 호출을 try-catch로 보호
+   - `applyLang()` 호출도 try-catch로 보호
+   - 코드 위치: `shared/shell/header.js:27-35, 115, 123, 217`
+
+5. **DOM 준비 후 스크립트 실행 보장**
+   - `index.html`에서 `DOMContentLoaded` 이벤트 또는 즉시 실행 패턴 사용
+   - 마운트 요소 존재 여부 확인 추가
+   - 코드 위치: `index.html:52-64`
+
+### 변경된 파일
+- `shared/shell/header.js`: MutationObserver 제거, 이벤트 위임으로 변경, try-catch 추가
+- `shared/i18n/lang.js`: history.replaceState 비활성화, localStorage 에러 처리 추가
+- `index.html`: DOM 준비 후 스크립트 실행 보장
+
+### 검증 방법
+- 브라우저에서 `http://localhost:5173/` 접속 후 클릭/우클릭/F12 정상 동작 확인
+- Play Now 버튼 클릭 → `/seoulsurvival/` 이동 확인
+- 계정 관리 링크 클릭 → `/account/` 이동 확인
+- 콘솔 에러 없음 확인
+
+### 주의사항 (재발 방지)
+- **MutationObserver 사용 시 주의**: DOM 변경을 감지하는 Observer가 자신의 콜백에서 DOM을 변경하면 무한 루프 발생
+  - 해결책: 이벤트 위임 패턴 사용 또는 `disconnect()` 후 변경, 또는 `isProcessing` 플래그로 중복 호출 방지
+- **history.replaceState 호출 시 주의**: URL 변경이 다시 같은 함수를 트리거하지 않도록 플래그나 조건 체크 필요
+- **localStorage 접근**: 항상 try-catch로 감싸서 실패 시 기본값 반환
+- **DOM 조작**: `replaceChild()`, `innerHTML` 등 DOM 변경 시 MutationObserver가 다시 트리거되지 않도록 주의
+- **이벤트 리스너**: 중복 등록 방지를 위해 `dataset` 플래그나 이벤트 위임 패턴 사용
+
+### 교훈
+- MutationObserver는 강력하지만, 콜백 내에서 DOM을 변경하면 무한 루프가 발생하기 쉬움
+- 이벤트 위임 패턴이 더 안전하고 성능도 좋음 (리스너 1개 vs N개)
+- 모든 외부 API 접근(localStorage, history 등)은 try-catch로 보호해야 함
+- 브라우저 자동화 테스트를 통해 실제 동작을 확인하는 것이 중요함
+
+---
+
+## [2025-12-22] [hub] 게임 목록 페이지 무한 로딩 버그 수정
+
+### 작업 내용
+1. **초기화 순서 문제 해결**
+   - `games/main.js`에서 `initCommonShell()`이 `async`인데 `await` 없이 호출되어 헤더/푸터 렌더링 완료 전에 초기 렌더링이 실행되는 문제 수정
+   - IIFE(async)로 변경하여 `await initCommonShell()` 후 초기 렌더링 실행
+   - 필터 탭 이벤트 리스너를 초기화 블록 안으로 이동하여 DOM 준비 후 실행
+
+2. **Auth 초기화 타임아웃 보호**
+   - `shared/shell/header.js`의 `getUser()` 호출에 3초 타임아웃 추가 (`Promise.race`)
+   - Auth 초기화 실패 시에도 guest 상태로 표시하여 페이지 로딩 차단 방지
+   - try-catch로 오류 처리 강화
+
+3. **오류 처리 강화**
+   - `games/main.js` 초기화 블록에 try-catch 추가
+   - 오류 발생 시에도 최소한의 렌더링(Featured Hero, Games Grid) 시도
+
+### 변경된 파일
+- `games/main.js`: 초기화 순서 수정 (await initCommonShell, 필터 탭 이벤트 이동, try-catch 추가)
+- `shared/shell/header.js`: Auth 초기화 타임아웃 보호 추가
+
+### 주의사항
+- Auth 초기화가 실패하거나 타임아웃되어도 페이지는 정상 로드되어야 함 (guest 모드)
+- 필터 탭 이벤트는 DOM이 준비된 후에만 등록되므로, 초기 렌더링 전에는 클릭해도 동작하지 않을 수 있음 (정상 동작)
+
+---
+
+## [2025-12-22] [hub] SEO 개선 P1: 서브 페이지 정렬 + sitemap 확장 + 구조화데이터
+
+### 작업 내용
+1. **sitemap.xml 확장**
+   - `/games/`, `/games/seoulsurvival/`, `/patch-notes/`, `/support/` 추가
+   - 각 페이지별 priority/changefreq 설정 (게임 스토어/상세: 0.8~0.9, 패치노트: 0.7, 지원: 0.5)
+
+2. **허브 홈 내부 링크 강화**
+   - 헤더 nav에 "게임 목록", "패치노트" 링크 추가
+   - 푸터 게임 섹션에 "게임 목록" 링크 추가, 지원 섹션에 "패치노트" 링크 추가
+   - 사이트 구조를 크롤러/사용자에게 더 명확하게 노출
+
+3. **서브 페이지 SEO 메타 정리**
+   - `games/index.html`: robots meta 추가 (`index,follow`)
+   - `games/seoulsurvival/index.html`: robots meta 추가, OG 이미지 경로 정규화 (`og-seoulsurvivor.png` → `seoulsurvivor-1200x630.png`)
+   - `patch-notes/index.html`: robots meta 추가, OG 이미지 버전 쿼리 업데이트 (`2025-01-XX` → `2025-12-22`)
+   - `account/index.html`: `noindex,follow` 설정 (계정 관리 페이지는 검색 노출 불필요), canonical 추가, theme-color 추가
+
+4. **구조화 데이터 확장 (VideoGame 스키마)**
+   - `games/seoulsurvival/index.html`에 `VideoGame` JSON-LD 추가
+   - 필드: name, alternateName, url, image, description, applicationCategory, gamePlatform, operatingSystem, genre, inLanguage, publisher, offers, aggregateRating
+   - 검색엔진이 게임 정보를 구조화하여 인식하고, 리치 스니펫/게임 카드 표시 가능성 향상
+
+### 변경된 파일
+- `public/sitemap.xml`: 4개 URL 추가 (games/, games/seoulsurvival/, patch-notes/, support/)
+- `index.html`: 헤더 nav + 푸터 링크 추가
+- `games/index.html`: robots meta 추가
+- `games/seoulsurvival/index.html`: robots meta 추가, OG 이미지 경로 정규화, VideoGame JSON-LD 추가
+- `patch-notes/index.html`: robots meta 추가, OG 이미지 버전 쿼리 업데이트
+- `account/index.html`: robots meta (`noindex`), canonical, theme-color 추가
+
+### 주의사항
+- 계정 관리 페이지는 `noindex`로 설정하여 검색 노출 방지 (개인정보/로그인 페이지는 일반적으로 인덱싱 불필요)
+- OG 이미지 경로는 README 가이드(`public/og/*.png`)와 일치하도록 정규화
+- VideoGame 스키마는 향후 게임 추가 시 템플릿으로 활용 가능
+
+---
+
+## [2025-12-22] [hub] SEO 개선 P0: 허브 홈 메타/구조화데이터/시맨틱 정리
+
+### 작업 내용
+1. **허브 홈 메타/OG/Twitter/Canonical/Robots 정렬**
+   - `<title>`: "ClickSurvivor 허브 | Capital Clicker: Seoul Survival" (브랜드+핵심키워드+가치제안)
+   - `<meta name="description">`: 허브 역할 + 다중 게임 + 계정/랭킹 가치제안 카피
+   - `<link rel="canonical" href="https://clicksurvivor.com/" />` 추가
+   - `<meta name="robots" content="index,follow">` 명시
+   - OG 메타: `og:site_name`, `og:locale=ko_KR`, `og:image`를 `public/og/clicksurvivor-home-1200x630.png?v=2025-12-21`로 정규화, `og:image:width/height` 추가
+   - Twitter Card: OG와 동일한 값으로 통일
+   - `<meta name="theme-color" content="#0b0f19" />` 추가
+
+2. **구조화 데이터(JSON-LD) 추가**
+   - `Organization` (ClickSurvivor 브랜드)
+   - `WebSite` (SearchAction 포함: `/games/?q={search_term_string}`)
+   - `ItemList` (대표 게임: Capital Clicker: Seoul Survival을 VideoGame으로 표현)
+
+3. **시맨틱 H 계층 정리**
+   - 섹션 타이틀을 `div.sectionTitle` → `h2.sectionTitle`로 변경 (#about, #screenshots, #account)
+   - H1(히어로 게임명) + H2(섹션) 구조로 검색엔진/스크린리더 친화적 계층 확립
+
+### 변경된 파일
+- `index.html`: 메타태그 정리, JSON-LD 추가, H2 시맨틱 정리
+
+### 주의사항
+- OG 이미지는 README의 SEO 가이드(`public/og/*.png?v=날짜`) 규칙 준수
+- 구조화데이터는 향후 게임 추가 시 `ItemList.itemListElement` 확장으로 쉽게 확장 가능
+
+---
+
 ## [2025-01-XX] [hub] Auth 상태머신 + 공통 Shell 통합 (모순 제거)
 
 ### 작업 내용

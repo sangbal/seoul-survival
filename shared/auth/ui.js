@@ -1,6 +1,8 @@
-import { getUser, initAuthFromUrl, isAuthEnabled, onAuthStateChange, signInWithOAuth, signOut } from './core.js';
-import { deleteUserData } from './deleteUserData.js';
-import { deleteAccount } from './deleteAccount.js';
+// core.js는 동적 import로 변경 (config.js 로드 지연)
+// import { getUser, initAuthFromUrl, isAuthEnabled, onAuthStateChange, signInWithOAuth, signOut } from './core.js';
+// deleteUserData와 deleteAccount도 동적 import로 변경 (config.js 로드 지연)
+// import { deleteUserData } from './deleteUserData.js';
+// import { deleteAccount } from './deleteAccount.js';
 
 function pickDisplayName(user) {
   if (!user) return null;
@@ -32,6 +34,9 @@ export async function initAuthUI(opts) {
 
   const t = typeof toast === 'function' ? toast : () => {};
 
+  // 동적 import로 auth 모듈 로드 (config.js 로드 지연)
+  const { initAuthFromUrl, getUser, isAuthEnabled, onAuthStateChange, signInWithOAuth, signOut } = await import('./core.js');
+
   // Exchange OAuth code if we were redirected back.
   await initAuthFromUrl();
 
@@ -43,14 +48,9 @@ export async function initAuthUI(opts) {
       userLabel.setAttribute('aria-hidden', 'false');
     }
     if (statusLabel) {
-      if (!isAuthEnabled()) {
-        // 키가 설정되지 않은 경우: 개발자용 경고 대신 유저에게는 "게스트 모드"만 안내
-        statusLabel.textContent =
-          scope === 'hub'
-            ? 'Guest mode (로그인 준비 중)'
-            : '게스트 모드 (로그인 준비 중)';
-        statusLabel.style.color = 'rgba(148, 163, 184, .95)';
-      } else if (name) {
+      // isAuthEnabled 체크는 제거 (user 객체로 판단)
+      // 게스트 모드는 user가 null일 때만 표시
+      if (name) {
         statusLabel.textContent = scope === 'hub' ? 'Signed in' : '로그인됨';
         statusLabel.style.color = 'rgba(52, 211, 153, .95)';
       } else {
@@ -146,20 +146,56 @@ export async function initAuthUI(opts) {
   const off = onAuthStateChange((user) => setUI(user));
 
   async function doLogin(provider) {
-    if (!isAuthEnabled()) {
+    if (!(await isAuthEnabled())) {
       t(scope === 'hub' ? '현재는 게스트 모드입니다. 로그인 기능은 준비 중입니다.' : '현재는 게스트 모드입니다. 로그인 기능은 준비 중입니다.');
       return;
     }
     t(scope === 'hub' ? 'Redirecting…' : '이동 중…');
-    const r = await signInWithOAuth(provider);
-    if (!r.ok) t(scope === 'hub' ? 'Login failed' : '로그인 실패');
+    // Google 로그인은 signInGoogle 사용 (공통 함수)
+    if (provider === 'google') {
+      const { signInGoogle } = await import('./core.js');
+      const r = await signInGoogle();
+      if (!r.ok) t(scope === 'hub' ? 'Login failed' : '로그인 실패');
+    } else {
+      const r = await signInWithOAuth(provider);
+      if (!r.ok) t(scope === 'hub' ? 'Login failed' : '로그인 실패');
+    }
   }
 
   async function doLogout() {
-    if (!isAuthEnabled()) return;
+    if (!(await isAuthEnabled())) return;
     const r = await signOut();
-    if (!r.ok) t(scope === 'hub' ? 'Logout failed' : '로그아웃 실패');
-    else t(scope === 'hub' ? 'Signed out' : '로그아웃');
+    if (!r.ok) {
+      t(scope === 'hub' ? 'Logout failed' : '로그아웃 실패');
+      return;
+    }
+    
+    t(scope === 'hub' ? 'Signed out' : '로그아웃');
+    
+    // 로그아웃 후 메인홈으로 리다이렉트
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        const currentPath = window.location.pathname;
+        let homeHref = '/';
+        
+        // 현재 경로에 따라 상대 경로로 메인홈 계산
+        if (currentPath.includes('/account/')) {
+          // account/ 폴더 내부: ../ (상위 1단계)
+          homeHref = '../';
+        } else if (currentPath.includes('/auth/callback/')) {
+          // auth/callback/ 폴더 내부: ../../ (상위 2단계)
+          homeHref = '../../';
+        } else if (currentPath.includes('/seoulsurvival/')) {
+          // 게임 페이지: ../ (상위 1단계)
+          homeHref = '../';
+        } else if (currentPath !== '/') {
+          // 기타 하위 경로: / (절대 경로)
+          homeHref = '/';
+        }
+        
+        window.location.href = homeHref;
+      }, 500);
+    }
   }
 
   if (loginBtn) {
@@ -199,7 +235,9 @@ export async function initAuthUI(opts) {
   if (deleteAccountBtn) {
     deleteAccountBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      await handleDeleteAccount(scope, t, doLogout);
+      // 동적 import로 deleteAccount 로드
+      const { deleteAccount } = await import('./deleteAccount.js');
+      await handleDeleteAccount(scope, t, doLogout, deleteAccount);
     });
   }
 
@@ -212,7 +250,7 @@ export async function initAuthUI(opts) {
 /**
  * Handle delete user data with 2-step confirmation
  */
-async function handleDeleteData(scope, toast, doLogout) {
+async function handleDeleteData(scope, toast, doLogout, deleteUserData) {
   const t = typeof toast === 'function' ? toast : () => {};
 
   // 1단계 확인
@@ -332,7 +370,7 @@ async function handleDeleteData(scope, toast, doLogout) {
 /**
  * Handle delete account (회원 탈퇴) with 2-step confirmation
  */
-async function handleDeleteAccount(scope, toast, doLogout) {
+async function handleDeleteAccount(scope, toast, doLogout, deleteAccount) {
   const t = typeof toast === 'function' ? toast : () => {};
 
   // 1단계 확인

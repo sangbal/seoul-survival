@@ -128,3 +128,12 @@ curl -X POST https://<PROJECT_REF>.supabase.co/functions/v1/delete-account \
 
 
 
+
+
+
+
+
+
+
+
+

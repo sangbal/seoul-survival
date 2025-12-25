@@ -1,352 +1,451 @@
-/**
- * 공통 헤더 컴포넌트
- * 
- * 모든 페이지에서 동일한 헤더/드로어를 제공합니다.
- * Auth 상태머신을 사용하여 로그인 상태를 일관되게 표시합니다.
- */
-
-import { getActiveLang, t, applyLang } from '../i18n/lang.js';
-import { signInWithOAuth, signOut, isAuthEnabled, onAuthStateChange, getUser } from '../auth/core.js';
-
-// 사용자 표시명 추출
-function pickDisplayName(user) {
-  if (!user) return null;
-  return (
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    user.user_metadata?.preferred_username ||
-    user.email ||
-    user.id?.slice(0, 8)
-  );
-}
-
-/**
- * 헤더 렌더링
- */
-export function renderHeader(mountEl, options = {}) {
-  const {
-    currentPath = '/',
-    lang = getActiveLang(),
-    onLangChange,
-    onLogin,
-    onLogout,
-  } = options;
-
-  if (!mountEl) {
-    console.warn('Header mount element not found');
-    return null;
+// 공통 헤더 컴포넌트 (SeoulSurvival 패턴 기반)
+export function renderHeader(container) {
+  if (!container) return;
+  
+  // 현재 경로에 따라 홈 링크 경로 결정
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  // 홈 링크는 항상 절대 경로로 설정 (뒤로가기 방지)
+  let homeHref = '/';
+  let logoHref = './seoulsurvival/assets/images/logo.png';
+  let accountHref = './account/';
+  
+  // seoulsurvival/ 폴더에 있는 경우
+  if (currentPath.includes('/seoulsurvival/')) {
+    homeHref = '/';
+    logoHref = './assets/images/logo.png';
+    accountHref = '/account/';
   }
-
-  // 헤더 HTML 생성
-  const headerHTML = `
-    <header class="topbar" id="commonHeader">
-      <div class="topbar-inner">
-        <a class="brand" href="${getHomePath(currentPath)}" aria-label="ClickSurvivor 홈으로">
-          <div class="logo">
-            <img src="${getLogoPath(currentPath)}" alt="ClickSurvivor" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;" />
-          </div>
-          <div class="brandtxt">
-            <div class="brandname">ClickSurvivor</div>
-            <div class="brandtag" data-i18n="hub.brand.tag">오늘도 서울에서 살아남기</div>
-          </div>
+  // account/ 폴더에 있는 경우
+  else if (currentPath.includes('/account/')) {
+    homeHref = '/';
+    logoHref = '../seoulsurvival/assets/images/logo.png';
+    accountHref = './';
+  }
+  // auth/callback/ 폴더에 있는 경우
+  else if (currentPath.includes('/auth/callback/')) {
+    homeHref = '/';
+    logoHref = '../../seoulsurvival/assets/images/logo.png';
+    accountHref = '/account/';
+  }
+  
+  container.innerHTML = `
+    <header>
+      <div class="header-brand" aria-label="ClickSurvivor Hub">
+        <a href="${homeHref}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;">
+          <img class="brand-icon" src="${logoHref}" alt="" aria-hidden="true" />
+          <span class="brand-text"><b>ClickSurvivor</b></span>
         </a>
-        <button class="hamburger-btn" id="hamburgerBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="drawer">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
       </div>
-    </header>
+      
+      <!-- 즐겨찾기 / 홈 화면 안내 버튼 -->
+      <button
+        class="chip favorite-btn"
+        id="headerFavoriteBtn"
+        type="button"
+        title="즐겨찾기 / 홈 화면에 추가 안내"
+        aria-label="즐겨찾기 / 홈 화면에 추가 안내"
+      >
+        <span class="favorite-icon">⭐</span>
+        <span class="favorite-label">즐겨찾기</span>
+      </button>
 
-    <!-- 드로어 오버레이 -->
-    <div class="drawer-overlay" id="drawerOverlay" aria-hidden="true"></div>
-
-    <!-- 드로어 메뉴 -->
-    <aside class="drawer" id="drawer" aria-label="메뉴" aria-hidden="true">
-      <div class="drawer-header">
-        <div class="drawer-title" data-i18n="hub.drawer.title">메뉴</div>
-        <button class="drawer-close" id="drawerClose" aria-label="메뉴 닫기">×</button>
-      </div>
-      <div class="drawer-content">
-        <nav class="drawer-nav" aria-label="허브 내비게이션">
-          <a class="drawer-nav-link" href="${getHomePath(currentPath)}#about" data-i18n="hub.header.about">소개</a>
-          <a class="drawer-nav-link" href="${getHomePath(currentPath)}games/">게임 목록</a>
-          <a class="drawer-nav-link" href="${getHomePath(currentPath)}patch-notes/">패치노트</a>
-          <a class="drawer-nav-link" href="${getHomePath(currentPath)}account/" data-i18n="hub.header.account">계정</a>
-        </nav>
-
-        <div class="drawer-actions">
-          <div class="drawer-actions-group">
-            <div class="drawer-actions-label" data-i18n="hub.drawer.language">언어</div>
-            <select class="drawer-select" id="drawerLangSelect" aria-label="Language">
-              <option value="ko">한국어 (KO)</option>
-              <option value="en">English (EN)</option>
-            </select>
-          </div>
-
-          <div class="drawer-actions-group">
-            <div class="drawer-actions-label" data-i18n="hub.drawer.account">계정</div>
-            <!-- Auth 상태에 따라 동적 렌더링 -->
-            <div id="drawerAuthSection">
-              <!-- loading/guest/authed 상태에 따라 동적 업데이트 -->
+      <!-- 공유하기 버튼 -->
+      <button class="chip share-btn" id="headerShareBtn" type="button" title="페이지 공유하기" aria-label="페이지 공유하기">
+        <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.6 2.6 0 0 0 0-1.39l7.02-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .06.59L7.03 9.7A3 3 0 1 0 7 14.3l7.02 4.11A3 3 0 1 0 18 16.08z"></path>
+        </svg>
+        <span class="share-label">공유</span>
+      </button>
+      
+      <nav class="header-nav" style="display: flex; gap: 10px; align-items: center;">
+        <!-- 계정 버튼 (로그인 상태에 따라 동적 업데이트) -->
+        <div class="header-account" id="headerAccount">
+          <!-- 로그인 안 됨: Login 버튼 -->
+          <button id="headerLoginBtn" class="chip login-btn" type="button" title="로그인" aria-label="로그인">
+            <span class="login-label">로그인</span>
+          </button>
+          <!-- 로그인 됨: 햄버거 메뉴 아이콘 -->
+          <div id="headerAccountMenu" style="display: none; position: relative;">
+            <!-- 모든 버전: 햄버거 메뉴 아이콘 -->
+            <button id="headerAccountBtn" class="chip account-btn" type="button" title="계정 메뉴" aria-label="계정 메뉴">
+              <svg class="hamburger-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <div id="headerAccountDropdown" class="account-dropdown">
+              <div class="account-menu-header">
+                <span id="headerAccountNicknameMobile" class="account-menu-nickname">Guest</span>
+              </div>
+              <a href="${accountHref}" class="account-menu-item">
+                계정 관리
+              </a>
+              <button id="headerLogoutBtn" class="account-menu-item" type="button">
+                로그아웃
+              </button>
             </div>
-            <a href="${getHomePath(currentPath)}account/" class="drawer-btn" style="margin-top: 8px; text-align: center; text-decoration: none;" onclick="document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); document.body.classList.remove('drawer-open');">⚙️ 계정 관리</a>
           </div>
+          <!-- 모바일 바텀시트 오버레이 (body에 직접 렌더링) -->
+          <div id="headerAccountOverlay" class="account-overlay"></div>
         </div>
-      </div>
-    </aside>
+      </nav>
+    </header>
   `;
-
-  mountEl.innerHTML = headerHTML;
-
-  // 언어 적용
-  applyLang(lang);
-
-  // 언어 선택 초기값 설정
-  const langSelect = document.getElementById('drawerLangSelect');
-  if (langSelect) {
-    langSelect.value = lang;
-    langSelect.addEventListener('change', (e) => {
-      const newLang = e.target.value;
-      applyLang(newLang);
-      if (onLangChange) onLangChange(newLang);
-    });
-  }
-
-  // 드로어 초기화
-  initDrawer();
-
-  // Auth 상태 구독 및 UI 업데이트 (초기 렌더링 후)
-  setTimeout(async () => {
-    // 초기 상태 확인
-    const initialUser = await getUser();
-    updateAuthUIFromUser(initialUser, currentPath, onLogin, onLogout);
-
-    // Auth 상태 변경 감지
-    const unsubscribe = onAuthStateChange((user) => {
-      updateAuthUIFromUser(user, currentPath, onLogin, onLogout);
-    });
-
-    // 컴포넌트 반환 객체에 구독 해제 함수 저장
-    if (mountEl._headerUnsubscribe) {
-      mountEl._headerUnsubscribe();
-    }
-    mountEl._headerUnsubscribe = unsubscribe;
-  }, 100);
-
-  return {
-    unmount: () => {
-      if (mountEl._headerUnsubscribe) {
-        mountEl._headerUnsubscribe();
+  
+  // 계정 메뉴 이벤트 처리
+  const accountMenu = container.querySelector('#headerAccountMenu');
+  let dropdown = container.querySelector('#headerAccountDropdown');
+  let overlay = container.querySelector('#headerAccountOverlay');
+  const accountBtn = container.querySelector('#headerAccountBtn');
+  const nicknameMobile = container.querySelector('#headerAccountNicknameMobile');
+  
+  // 모바일에서 바텀시트와 오버레이를 body에 직접 렌더링
+  function ensureMobileMenuInBody() {
+    if (window.innerWidth <= 768) {
+      // 바텀시트가 이미 body에 있으면 스킵
+      if (dropdown && dropdown.parentElement === document.body) {
+        return;
       }
-    },
-  };
-}
-
-/**
- * Auth UI 업데이트 (user 객체 기반)
- */
-function updateAuthUIFromUser(user, currentPath, onLogin, onLogout) {
-  const drawerAuthSection = document.getElementById('drawerAuthSection');
-  if (!drawerAuthSection) return;
-
-  const status = user ? 'authed' : 'guest';
-
-  // 기존 이벤트 리스너 제거를 위해 innerHTML 전에 처리
-  const oldLoginBtn = document.getElementById('drawerAuthLoginBtn');
-  const oldLogoutBtn = document.getElementById('drawerAuthLogoutBtn');
-  if (oldLoginBtn) {
-      oldLoginBtn.replaceWith(oldLoginBtn.cloneNode(true));
-  }
-  if (oldLogoutBtn) {
-      oldLogoutBtn.replaceWith(oldLogoutBtn.cloneNode(true));
-  }
-
-  // 숨김 요소는 DOM에서 완전히 제거 (aria-hidden + tabindex=-1)
-  let authHTML = '';
-
-  if (status === 'loading') {
-    authHTML = '<div style="color: var(--muted); font-size: 12px;">Checking session…</div>';
-  } else if (status === 'guest') {
-    // guest: Login 버튼만 표시
-    authHTML = `
-      <button class="drawer-btn" id="drawerAuthLoginBtn" data-i18n="hub.header.login">로그인</button>
-    `;
-  } else if (status === 'authed' && user) {
-    // authed: Profile + Logout만 표시
-    const displayName = pickDisplayName(user);
-    authHTML = `
-      <span class="drawer-userchip" id="drawerAuthUserLabel">${displayName || 'User'}</span>
-      <button class="drawer-btn" id="drawerAuthLogoutBtn">Logout</button>
-    `;
-  } else if (status === 'error') {
-    authHTML = '<div style="color: var(--danger); font-size: 12px;">Auth error</div>';
-  }
-
-  drawerAuthSection.innerHTML = authHTML;
-  applyLang(getActiveLang());
-
-  // 새로 생성된 버튼에 이벤트 리스너 추가
-  const loginBtn = document.getElementById('drawerAuthLoginBtn');
-  if (loginBtn) {
-    loginBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      if (onLogin) {
-        onLogin();
-      } else {
-        await handleLogin();
+      
+      // 기존 바텀시트와 오버레이를 body로 이동
+      if (dropdown && dropdown.parentElement !== document.body) {
+        document.body.appendChild(dropdown);
       }
-    });
-  }
-
-  const logoutBtn = document.getElementById('drawerAuthLogoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      if (onLogout) {
-        onLogout();
-      } else {
-        await handleLogout();
+      if (overlay && overlay.parentElement !== document.body) {
+        document.body.appendChild(overlay);
       }
-    });
-  }
-}
-
-/**
- * 로그인 처리
- */
-async function handleLogin() {
-  if (!isAuthEnabled()) {
-    console.warn('Auth not enabled');
-    return;
-  }
-  const result = await signInWithOAuth('google');
-  if (!result.ok) {
-    console.error('Login failed:', result.reason);
-  }
-}
-
-/**
- * 로그아웃 처리
- */
-async function handleLogout() {
-  if (!isAuthEnabled()) {
-    console.warn('Auth not enabled');
-    return;
-  }
-  const result = await signOut();
-  if (!result.ok) {
-    console.error('Logout failed:', result.reason);
-  }
-}
-
-/**
- * 드로어 초기화
- */
-function initDrawer() {
-  const hamburgerBtn = document.getElementById('hamburgerBtn');
-  const drawer = document.getElementById('drawer');
-  const drawerOverlay = document.getElementById('drawerOverlay');
-  const drawerClose = document.getElementById('drawerClose');
-  const drawerNavLinks = document.querySelectorAll('.drawer-nav-link');
-
-  if (!hamburgerBtn || !drawer || !drawerOverlay) return;
-
-  function openDrawer() {
-    drawer.classList.add('open');
-    drawerOverlay.classList.add('show');
-    hamburgerBtn.classList.add('active');
-    hamburgerBtn.setAttribute('aria-expanded', 'true');
-    drawer.setAttribute('aria-hidden', 'false');
-    drawerOverlay.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('drawer-open');
-
-    // 포커스 이동: 드로어의 첫 포커스 가능한 요소로
-    const firstFocusable = drawer.querySelector('a, button, select, [tabindex]:not([tabindex="-1"])');
-    if (firstFocusable) {
-      setTimeout(() => firstFocusable.focus(), 100);
-    }
-  }
-
-  function closeDrawer() {
-    drawer.classList.remove('open');
-    drawerOverlay.classList.remove('show');
-    hamburgerBtn.classList.remove('active');
-    hamburgerBtn.setAttribute('aria-expanded', 'false');
-    drawer.setAttribute('aria-hidden', 'true');
-    drawerOverlay.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('drawer-open');
-
-    // 포커스 복귀: 햄버거 버튼으로
-    hamburgerBtn.focus();
-  }
-
-  hamburgerBtn.addEventListener('click', () => {
-    if (drawer.classList.contains('open')) {
-      closeDrawer();
     } else {
-      openDrawer();
+      // PC에서는 원래 위치로 복원
+      if (dropdown && dropdown.parentElement === document.body && accountMenu) {
+        accountMenu.appendChild(dropdown);
+      }
+      if (overlay && overlay.parentElement === document.body && accountMenu) {
+        accountMenu.appendChild(overlay);
+      }
     }
-  });
-
-  if (drawerClose) {
-    drawerClose.addEventListener('click', closeDrawer);
-  }
-  if (drawerOverlay) {
-    drawerOverlay.addEventListener('click', closeDrawer);
-  }
-
-  // 드로어 내부 링크 클릭 시 드로어 닫기 (동적으로 추가되는 링크도 처리)
-  function setupDrawerNavLinks() {
-    const links = document.querySelectorAll('.drawer-nav-link');
-    links.forEach((link) => {
-      // 중복 리스너 방지: 기존 리스너 제거 후 추가
-      const newLink = link.cloneNode(true);
-      link.parentNode.replaceChild(newLink, link);
-      newLink.addEventListener('click', () => {
-        closeDrawer();
-      });
-    });
   }
   
   // 초기 설정
-  setupDrawerNavLinks();
+  ensureMobileMenuInBody();
   
-  // 동적으로 추가되는 링크를 위해 MutationObserver 사용
-  const drawerNav = document.querySelector('.drawer-nav');
-  if (drawerNav) {
-    const navObserver = new MutationObserver(() => {
-      setupDrawerNavLinks();
-    });
-    navObserver.observe(drawerNav, { childList: true, subtree: true });
+  // 창 크기 변경 시 재설정
+  window.addEventListener('resize', () => {
+    ensureMobileMenuInBody();
+  });
+  
+  // 초기 상태: 드롭다운 숨김
+  if (dropdown) {
+    dropdown.style.display = 'none';
   }
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+  
+  // 모바일/데스크톱 감지 함수
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+  
+  // 모바일 메뉴 열기
+  function openMobileMenu() {
+    // 모바일 메뉴가 body에 있는지 확인
+    ensureMobileMenuInBody();
+    
+    if (dropdown) {
+      dropdown.style.display = 'block';
+      dropdown.style.position = 'fixed';
+      dropdown.style.bottom = '0';
+      dropdown.style.left = '0';
+      dropdown.style.right = '0';
+      dropdown.style.top = 'auto';
+      dropdown.style.zIndex = '10000';
+      dropdown.style.margin = '0';
+      // 초기 위치 설정 (화면 밖)
+      dropdown.style.transform = 'translateY(100%)';
+      // 클래스 추가로 애니메이션 트리거
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (dropdown) {
+            dropdown.classList.add('show');
+          }
+        });
+      });
+    }
+    if (overlay) {
+      overlay.style.display = 'block';
+      overlay.style.zIndex = '9999';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.right = '0';
+      overlay.style.bottom = '0';
+    }
+    document.body.style.overflow = 'hidden'; // 스크롤 방지
+  }
+  
+  // 모바일 메뉴 닫기
+  function closeMobileMenu() {
+    if (dropdown) {
+      dropdown.classList.remove('show');
+      dropdown.style.transform = 'translateY(100%)';
+      // 애니메이션 완료 후 숨김
+      setTimeout(() => {
+        if (dropdown) {
+          dropdown.style.display = 'none';
+        }
+      }, 300); // 애니메이션 시간과 동일
+    }
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+    document.body.style.overflow = ''; // 스크롤 복원
+  }
+  
+  if (accountMenu && dropdown) {
+    // 모든 버전: 클릭 이벤트
+    if (accountBtn) {
+      accountBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isMobile()) {
+          // 모바일: 바텀시트 열기/닫기
+          if (dropdown.style.display === 'block') {
+            closeMobileMenu();
+          } else {
+            openMobileMenu();
+          }
+        } else {
+          // PC: 드롭다운 토글
+          if (dropdown.style.display === 'block') {
+            dropdown.style.display = 'none';
+          } else {
+            dropdown.style.display = 'block';
+          }
+        }
+      });
+    }
+    
+    // 모바일: 오버레이 클릭 시 메뉴 닫기
+    if (overlay) {
+      overlay.addEventListener('click', () => {
+        if (isMobile()) {
+          closeMobileMenu();
+        }
+      });
+    }
+    
+    // 모바일: 메뉴 항목 클릭 시 메뉴 닫기
+    const menuItems = dropdown.querySelectorAll('.account-menu-item');
+    menuItems.forEach(item => {
+      item.addEventListener('click', () => {
+        if (isMobile()) {
+          setTimeout(() => closeMobileMenu(), 100); // 약간의 지연으로 전환 애니메이션 보장
+        }
+      });
+    });
+    
+    // 닉네임 동기화 (모바일 메뉴 헤더에 표시)
+    // 닉네임은 드롭다운 메뉴 헤더에만 표시됨
+    
+    // 창 크기 변경 시 모바일 메뉴 닫기
+    window.addEventListener('resize', () => {
+      if (!isMobile() && dropdown.style.display === 'block') {
+        closeMobileMenu();
+      }
+    });
+  }
+  
+  // ======= 공유하기 기능 =======
+  const shareBtn = container.querySelector('#headerShareBtn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+      const pageUrl = window.location.href;
+      const pageTitle = document.title || 'ClickSurvivor Hub';
+      const pageDescription = '게임 허브 - 여러 게임을 한 곳에서 플레이하세요';
+      
+      if (!navigator.share) {
+        // Web Share API가 없는 경우 간단한 알림
+        alert('이 기기/브라우저에서는 공유하기를 지원하지 않습니다.');
+        return;
+      }
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && drawer.classList.contains('open')) {
-      closeDrawer();
+      try {
+        await navigator.share({
+          title: pageTitle,
+          text: pageDescription,
+          url: pageUrl,
+        });
+      } catch (err) {
+        // 사용자가 공유 UI를 닫은 경우는 조용히 무시
+        if (err?.name !== 'AbortError') {
+          console.error('공유 실패:', err);
+        }
+      }
+    });
+  }
+  
+  // ======= 즐겨찾기 / 홈 화면 안내 =======
+  const favoriteBtn = container.querySelector('#headerFavoriteBtn');
+  if (favoriteBtn) {
+    favoriteBtn.addEventListener('click', () => {
+      const url = window.location.href;
+      const title = document.title || 'ClickSurvivor Hub';
+      const ua = navigator.userAgent.toLowerCase();
+      const isMobile = /iphone|ipad|ipod|android/.test(ua);
+      const isIOS = /iphone|ipad|ipod/.test(ua);
+      const isAndroid = /android/.test(ua);
+      const isMac = navigator.platform.toUpperCase().includes('MAC');
+
+      // (아주 옛날 IE 전용) 가능한 경우 직접 즐겨찾기 추가 시도
+      if (window.external && typeof window.external.AddFavorite === 'function') {
+        try {
+          window.external.AddFavorite(url, title);
+          return;
+        } catch {
+          // 실패하면 아래 안내로 fallback
+        }
+      }
+
+      let message = '';
+      let modalTitle = '즐겨찾기 / 홈 화면에 추가';
+      let icon = '⭐';
+
+      if (isMobile) {
+        if (isIOS) {
+          message =
+            'iPhone/iPad에서는 Safari 하단의 공유 버튼(□↑)을 누른 뒤\n' +
+            '"홈 화면에 추가"를 선택하면 바탕화면에 아이콘이 만들어집니다.';
+        } else if (isAndroid) {
+          message =
+            'Android에서는 브라우저 오른쪽 위 메뉴(⋮)에서\n' +
+            '"홈 화면에 추가" 또는 "앱 설치"를 선택하면 바탕화면에 아이콘이 만들어집니다.';
+        } else {
+          message = '이 기기에서는 브라우저의 메뉴에서 "홈 화면에 추가" 기능을 사용해 주세요.';
+        }
+      } else {
+        const shortcut = isMac ? '⌘ + D' : 'Ctrl + D';
+        message = `${shortcut} 를 눌러 이 페이지를 브라우저 즐겨찾기에 추가할 수 있습니다.`;
+      }
+
+      alert(`${icon} ${modalTitle}\n\n${message}`);
+    });
+  }
+}
+
+// 자동 렌더링 (terms.html, privacy.html 등에서 사용)
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', async () => {
+    const container = document.getElementById('header-mount');
+    if (container) {
+      renderHeader(container);
+      
+      // 헤더 계정 버튼 인증 UI 초기화 (terms.html, privacy.html 등에서도)
+      try {
+        const { initAuthUI } = await import('../auth/ui.js');
+        const { getUser, onAuthStateChange } = await import('../auth/core.js');
+        
+        const loginBtn = document.getElementById('headerLoginBtn');
+        const logoutBtn = document.getElementById('headerLogoutBtn');
+        const accountMenu = document.getElementById('headerAccountMenu');
+        const nicknameMobile = document.getElementById('headerAccountNicknameMobile');
+        
+        if (!loginBtn && !logoutBtn) return;
+        
+        // 초기 상태 설정 (게스트 모드)
+        if (loginBtn) loginBtn.style.display = 'block';
+        if (accountMenu) accountMenu.style.setProperty('display', 'none', 'important');
+        
+        // 닉네임 업데이트 함수 (getUserProfile 사용)
+        async function updateNickname(user) {
+          if (!nicknameMobile) return;
+          
+          if (!user) {
+            nicknameMobile.textContent = 'Guest';
+            return;
+          }
+          
+          try {
+            const { getUserProfile } = await import('../auth/core.js');
+            const profile = await getUserProfile('seoulsurvival');
+            if (profile.success && profile.user?.nickname) {
+              nicknameMobile.textContent = profile.user.nickname;
+              console.log('[Header] Nickname updated:', profile.user.nickname);
+            } else {
+              const fallback = user?.user_metadata?.full_name || 
+                             user?.user_metadata?.name || 
+                             user?.user_metadata?.preferred_username || 
+                             user?.email?.split('@')[0] || 
+                             'Guest';
+              nicknameMobile.textContent = fallback;
+              console.log('[Header] Using fallback nickname:', fallback);
+            }
+          } catch (error) {
+            console.warn('[Header] Failed to get nickname:', error);
+            const fallback = user?.user_metadata?.full_name || 
+                           user?.user_metadata?.name || 
+                           user?.user_metadata?.preferred_username || 
+                           user?.email?.split('@')[0] || 
+                           'Guest';
+            nicknameMobile.textContent = fallback;
+            console.log('[Header] Using fallback nickname (error):', fallback);
+          }
+        }
+        
+        // 로그인 상태 변경 시 헤더 UI 업데이트
+        async function updateHeaderUI(user) {
+          const isLoggedIn = !!user;
+          
+          if (loginBtn) {
+            loginBtn.style.display = isLoggedIn ? 'none' : 'block';
+          }
+          
+          if (accountMenu) {
+            // !important를 우회하기 위해 setProperty 사용
+            if (isLoggedIn) {
+              accountMenu.style.setProperty('display', 'block', 'important');
+            } else {
+              accountMenu.style.setProperty('display', 'none', 'important');
+            }
+          }
+          
+          // 닉네임 업데이트 (드롭다운 메뉴 헤더에만 표시)
+          await updateNickname(user);
+        }
+        
+        // 초기 상태 설정 (initAuthUI 호출 전에 먼저 설정)
+        const initial = await getUser();
+        await updateHeaderUI(initial);
+        
+        // 인증 UI 초기화 (userLabel을 null로 설정하여 setUI가 닉네임을 덮어쓰지 않도록 함)
+        const authOff = await initAuthUI({
+          scope: 'hub',
+          providerButtons: [],
+          defaultProvider: 'google',
+          loginBtn,
+          logoutBtn,
+          userLabel: null, // 닉네임은 updateNickname에서 직접 관리
+          statusLabel: null,
+          toast: (msg) => console.log('[Header]', msg),
+        });
+        
+        // initAuthUI 내부의 onAuthStateChange가 setUI를 호출하지만 userLabel이 null이므로 닉네임은 업데이트하지 않음
+        // 우리의 onAuthStateChange가 나중에 실행되어 닉네임을 업데이트하도록 함
+        // 하지만 initAuthUI 내부의 콜백이 먼저 실행될 수 있으므로, 약간의 지연을 두고 다시 업데이트
+        setTimeout(async () => {
+          const currentUser = await getUser();
+          await updateHeaderUI(currentUser);
+        }, 100);
+        
+        // 로그인 상태 변경 감지 (닉네임도 함께 업데이트)
+        // initAuthUI 내부의 onAuthStateChange와 별도로 관리
+        onAuthStateChange(async (user) => {
+          await updateHeaderUI(user);
+        });
+      } catch (error) {
+        console.warn('[Header] Auth init failed, using guest mode:', error);
+        const loginBtn = document.getElementById('headerLoginBtn');
+        const accountMenu = document.getElementById('headerAccountMenu');
+        if (loginBtn) loginBtn.style.display = 'block';
+        if (accountMenu) accountMenu.style.setProperty('display', 'none', 'important');
+      }
     }
   });
 }
-
-/**
- * 현재 경로에 맞는 홈 경로 반환
- */
-function getHomePath(currentPath) {
-  if (currentPath.startsWith('/account/')) return '../';
-  if (currentPath.startsWith('/games/')) return '../../';
-  if (currentPath.startsWith('/patch-notes/')) return '../';
-  if (currentPath.startsWith('/support/')) return '../';
-  return './';
-}
-
-/**
- * 현재 경로에 맞는 로고 경로 반환
- */
-function getLogoPath(currentPath) {
-  if (currentPath.startsWith('/account/')) return '../seoulsurvival/assets/images/logo.png';
-  if (currentPath.startsWith('/games/')) return '../../seoulsurvival/assets/images/logo.png';
-  if (currentPath.startsWith('/patch-notes/')) return '../seoulsurvival/assets/images/logo.png';
-  if (currentPath.startsWith('/support/')) return '../seoulsurvival/assets/images/logo.png';
-  return 'seoulsurvival/assets/images/logo.png';
-}
-

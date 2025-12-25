@@ -1,503 +1,102 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="ClickSurvivor 계정 관리 — 로그인, 데이터 관리, 계정 삭제" />
-
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="계정 관리 — ClickSurvivor" />
-  <meta property="og:description" content="계정 관리 페이지 — 로그인, 데이터 관리, 계정 삭제" />
-  <meta property="og:url" content="https://clicksurvivor.com/account/" />
-  <meta property="og:image" content="https://clicksurvivor.com/seoulsurvival/assets/images/settings_gameinfo_bg.webp" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="계정 관리 — ClickSurvivor" />
-  <meta name="twitter:description" content="계정 관리 페이지 — 로그인, 데이터 관리, 계정 삭제" />
-  <meta name="twitter:image" content="https://clicksurvivor.com/seoulsurvival/assets/images/settings_gameinfo_bg.webp" />
-
-  <link rel="icon" type="image/png" href="../seoulsurvival/assets/images/logo.png" />
-  <link rel="apple-touch-icon" href="../seoulsurvival/assets/images/logo.png" />
-  <title>계정 관리 — ClickSurvivor</title>
-
-  <style>
-    :root{
-      --bg:#070b14;
-      --panel:#0f172a;
-      --panel2:#0b1220;
-      --text:#e5e7eb;
-      --muted:#94a3b8;
-      --accent:#5eead4;
-      --primary:#60a5fa;
-      --danger:#fb7185;
-      --border: rgba(148,163,184,.22);
-      --shadow: 0 18px 60px rgba(0,0,0,.35);
-      --radius: 18px;
-      --headerH: 64px;
-    }
-    *{ box-sizing:border-box; }
-    html{ scroll-behavior: smooth; overflow-x: hidden; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(900px 560px at 20% -10%, rgba(96,165,250,.22), transparent 60%),
-        radial-gradient(900px 520px at 85% 0%, rgba(94,234,212,.14), transparent 55%),
-        radial-gradient(720px 520px at 65% 30%, rgba(167,139,250,.10), transparent 55%),
-        var(--bg);
-      overflow-x: hidden;
-    }
-    a{ color:inherit; text-decoration:none; }
-
-    /* layout */
-    .wrap{ max-width: 1080px; margin: 0 auto; padding: 0 18px 70px; }
-    .topbar{
-      position: sticky; top: 0; z-index: 30;
-      height: var(--headerH);
-      display:flex; align-items:center; justify-content:space-between; gap: 14px;
-      padding: 0 18px;
-      background: linear-gradient(180deg, rgba(7,11,20,.94), rgba(7,11,20,.72));
-      border-bottom: 1px solid rgba(148,163,184,.18);
-      backdrop-filter: blur(10px);
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-    .topbar-inner{ max-width: 1080px; margin: 0 auto; width: 100%; display:flex; align-items:center; justify-content:space-between; gap: 14px; box-sizing: border-box; }
-    .brand{ display:flex; align-items:center; gap: 12px; min-width: 0; flex: 0 1 auto; }
-    .logo{
-      width: 38px; height: 38px; border-radius: 12px;
-      background: rgba(7,11,20,.45);
-      display:grid; place-items:center;
-      border: 1px solid rgba(255,255,255,.10);
-      box-shadow: 0 10px 25px rgba(0,0,0,.35);
-      user-select: none;
-      overflow: hidden;
-    }
-    .brandtxt{ display:flex; flex-direction:column; gap: 2px; min-width: 0; }
-    .brandname{ font-size: 16px; font-weight: 900; letter-spacing: .2px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .brandtag{ font-size: 12px; color: var(--muted); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    nav{ display:none; align-items:center; gap: 12px; }
-    .navlink{
-      font-size: 13px; color: var(--muted);
-      padding: 8px 10px;
-      border-radius: 999px;
-    }
-    .navlink:hover{ color: var(--text); background: rgba(148,163,184,.10); }
-    .actions{ display:none; align-items:center; gap: 10px; flex-shrink: 0; }
-    /* 햄버거 메뉴 버튼 - 모든 뷰포트에서 기본 표시 */
-    .hamburger-btn{
-      display: flex;
-      width: 38px;
-      height: 38px;
-      padding: 0;
-      border: 1px solid rgba(148,163,184,.25);
-      background: rgba(15,23,42,.55);
-      border-radius: 999px;
-      cursor: pointer;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 4px;
-      transition: all .15s ease;
-    }
-    .hamburger-btn:hover{
-      background: rgba(15,23,42,.75);
-      border-color: rgba(148,163,184,.35);
-    }
-    .hamburger-btn span{
-      display: block;
-      width: 18px;
-      height: 2px;
-      background: var(--text);
-      border-radius: 2px;
-      transition: all .2s ease;
-    }
-    .hamburger-btn.active span:nth-child(1){
-      transform: rotate(45deg) translate(5px, 5px);
-    }
-    .hamburger-btn.active span:nth-child(2){
-      opacity: 0;
-    }
-    .hamburger-btn.active span:nth-child(3){
-      transform: rotate(-45deg) translate(5px, -5px);
-    }
-    /* 드로어 메뉴 */
-    .drawer-overlay{
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.6);
-      z-index: 40;
-      opacity: 0;
-      transition: opacity .2s ease;
-    }
-    .drawer-overlay.show{
-      display: block;
-      opacity: 1;
-    }
-    .drawer{
-      position: fixed;
-      top: 0;
-      right: -100%;
-      width: 280px;
-      max-width: 85vw;
-      height: 100vh;
-      background: var(--panel);
-      border-left: 1px solid rgba(148,163,184,.18);
-      z-index: 50;
-      transition: right .3s ease;
-      overflow-y: auto;
-      box-shadow: -4px 0 20px rgba(0,0,0,.3);
-    }
-    .drawer.open{
-      right: 0;
-    }
-    .drawer-header{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px;
-      border-bottom: 1px solid rgba(148,163,184,.18);
-      height: var(--headerH);
-      box-sizing: border-box;
-    }
-    .drawer-title{
-      font-size: 16px;
-      font-weight: 950;
-      letter-spacing: .2px;
-    }
-    .drawer-close{
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      border: 1px solid rgba(148,163,184,.25);
-      background: rgba(15,23,42,.55);
-      border-radius: 999px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: var(--text);
-      transition: all .15s ease;
-    }
-    .drawer-close:hover{
-      background: rgba(15,23,42,.75);
-      border-color: rgba(148,163,184,.35);
-    }
-    .drawer-content{
-      padding: 18px;
-    }
-    .drawer-nav{
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 24px;
-    }
-    .drawer-nav-link{
-      display: block;
-      padding: 12px 14px;
-      border-radius: 12px;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 900;
-      transition: all .15s ease;
-      text-decoration: none;
-    }
-    .drawer-nav-link:hover{
-      color: var(--text);
-      background: rgba(148,163,184,.10);
-    }
-    .drawer-actions{
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .drawer-actions-group{
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .drawer-actions-label{
-      font-size: 12px;
-      font-weight: 900;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      margin-bottom: 4px;
-    }
-    .drawer-select{
-      width: 100%;
-      height: 42px;
-      border-radius: 12px;
-      border: 1px solid rgba(148,163,184,.25);
-      background: rgba(15,23,42,.55);
-      color: var(--text);
-      padding: 0 14px;
-      font-weight: 800;
-      font-size: 14px;
-    }
-    .drawer-btn{
-      width: 100%;
-      height: 42px;
-      padding: 0 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(148,163,184,.25);
-      background: rgba(15,23,42,.55);
-      color: var(--text);
-      font-weight: 900;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all .15s ease;
-    }
-    .drawer-btn:hover{
-      background: rgba(15,23,42,.75);
-      border-color: rgba(148,163,184,.35);
-    }
-    .drawer-userchip{
-      display: inline-flex;
-      align-items: center;
-      padding: 10px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(94,234,212,.25);
-      background: rgba(94,234,212,.12);
-      color: rgba(94,234,212,.95);
-      font-weight: 900;
-      font-size: 13px;
-      width: 100%;
-      justify-content: center;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .select{
-      height: 38px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.25);
-      background: rgba(15,23,42,.55);
-      color: var(--text);
-      padding: 0 12px;
-      font-weight: 800;
-    }
-    .ghostbtn{
-      height: 38px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.25);
-      background: rgba(15,23,42,.55);
-      color: var(--text);
-      font-weight: 900;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all .15s ease;
-    }
-    .ghostbtn:hover{
-      background: rgba(15,23,42,.75);
-      border-color: rgba(148,163,184,.35);
-    }
-    .sectionTitle{ margin: 32px 0 14px; font-size: 16px; font-weight: 950; letter-spacing: .2px; color: rgba(229,231,235,.95); }
-    .panel{
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(15,23,42,.45);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      margin-bottom: 16px;
-    }
-    .panel-inner{ padding: 20px; }
-    .muted{ color: var(--muted); }
-    .btn{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-weight: 900;
-      font-size: 14px;
-      cursor: pointer;
-      border: 0;
-      transition: all .15s ease;
-      text-decoration: none;
-    }
-    .btn:hover{ transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
-    .btn:active{ transform: translateY(0); }
-    .ctaRow{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .callout{
-      display:flex;
-      gap: 14px;
-      align-items:flex-start;
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(11,18,32,.55);
-      border-radius: 14px;
-      padding: 18px;
-      margin-bottom: 16px;
-    }
-    .callout .icon{
-      width: 36px; height: 36px; border-radius: 12px;
-      background: rgba(96,165,250,.18);
-      border: 1px solid rgba(96,165,250,.22);
-      display:grid; place-items:center;
-      font-weight: 950;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-    /* 모든 뷰포트에서 드로어 기본 사용 */
-    body.drawer-open{
-      overflow: hidden;
-      position: fixed;
-      width: 100%;
-      height: 100%;
-    }
-    /* 모바일: 브랜드 텍스트 크기 조정 */
-    @media (max-width: 768px){
-      .brand{
-        flex: 1 1 auto;
-        min-width: 0;
-      }
-      .brandname{
-        font-size: 14px;
-      }
-      .brandtag{
-        font-size: 11px;
-      }
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account - ClickSurvivor</title>
+  <link rel="stylesheet" href="../shared/styles/uniform-core.css">
+  <link rel="stylesheet" href="../shared/styles/header.css">
+  <link rel="stylesheet" href="../shared/styles/hub.css">
 </head>
-<body>
-  <!-- 공통 헤더 마운트 포인트 -->
-  <div id="commonHeaderMount"></div>
-
-  <main class="wrap" id="top" data-testid="account-root">
-    <section id="account" aria-label="Account">
-      <div class="sectionTitle" data-i18n="hub.account.title">계정 관리</div>
-      
-      <!-- 로그인 전 안내 -->
-      <div class="panel" id="accountGuestInfo">
-        <div class="panel-inner">
-          <div class="callout">
-            <div class="icon">👤</div>
-            <div>
-              <div style="font-weight: 950; margin-bottom: 4px" data-i18n="hub.account.head">
-                저장·통계·업적·리더보드를 한 계정에
-              </div>
-              <div class="muted" data-i18n="hub.account.body" style="margin-bottom: 8px;">
-                허브와 모든 게임에서 공통으로 동작하는 소셜 로그인으로 여러 기기에서 진행 상황을 동기화하세요.
-              </div>
-              <div class="muted" id="authStatusLabel" style="margin-top: 8px; font-size: 12px; font-weight: 900;">
-                게스트 모드입니다. 로그인하면 기기 간 이어하기/랭킹 참여가 가능합니다.
-              </div>
-              <div id="authProviderButtons" class="ctaRow" style="margin-top: 10px;">
-                <button class="btn" data-auth-provider="google" style="background: linear-gradient(135deg, rgba(96,165,250,.95), rgba(94,234,212,.86)); color: #071018; border: 0;">🔐 Google로 로그인</button>
-              </div>
-            </div>
-          </div>
+<body data-theme="seoulsurvival">
+  <div id="header-mount"></div>
+  <main id="app">
+    <div class="account-container">
+      <!-- 프로필 헤더 -->
+      <div class="account-header">
+        <div class="account-avatar" id="account-avatar">
+          <span id="account-avatar-text">?</span>
+        </div>
+        <div class="account-header-info">
+          <h1 class="account-name" id="account-name">로딩 중...</h1>
+          <p class="account-email muted" id="account-email">로딩 중...</p>
         </div>
       </div>
 
-      <!-- A) Account Overview -->
-      <div class="panel" id="accountOverviewSection" style="display: none;">
-        <div class="panel-inner">
-          <div style="margin-bottom: 16px;">
-            <h3 style="font-size: 15px; font-weight: 950; margin-bottom: 6px; color: var(--text);">계정 정보</h3>
-            <p class="muted" style="font-size: 12px; line-height: 1.5; margin-bottom: 16px;">로그인된 계정 정보를 확인할 수 있습니다.</p>
+      <!-- 계정 관리 메뉴 -->
+      <div class="account-menu">
+        <a href="./profile/" class="account-menu-item">
+          <div class="menu-item-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
           </div>
-          <div id="authUserInfo" style="margin-bottom: 16px;">
-            <div style="font-weight: 900; margin-bottom: 8px; font-size: 16px; color: var(--text);">
-              <span id="authUserName">Guest</span>
-            </div>
-            <div class="muted" style="font-size: 13px; margin-bottom: 6px;">
-              이메일: <span id="authUserEmail">-</span>
-            </div>
-            <div class="muted" style="font-size: 13px; margin-bottom: 12px;">
-              로그인 제공자: <span style="color: rgba(94,234,212,.95);">Google</span>
-            </div>
+          <div class="menu-item-content">
+            <h3 class="menu-item-title">프로필 정보</h3>
           </div>
-          <button class="btn" id="authLogoutBtn" style="background: rgba(251,113,133,.95); color: white; border: 0; width: 100%;">🚪 로그아웃</button>
-        </div>
-      </div>
+          <div class="menu-item-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </div>
+        </a>
 
-      <!-- B) Preferences -->
-      <div class="panel" id="preferencesSection" style="display: none;">
-        <div class="panel-inner">
-          <div style="margin-bottom: 16px;">
-            <h3 style="font-size: 15px; font-weight: 950; margin-bottom: 6px; color: var(--text);">환경 설정</h3>
-            <p class="muted" style="font-size: 12px; line-height: 1.5; margin-bottom: 16px;">언어 설정을 변경할 수 있습니다.</p>
+        <a href="./connected/" class="account-menu-item">
+          <div class="menu-item-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-size: 13px; font-weight: 900; color: var(--text);">언어</label>
-            <select class="select" id="accountLangSelect" aria-label="Language" style="width: 100%;">
-              <option value="ko">한국어 (KO)</option>
-              <option value="en">English (EN)</option>
-            </select>
-            <p class="muted" style="font-size: 11px; line-height: 1.4; margin-top: 4px;">언어 설정은 브라우저에 저장되며, 계정 삭제 후에도 유지됩니다.</p>
+          <div class="menu-item-content">
+            <h3 class="menu-item-title">연결된 계정</h3>
           </div>
-        </div>
-      </div>
+          <div class="menu-item-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </div>
+        </a>
 
-      <!-- C) Privacy & Data -->
-      <div class="panel" id="privacyDataSection" style="display: none;">
-        <div class="panel-inner">
-          <div style="margin-bottom: 16px;">
-            <h3 style="font-size: 15px; font-weight: 950; margin-bottom: 6px; color: var(--text);">개인정보 및 데이터</h3>
-            <p class="muted" style="font-size: 12px; line-height: 1.5; margin-bottom: 16px;">클라우드 저장 데이터를 관리할 수 있습니다.</p>
+        <a href="./security/" class="account-menu-item">
+          <div class="menu-item-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div>
-              <p style="font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.4;">
-                <a href="../support/#account-data" style="color: var(--accent); text-decoration: underline;">데이터 삭제와 계정 삭제의 차이를 확인하세요</a>
-              </p>
-              <button class="btn" id="deleteDataBtn" style="background: rgba(251,113,133,.75); color: white; border: 1px solid rgba(251,113,133,.5); width: 100%; font-size: 13px;">🗑️ 내 데이터 삭제</button>
-              <p class="muted" style="font-size: 11px; line-height: 1.4; margin-top: 8px;">
-                클라우드 세이브와 리더보드 기록이 삭제됩니다. 계정은 유지되며, 다시 게임을 시작할 수 있습니다.
-              </p>
-            </div>
-            <div style="padding-top: 12px; border-top: 1px solid rgba(148,163,184,.18);">
-              <p class="muted" style="font-size: 11px; line-height: 1.4; color: var(--muted);">
-                📥 내 데이터 다운로드 (준비 중)
-              </p>
-            </div>
+          <div class="menu-item-content">
+            <h3 class="menu-item-title">보안</h3>
           </div>
-        </div>
-      </div>
+          <div class="menu-item-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </div>
+        </a>
 
-      <!-- D) Danger Zone -->
-      <div class="panel" id="dangerZoneSection" style="display: none; border: 1px solid rgba(239,68,68,.3);">
-        <div class="panel-inner">
-          <div style="margin-bottom: 16px;">
-            <h3 style="font-size: 15px; font-weight: 950; margin-bottom: 6px; color: rgba(239,68,68,.95);">⚠️ 위험 구역</h3>
-            <p class="muted" style="font-size: 12px; line-height: 1.5; margin-bottom: 8px; color: rgba(239,68,68,.8);">
-              계정 삭제는 되돌릴 수 없는 작업입니다. 신중하게 결정해주세요.
-            </p>
-            <p style="font-size: 11px; margin-bottom: 16px;">
-              <a href="../support/#account-data" style="color: var(--accent); text-decoration: underline;">정말 삭제가 필요한가요? 지원 센터에서 자세한 안내를 확인하세요.</a>
-            </p>
+        <a href="./delete/" class="account-menu-item account-menu-item-danger">
+          <div class="menu-item-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
           </div>
-          <div style="background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-            <p style="font-size: 12px; font-weight: 900; color: rgba(239,68,68,.95); margin-bottom: 8px;">삭제되는 항목:</p>
-            <ul style="font-size: 11px; color: rgba(239,68,68,.85); line-height: 1.6; margin: 0; padding-left: 20px;">
-              <li>계정 정보 (이메일, 로그인 정보)</li>
-              <li>클라우드 저장 데이터</li>
-              <li>리더보드 기록</li>
-              <li>로컬 게임 저장</li>
-            </ul>
-            <p style="font-size: 11px; color: rgba(239,68,68,.75); margin-top: 8px; margin-bottom: 0;">
-              언어 설정은 유지됩니다.
-            </p>
+          <div class="menu-item-content">
+            <h3 class="menu-item-title">계정 삭제</h3>
           </div>
-          <button class="btn" id="deleteAccountBtn" style="background: rgba(127,29,29,.9); color: white; border: 1px solid rgba(127,29,29,.7); width: 100%; font-size: 13px; font-weight: 900;">💀 계정 삭제 (회원 탈퇴)</button>
-        </div>
+          <div class="menu-item-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </div>
+        </a>
       </div>
-    </section>
+    </div>
   </main>
-
-  <!-- 공통 푸터 마운트 포인트 -->
-  <div id="commonFooterMount"></div>
-
+  <div id="footer-mount"></div>
   <script type="module" src="./main.js"></script>
-  <script type="module" src="../shared/authBoot.js"></script>
 </body>
 </html>
-
-

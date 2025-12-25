@@ -1,0 +1,44 @@
+[
+  {
+    "version": "v1.2.0",
+    "date": "2025-12-22",
+    "title": {
+      "ko": "글로벌 유니크 닉네임 시스템 완성",
+      "en": "Global Unique Nickname System Complete"
+    },
+    "summary": {
+      "ko": "닉네임 회수 정책 적용 및 마이그레이션 충돌 UX 강제",
+      "en": "Nickname release policy applied and migration conflict UX enforced"
+    },
+    "file": "v1.2.0.md"
+  },
+  {
+    "version": "v1.1.0",
+    "date": "2025-12-21",
+    "title": {
+      "ko": "프레스티지 시스템 개편",
+      "en": "Prestige System Overhaul"
+    },
+    "summary": {
+      "ko": "자동 프레스티지 구현 및 리더보드 지속 업데이트",
+      "en": "Auto prestige implementation and continuous leaderboard updates"
+    },
+    "file": "v1.1.0.md"
+  },
+  {
+    "version": "v1.0.0",
+    "date": "2025-12-20",
+    "title": {
+      "ko": "초기 릴리즈",
+      "en": "Initial Release"
+    },
+    "summary": {
+      "ko": "Capital Clicker: Seoul Survival 첫 출시",
+      "en": "Capital Clicker: Seoul Survival first release"
+    },
+    "file": "v1.0.0.md"
+  }
+]
+
+
+

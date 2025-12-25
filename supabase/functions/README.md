@@ -53,9 +53,48 @@ supabase functions deploy delete-account
 ### 동작
 
 1. JWT 토큰 검증
-2. game_saves 테이블에서 user_id 행 삭제
-3. leaderboard 테이블에서 user_id 행 삭제
-4. auth.users에서 사용자 삭제 (`admin.deleteUser()`)
+2. 관련 데이터 삭제 (순서대로):
+   - `game_saves` 테이블에서 `user_id` 행 삭제
+   - `leaderboard` 테이블에서 `user_id` 행 삭제
+   - `nickname_registry` 테이블에서 `user_id` 행 삭제 (닉네임 회수)
+   - `reviews` 테이블에서 `user_id` 행 삭제 (있는 경우)
+3. `auth.users`에서 사용자 삭제 (`admin.deleteUser()`)
+
+### 주의사항
+
+- `nickname_registry` 삭제 실패 시에도 계정 삭제는 계속 진행 (닉네임은 나중에 자동 회수됨)
+- `reviews` 테이블이 없을 수 있으므로 삭제 실패는 무시
+- 데이터 삭제 실패 시에도 `auth.users` 삭제는 시도 (부분 삭제 방지)
+
+### CORS 설정
+
+기본적으로 모든 Origin을 허용합니다 (`*`). 프로덕션에서는 환경 변수 `ALLOWED_ORIGIN`을 설정하여 특정 도메인만 허용할 수 있습니다:
+
+```bash
+supabase secrets set ALLOWED_ORIGIN="https://clicksurvivor.com"
+```
+
+### 로컬 검증
+
+배포 전 로컬에서 함수를 검증하려면 `tools/test-delete-account.js` 또는 `tools/test-delete-account.sh`를 사용하세요:
+
+```bash
+# Node.js 버전
+node tools/test-delete-account.js <FUNCTION_URL> [JWT_TOKEN]
+
+# Bash 버전
+./tools/test-delete-account.sh <FUNCTION_URL> [JWT_TOKEN]
+
+# OPTIONS 프리플라이트 확인
+node tools/test-delete-account.js <FUNCTION_URL> --options
+```
+
+**⚠️ 주의**: 유효한 JWT 토큰으로 테스트하면 실제 계정이 삭제됩니다. 반드시 **테스트 계정**으로만 테스트하세요.
+
+
+
+
+
 
 
 

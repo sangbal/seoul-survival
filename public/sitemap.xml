@@ -30,6 +30,30 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
+  <url>
+    <loc>https://clicksurvivor.com/games/</loc>
+    <lastmod>2025-12-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://clicksurvivor.com/games/seoulsurvival/</loc>
+    <lastmod>2025-12-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://clicksurvivor.com/patch-notes/</loc>
+    <lastmod>2025-12-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://clicksurvivor.com/support/</loc>
+    <lastmod>2025-12-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
 </urlset>
 
 

@@ -9,7 +9,7 @@ import { getUser } from './core.js';
  * @returns {Promise<{ ok: boolean, reason?: string, error?: any }>}
  */
 export async function deleteUserData() {
-  const supabase = getSupabaseClient();
+  const supabase = await getSupabaseClient();
   if (!supabase) {
     return { ok: false, reason: 'not_configured' };
   }

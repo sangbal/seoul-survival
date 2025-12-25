@@ -1,4 +1,5 @@
-import { initAuthUI } from './auth/ui.js';
+// ui.js는 동적 import로 변경 (auth 모듈 로드 지연)
+// import { initAuthUI } from './auth/ui.js';
 
 function $(sel) {
   return document.querySelector(sel);
@@ -33,6 +34,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Auth 초기화에 timeout 적용 (2초, 무한 대기 방지)
   try {
+    // 동적 import로 ui 모듈 로드 (auth 모듈 로드 지연)
+    const { initAuthUI } = await import('./auth/ui.js');
+    
     await Promise.race([
       initAuthUI({
         scope: detectScope(),

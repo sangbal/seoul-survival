@@ -6,38 +6,66 @@
 //
 // Vite dev / build 환경에서는 import.meta.env에 값이 주입된다.
 // 정적 ESM 환경(직접 호스팅)에서는 env가 비어 있어 SSO/리더보드가 비활성(게스트 모드)로 동작한다.
-const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
 
-// 진단용 로그 (개발 시 env 주입 여부 확인)
-try {
-  console.log('[env] VITE_SUPABASE_URL:', env.VITE_SUPABASE_URL);
-  console.log(
-    '[env] VITE_SUPABASE_ANON_KEY length:',
-    (env.VITE_SUPABASE_ANON_KEY || '').length
-  );
-} catch {}
+// 모듈 로드 시 블로킹 방지: 모든 코드를 함수 내부로 이동
+let _env = null;
+let _configLogged = false;
 
-export const SUPABASE_URL = env.VITE_SUPABASE_URL ?? '';
-export const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY ?? '';
+function getEnv() {
+  if (_env === null) {
+    _env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
+  }
+  return _env;
+}
+
+function logConfigOnce() {
+  if (_configLogged) return;
+  _configLogged = true;
+  try {
+    const env = getEnv();
+    console.log('[env] VITE_SUPABASE_URL:', env.VITE_SUPABASE_URL);
+    console.log(
+      '[env] VITE_SUPABASE_ANON_KEY length:',
+      (env.VITE_SUPABASE_ANON_KEY || '').length
+    );
+  } catch {}
+}
 
 // Share auth state across hub + all subpath games on the same origin.
 export const AUTH_STORAGE_KEY = 'clicksurvivor-auth';
 
+// 상수들을 함수로 변경하여 지연 실행
+export function getSupabaseUrl() {
+  const env = getEnv();
+  return env.VITE_SUPABASE_URL ?? '';
+}
+
+export function getSupabaseAnonKey() {
+  const env = getEnv();
+  return env.VITE_SUPABASE_ANON_KEY ?? '';
+}
+
 export function isSupabaseConfigured() {
+  // 첫 호출 시에만 로그 출력 (지연 실행)
+  logConfigOnce();
+  
+  const url = getSupabaseUrl();
+  const key = getSupabaseAnonKey();
+  
   const ok =
-    typeof SUPABASE_URL === 'string' &&
-    typeof SUPABASE_ANON_KEY === 'string' &&
-    SUPABASE_URL.startsWith('https://') &&
-    SUPABASE_URL.length > 'https://'.length &&
-    SUPABASE_ANON_KEY.length > 0;
+    typeof url === 'string' &&
+    typeof key === 'string' &&
+    url.startsWith('https://') &&
+    url.length > 'https://'.length &&
+    key.length > 0;
 
   if (!ok) {
     try {
       console.warn('[auth] Supabase not configured', {
-        urlEmpty: !SUPABASE_URL,
-        anonEmpty: !SUPABASE_ANON_KEY,
-        urlValue: SUPABASE_URL || '(empty)',
-        anonLen: (SUPABASE_ANON_KEY || '').length,
+        urlEmpty: !url,
+        anonEmpty: !key,
+        urlValue: url || '(empty)',
+        anonLen: (key || '').length,
       });
     } catch {}
   }

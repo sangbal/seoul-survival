@@ -12,20 +12,54 @@
   <meta property="og:locale" content="ko_KR" />
   <meta property="og:title" content="Capital Clicker: SeoulSurvivor | ClickSurvivor" />
   <meta property="og:description" content="서울에서 노동→투자→자본 루프로 생존하는 증분 클릭 게임" />
-  <meta property="og:image" content="https://clicksurvivor.com/og/og-seoulsurvivor.png?v=2025-12-21" />
+  <meta property="og:image" content="https://clicksurvivor.com/og/seoulsurvivor-1200x630.png?v=2025-12-21" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Capital Clicker: SeoulSurvivor | ClickSurvivor" />
   <meta name="twitter:description" content="서울에서 노동→투자→자본 루프로 생존하는 증분 클릭 게임" />
-  <meta name="twitter:image" content="https://clicksurvivor.com/og/og-seoulsurvivor.png?v=2025-12-21" />
+  <meta name="twitter:image" content="https://clicksurvivor.com/og/seoulsurvivor-1200x630.png?v=2025-12-21" />
 
   <meta name="theme-color" content="#0b0f19" />
+  <meta name="robots" content="index,follow" />
 
   <link rel="icon" type="image/png" href="../../seoulsurvival/assets/images/logo.png" />
   <link rel="apple-touch-icon" href="../../seoulsurvival/assets/images/logo.png" />
   <title>Capital Clicker: SeoulSurvivor | ClickSurvivor</title>
+
+  <!-- 구조화 데이터 (VideoGame) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "Capital Clicker: Seoul Survival",
+    "alternateName": "SeoulSurvivor",
+    "url": "https://clicksurvivor.com/seoulsurvival/",
+    "image": "https://clicksurvivor.com/og/seoulsurvivor-1200x630.png?v=2025-12-21",
+    "description": "서울에서 노동→투자→자본 루프로 생존하는 증분 클릭 게임. 알바에서 시작해 CEO까지 승진하고, 금융상품과 부동산에 투자해 자본을 증식시키세요.",
+    "applicationCategory": "Game",
+    "gamePlatform": ["Web Browser"],
+    "operatingSystem": "Web Browser",
+    "genre": ["Incremental", "Clicker", "Idle"],
+    "inLanguage": ["ko-KR", "en-US"],
+    "publisher": {
+      "@type": "Organization",
+      "name": "ClickSurvivor",
+      "url": "https://clicksurvivor.com/"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "KRW"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.5",
+      "ratingCount": "1"
+    }
+  }
+  </script>
 
   <style>
     :root{
@@ -270,6 +304,29 @@
       font-size: var(--font-xs);
       font-weight: 900;
     }
+    .status-badge{
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: var(--font-xs);
+      font-weight: 900;
+      margin-bottom: var(--space-3);
+    }
+    .status-badge.released{
+      background: rgba(94,234,212,.15);
+      color: rgba(94,234,212,.95);
+      border: 1px solid rgba(94,234,212,.25);
+    }
+    .status-badge.coming-soon{
+      background: rgba(251,191,36,.15);
+      color: rgba(251,191,36,.95);
+      border: 1px solid rgba(251,191,36,.25);
+    }
+    .status-badge.early-access{
+      background: rgba(96,165,250,.15);
+      color: rgba(96,165,250,.95);
+      border: 1px solid rgba(96,165,250,.25);
+    }
     .cta-primary{
       display: inline-flex;
       align-items: center;
@@ -409,7 +466,11 @@
   <!-- 공통 푸터 마운트 포인트 -->
   <div id="commonFooterMount"></div>
 
-  <script type="module" src="./main.js"></script>
-  <script type="module" src="../../shared/authBoot.js"></script>
+  <!-- 모든 스크립트 임시 비활성화 -->
+  <!-- <script type="module" src="./main.js"></script> -->
+  <!-- <script type="module" src="../../shared/authBoot.js"></script> -->
+  <script>
+    console.log('[games/seoulsurvival/index.html] Page loaded (scripts disabled)');
+  </script>
 </body>
 </html>

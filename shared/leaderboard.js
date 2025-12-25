@@ -107,7 +107,7 @@ export function containsBannedWord(raw, key) {
  * @returns {Promise<{ taken: boolean, reason?: string }>}
  */
 export async function isNicknameTaken(nickname) {
-  const supabase = getSupabaseClient();
+  const supabase = await getSupabaseClient();
   if (!supabase) {
     console.warn('Leaderboard: Supabase client not configured for nickname check');
     return { taken: false, reason: 'not_configured' };
@@ -159,7 +159,7 @@ export async function isNicknameTaken(nickname) {
  * @returns {Promise<{ success: boolean, error?: 'taken' | 'network' | 'unknown', message?: string }>}
  */
 export async function claimNickname(raw, userId) {
-  const supabase = getSupabaseClient();
+  const supabase = await getSupabaseClient();
   if (!supabase) {
     return { success: false, error: 'network', message: 'Supabase not configured' };
   }
@@ -219,7 +219,7 @@ export async function claimNickname(raw, userId) {
  * @returns {Promise<{ success: boolean, error?: string, message?: string }>}
  */
 export async function releaseNickname(userId, gameSlug = GAME_SLUG) {
-  const supabase = getSupabaseClient();
+  const supabase = await getSupabaseClient();
   if (!supabase) {
     return { success: false, error: 'network', message: 'Supabase not configured' };
   }
@@ -418,7 +418,7 @@ export async function updateLeaderboard(nickname, totalAssets, playTimeMs, tower
       });
     }
 
-    const supabase = getSupabaseClient();
+    const supabase = await getSupabaseClient();
     if (!supabase) {
       return { success: false, error: 'Supabase client not available' };
     }
@@ -470,7 +470,7 @@ export async function updateLeaderboard(nickname, totalAssets, playTimeMs, tower
  */
 export async function getLeaderboard(limit = 10, sortBy = 'assets') {
   try {
-    const supabase = getSupabaseClient();
+    const supabase = await getSupabaseClient();
     if (!supabase) {
       console.error('Leaderboard: Supabase client not configured');
       console.warn('[LB] fetch failed', {
@@ -581,7 +581,7 @@ export async function getLeaderboard(limit = 10, sortBy = 'assets') {
  * @returns {Promise<{ success: boolean, data: any | null, rank: number | null }>}
  */
 export async function getMyRank(nickname, sortBy = 'assets') {
-  const supabase = getSupabaseClient();
+  const supabase = await getSupabaseClient();
   if (!supabase) {
     console.warn('[LB] my_rank failed', { reason: 'not_configured' });
     return { success: false, data: null, errorType: 'config' };

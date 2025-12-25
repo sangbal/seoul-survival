@@ -7,7 +7,7 @@ import { getDomRefs } from './ui/domRefs.js';
 import { safeClass, safeHTML, safeText } from './ui/domUtils.js';
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js';
 import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js';
-import { getUser, onAuthStateChange, signInWithOAuth } from '../../shared/auth/core.js';
+import { getUser, onAuthStateChange, signInGoogle } from '../../shared/auth/core.js';
 import { isSupabaseConfigured } from '../../shared/auth/config.js';
 import { updateLeaderboard, getLeaderboard, isNicknameTaken, normalizeNickname, validateNickname, claimNickname, getMyRank } from '../../shared/leaderboard.js';
 import { t, applyI18nToDOM, setLang, getLang, getInitialLang } from './i18n/index.js';
@@ -7012,6 +7012,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // 초기 렌더 (async IIFE로 감싸서 await 사용 가능하게 함)
     (async () => {
       const gameLoaded = loadGame(); // 게임 데이터 불러오기 시도
+      
+      // 게임 로드 후 서버에서 최신 닉네임 동기화 (로그인 상태인 경우)
+      try {
+        const user = await getUser();
+        if (user) {
+          const { getUserProfile } = await import('../../shared/auth/core.js');
+          const profile = await getUserProfile('seoulsurvival');
+          if (profile.success && profile.user?.nickname) {
+            const serverNickname = profile.user.nickname;
+            // 서버 닉네임과 로컬 닉네임이 다르면 서버 닉네임으로 동기화
+            if (playerNickname !== serverNickname) {
+              playerNickname = serverNickname;
+              // 게임 저장에 닉네임 업데이트
+              try {
+                const saveData = localStorage.getItem(SAVE_KEY);
+                if (saveData) {
+                  const data = JSON.parse(saveData);
+                  data.nickname = serverNickname;
+                  localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+                }
+              } catch (e) {
+                console.warn('닉네임 저장 실패:', e);
+              }
+              // UI 업데이트
+              updateUI();
+              console.log('[SeoulSurvival] Initial nickname synced from server:', serverNickname);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('초기 닉네임 동기화 실패:', e);
+      }
+      
       if (gameLoaded) {
         addLog(t('msg.gameLoaded'));
         // 로컬 저장이 있으면 즉시 닉네임 모달 확인
@@ -7535,6 +7568,67 @@ document.addEventListener('DOMContentLoaded', () => {
             window.__saveSyncChecked = false;
           }
         });
+        
+        // 닉네임 변경 이벤트 감지 (다른 페이지에서 닉네임 변경 시)
+        // 이벤트 리스너는 한 번만 등록되도록 onAuthStateChange 밖으로 이동
+        if (!window.__nicknameEventListenersRegistered) {
+          window.__nicknameEventListenersRegistered = true;
+          
+          window.addEventListener('nicknamechanged', async (event) => {
+            const newNickname = event.detail?.nickname;
+            if (newNickname) {
+              playerNickname = newNickname;
+              // 게임 저장에 닉네임 업데이트
+              try {
+                const saveData = localStorage.getItem(SAVE_KEY);
+                if (saveData) {
+                  const data = JSON.parse(saveData);
+                  data.nickname = newNickname;
+                  localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+                }
+              } catch (e) {
+                console.warn('닉네임 저장 실패:', e);
+              }
+              // UI 업데이트
+              updateUI();
+              console.log('[SeoulSurvival] Nickname updated from event:', newNickname);
+            }
+          });
+          
+          // authstatechange 이벤트도 감지 (닉네임 변경 후 발생)
+          window.addEventListener('authstatechange', async () => {
+            // 닉네임 변경 플래그 확인
+            try {
+              const nicknameChanged = localStorage.getItem('clicksurvivor_nickname_changed');
+              if (nicknameChanged) {
+                // 현재 사용자 가져오기
+                const currentUser = await getUser();
+                if (currentUser) {
+                  // 서버에서 최신 닉네임 가져오기
+                  const { getUserProfile } = await import('../../shared/auth/core.js');
+                  const profile = await getUserProfile('seoulsurvival');
+                  if (profile.success && profile.user?.nickname) {
+                    playerNickname = profile.user.nickname;
+                    // 게임 저장에 닉네임 업데이트
+                    const saveData = localStorage.getItem(SAVE_KEY);
+                    if (saveData) {
+                      const data = JSON.parse(saveData);
+                      data.nickname = playerNickname;
+                      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+                    }
+                    // UI 업데이트
+                    updateUI();
+                    console.log('[SeoulSurvival] Nickname updated from server:', playerNickname);
+                  }
+                }
+                // 플래그 제거
+                localStorage.removeItem('clicksurvivor_nickname_changed');
+              }
+            } catch (e) {
+              console.warn('닉네임 동기화 실패:', e);
+            }
+          });
+        }
       } catch {}
     })();
 
@@ -8360,7 +8454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       alert('현재는 게스트 모드입니다. 로그인 기능은 준비 중입니다.');
                       return;
                     }
-                    const result = await signInWithOAuth('google');
+                    const result = await signInGoogle();
                     if (!result.ok) {
                       alert('로그인에 실패했습니다. 다시 시도해 주세요.');
                     } else {
@@ -8497,7 +8591,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('현재는 게스트 모드입니다. 로그인 기능은 준비 중입니다.');
                         return;
                       }
-                      const result = await signInWithOAuth('google');
+                      const result = await signInGoogle();
                       if (!result.ok) {
                         alert('로그인에 실패했습니다. 다시 시도해 주세요.');
                       } else {
@@ -9228,9 +9322,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         btn.classList.add('active');
         
-        // 설정 탭 진입 시 마이그레이션 충돌 체크
+        // 설정 탭 진입 시 마이그레이션 충돌 체크 및 서버 닉네임 동기화
         if (targetTab === 'settingsTab') {
           try {
+            // 서버에서 최신 닉네임 가져오기 (로그인 상태인 경우)
+            (async () => {
+              try {
+                const user = await getUser();
+                if (user) {
+                  const { getUserProfile } = await import('../../shared/auth/core.js');
+                  const profile = await getUserProfile('seoulsurvival');
+                  if (profile.success && profile.user?.nickname) {
+                    const serverNickname = profile.user.nickname;
+                    // 서버 닉네임과 로컬 닉네임이 다르면 서버 닉네임으로 동기화
+                    if (playerNickname !== serverNickname) {
+                      playerNickname = serverNickname;
+                      // 게임 저장에 닉네임 업데이트
+                      try {
+                        const saveData = localStorage.getItem(SAVE_KEY);
+                        if (saveData) {
+                          const data = JSON.parse(saveData);
+                          data.nickname = serverNickname;
+                          localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+                        }
+                      } catch (e) {
+                        console.warn('닉네임 저장 실패:', e);
+                      }
+                      // UI 업데이트
+                      updateUI();
+                      console.log('[SeoulSurvival] Nickname synced from server:', serverNickname);
+                    }
+                  }
+                }
+              } catch (e) {
+                console.warn('서버 닉네임 동기화 실패:', e);
+              }
+            })();
+            
             const needsChange = localStorage.getItem('clicksurvivor_needsNicknameChange') === 'true';
             if (needsChange) {
               // 세션 단위 가드: 같은 세션에서 이미 자동 오픈했으면 스킵

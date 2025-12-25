@@ -1,241 +1,148 @@
-import { applyLang, getInitialLang } from './i18n.js';
+// Hub 메인 진입점
+// 공통 Shell 렌더링 (헤더/푸터)
+import { renderHeader } from '../shared/shell/header.js';
+import { renderFooter } from '../shared/shell/footer.js';
 
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
-
-function showToast(msg) {
-  const toast = $('#toast');
-  if (!toast) return;
-  toast.textContent = msg;
-  toast.classList.add('show');
-  window.clearTimeout(showToast._t);
-  showToast._t = window.setTimeout(() => toast.classList.remove('show'), 1400);
-}
-
-function initVersion() {
-  // package.json is the source of truth, but hub is a static HTML page.
-  // Keep this in sync when releasing.
-  const v = $('#version');
-  if (v) v.textContent = '1.0.0';
-}
-
-// 로그인 버튼은 shared/authBoot.js에서 처리
-
-function initLangSelect() {
-  const select = $('#langSelect');
-  if (!select) return;
-  select.addEventListener('change', (e) => {
-    const lang = String(e.target.value || '').toLowerCase();
-    const applied = applyLang(lang);
-    showToast(applied === 'ko' ? '언어: 한국어' : 'Language: English');
-    // 드로어의 언어 선택도 동기화
-    const drawerSelect = $('#drawerLangSelect');
-    if (drawerSelect) drawerSelect.value = lang;
-  });
-}
-
-function initDrawerLangSelect() {
-  const drawerSelect = $('#drawerLangSelect');
-  if (!drawerSelect) return;
-  drawerSelect.addEventListener('change', (e) => {
-    const lang = String(e.target.value || '').toLowerCase();
-    const applied = applyLang(lang);
-    showToast(applied === 'ko' ? '언어: 한국어' : 'Language: English');
-    // 헤더의 언어 선택도 동기화
-    const headerSelect = $('#langSelect');
-    if (headerSelect) headerSelect.value = lang;
-    // 계정 섹션의 언어 선택도 동기화
-    const accountLangSelect = $('#accountLangSelect');
-    if (accountLangSelect) accountLangSelect.value = lang;
-  });
-}
-
-function initAccountLangSelect() {
-  const accountLangSelect = $('#accountLangSelect');
-  if (!accountLangSelect) return;
-  accountLangSelect.addEventListener('change', (e) => {
-    const lang = String(e.target.value || '').toLowerCase();
-    const applied = applyLang(lang);
-    showToast(applied === 'ko' ? '언어: 한국어' : 'Language: English');
-    // 헤더의 언어 선택도 동기화
-    const headerSelect = $('#langSelect');
-    if (headerSelect) headerSelect.value = lang;
-    // 드로어의 언어 선택도 동기화
-    const drawerSelect = $('#drawerLangSelect');
-    if (drawerSelect) drawerSelect.value = lang;
-  });
-}
-
-function initDrawer() {
-  const hamburgerBtn = $('#hamburgerBtn');
-  const drawer = $('#drawer');
-  const drawerOverlay = $('#drawerOverlay');
-  const drawerClose = $('#drawerClose');
-  const drawerNavLinks = $$('.drawer-nav-link');
-
-  if (!hamburgerBtn || !drawer || !drawerOverlay) return;
-
-  function openDrawer() {
-    drawer.classList.add('open');
-    drawerOverlay.classList.add('show');
-    hamburgerBtn.classList.add('active');
-    hamburgerBtn.setAttribute('aria-expanded', 'true');
-    drawer.setAttribute('aria-hidden', 'false');
-    drawerOverlay.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('drawer-open');
-    
-    // 포커스 이동: 드로어의 첫 포커스 가능한 요소로
-    const firstFocusable = drawer.querySelector('a, button, select, [tabindex]:not([tabindex="-1"])');
-    if (firstFocusable) {
-      setTimeout(() => firstFocusable.focus(), 100);
-    }
-  }
-
-  function closeDrawer() {
-    drawer.classList.remove('open');
-    drawerOverlay.classList.remove('show');
-    hamburgerBtn.classList.remove('active');
-    hamburgerBtn.setAttribute('aria-expanded', 'false');
-    drawer.setAttribute('aria-hidden', 'true');
-    drawerOverlay.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('drawer-open');
-    
-    // 포커스 복귀: 햄버거 버튼으로
-    hamburgerBtn.focus();
-  }
-
-  hamburgerBtn.addEventListener('click', () => {
-    if (drawer.classList.contains('open')) {
-      closeDrawer();
-    } else {
-      openDrawer();
-    }
-  });
-
-  drawerClose.addEventListener('click', closeDrawer);
-  drawerOverlay.addEventListener('click', closeDrawer);
-
-  // 드로어 내부 링크 클릭 시 드로어 닫기
-  drawerNavLinks.forEach(link => {
-    link.addEventListener('click', () => {
-      closeDrawer();
-    });
-  });
-
-  // ESC 키로 드로어 닫기
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && drawer.classList.contains('open')) {
-      closeDrawer();
-    }
-  });
-}
-
-// 드로어의 로그인 버튼 동기화 (shared/authBoot.js에서 처리된 후)
-function syncDrawerAuthUI() {
-  const headerUserLabel = $('#authUserLabel');
-  const headerLoginBtn = $('#authLoginBtn');
-  const headerLogoutBtn = $('#authLogoutBtn');
-  const drawerUserLabel = $('#drawerAuthUserLabel');
-  const drawerLoginBtn = $('#drawerAuthLoginBtn');
-  const drawerLogoutBtn = $('#drawerAuthLogoutBtn');
-
-  // 드로어 버튼에 헤더 버튼과 동일한 이벤트 리스너 연결
-  if (drawerLoginBtn && headerLoginBtn) {
-    drawerLoginBtn.addEventListener('click', () => {
-      headerLoginBtn.click();
-    });
-  }
-
-  if (drawerLogoutBtn && headerLogoutBtn) {
-    drawerLogoutBtn.addEventListener('click', () => {
-      headerLogoutBtn.click();
-    });
-  }
-
-  // 로그인 상태 변경 시 드로어 UI도 동기화 (MutationObserver로 무한 루프 방지)
-  let isSyncing = false;
-  const syncDrawerUI = () => {
-    if (isSyncing) return; // 무한 루프 방지
-    isSyncing = true;
-    
-    try {
-      if (headerUserLabel) {
-        const isVisible = !headerUserLabel.hasAttribute('hidden');
-        if (drawerUserLabel) {
-          if (isVisible) {
-            drawerUserLabel.textContent = headerUserLabel.textContent;
-            drawerUserLabel.removeAttribute('hidden');
-          } else {
-            drawerUserLabel.setAttribute('hidden', '');
-          }
-        }
-      }
-      if (headerLoginBtn) {
-        const isVisible = !headerLoginBtn.hasAttribute('hidden');
-        if (drawerLoginBtn) {
-          if (isVisible) {
-            drawerLoginBtn.removeAttribute('hidden');
-            drawerLoginBtn.setAttribute('aria-hidden', 'false');
-            drawerLoginBtn.setAttribute('tabindex', '0');
-          } else {
-            drawerLoginBtn.setAttribute('hidden', '');
-            drawerLoginBtn.setAttribute('aria-hidden', 'true');
-            drawerLoginBtn.setAttribute('tabindex', '-1');
-          }
-        }
-      }
-      if (headerLogoutBtn) {
-        const isVisible = !headerLogoutBtn.hasAttribute('hidden');
-        if (drawerLogoutBtn) {
-          if (isVisible) {
-            drawerLogoutBtn.removeAttribute('hidden');
-            drawerLogoutBtn.setAttribute('aria-hidden', 'false');
-            drawerLogoutBtn.setAttribute('tabindex', '0');
-          } else {
-            drawerLogoutBtn.setAttribute('hidden', '');
-            drawerLogoutBtn.setAttribute('aria-hidden', 'true');
-            drawerLogoutBtn.setAttribute('tabindex', '-1');
-          }
-        }
-      }
-    } finally {
-      isSyncing = false;
-    }
-  };
-
-  const observer = new MutationObserver(syncDrawerUI);
-
-  if (headerUserLabel) observer.observe(headerUserLabel, { attributes: true, attributeFilter: ['hidden'], childList: false, subtree: false });
-  if (headerLoginBtn) observer.observe(headerLoginBtn, { attributes: true, attributeFilter: ['hidden'], childList: false, subtree: false });
-  if (headerLogoutBtn) observer.observe(headerLogoutBtn, { attributes: true, attributeFilter: ['hidden'], childList: false, subtree: false });
+// DOM 준비 후 실행
+document.addEventListener('DOMContentLoaded', async () => {
+  const headerMount = document.getElementById('header-mount');
+  const footerMount = document.getElementById('footer-mount');
   
-  // 초기 동기화
-  syncDrawerUI();
+  if (headerMount) {
+    renderHeader(headerMount);
+    
+    // 헤더 계정 버튼 인증 UI 초기화
+    await initHeaderAuth();
+  }
+  
+  if (footerMount) {
+    renderFooter(footerMount);
+  }
+  
+  console.log('[Hub] 초기화 완료');
+});
+
+// 헤더 계정 버튼 인증 UI 초기화
+async function initHeaderAuth() {
+  try {
+    const { initAuthUI } = await import('../shared/auth/ui.js');
+    const { getUser, onAuthStateChange } = await import('../shared/auth/core.js');
+    
+    const loginBtn = document.getElementById('headerLoginBtn');
+    const logoutBtn = document.getElementById('headerLogoutBtn');
+    const accountMenu = document.getElementById('headerAccountMenu');
+    const nicknameMobile = document.getElementById('headerAccountNicknameMobile');
+    
+    if (!loginBtn && !logoutBtn) return;
+    
+    // 초기 상태 설정 (게스트 모드)
+    if (loginBtn) loginBtn.style.display = 'block';
+    if (accountMenu) accountMenu.style.display = 'none';
+    
+    // 닉네임 업데이트 함수 (getUserProfile 사용)
+    async function updateNickname(user) {
+      if (!nicknameMobile || !user) {
+        if (nicknameMobile) nicknameMobile.textContent = 'Guest';
+        return;
+      }
+      
+      try {
+        const { getUserProfile } = await import('../shared/auth/core.js');
+        const profile = await getUserProfile('seoulsurvival');
+        if (profile.success && profile.user?.nickname) {
+          nicknameMobile.textContent = profile.user.nickname;
+        } else {
+          const fallback = user?.user_metadata?.full_name || 
+                         user?.user_metadata?.name || 
+                         user?.user_metadata?.preferred_username || 
+                         user?.email?.split('@')[0] || 
+                         'Guest';
+          nicknameMobile.textContent = fallback;
+        }
+      } catch (error) {
+        console.warn('[Hub] Failed to get nickname:', error);
+        const fallback = user?.user_metadata?.full_name || 
+                       user?.user_metadata?.name || 
+                       user?.user_metadata?.preferred_username || 
+                       user?.email?.split('@')[0] || 
+                       'Guest';
+        nicknameMobile.textContent = fallback;
+      }
+    }
+    
+    // 로그인 상태 변경 시 헤더 UI 업데이트
+    async function updateHeaderUI(user) {
+      const isLoggedIn = !!user;
+      
+      // 로그인 버튼 표시/숨김
+      if (loginBtn) {
+        loginBtn.style.display = isLoggedIn ? 'none' : 'block';
+      }
+      
+      // 계정 메뉴 표시/숨김
+      if (accountMenu) {
+        accountMenu.style.display = isLoggedIn ? 'block' : 'none';
+      }
+      
+      // 닉네임 업데이트 (드롭다운 메뉴 헤더에만 표시)
+      await updateNickname(user);
+    }
+    
+    // 초기 상태 설정 (initAuthUI 호출 전에 먼저 설정)
+    const initial = await getUser();
+    await updateHeaderUI(initial);
+    
+    // 인증 UI 초기화 (userLabel을 null로 설정하여 setUI가 닉네임을 덮어쓰지 않도록 함)
+    const authOff = await initAuthUI({
+      scope: 'hub',
+      providerButtons: [],
+      defaultProvider: 'google',
+      loginBtn,
+      logoutBtn,
+      userLabel: null, // 닉네임은 updateNickname에서 직접 관리
+      statusLabel: null,
+      toast: (msg) => console.log('[Hub]', msg),
+    });
+    
+    // initAuthUI 내부의 onAuthStateChange가 setUI를 호출하지만 userLabel이 null이므로 닉네임은 업데이트하지 않음
+    // 우리의 onAuthStateChange가 나중에 실행되어 닉네임을 업데이트하도록 함
+    // 하지만 initAuthUI 내부의 콜백이 먼저 실행될 수 있으므로, 약간의 지연을 두고 다시 업데이트
+    setTimeout(async () => {
+      const currentUser = await getUser();
+      await updateHeaderUI(currentUser);
+    }, 100);
+    
+    // 로그인 상태 변경 감지 (닉네임도 함께 업데이트)
+    // initAuthUI 내부의 onAuthStateChange와 별도로 관리
+    onAuthStateChange(async (user) => {
+      await updateHeaderUI(user);
+    });
+    
+    // 닉네임 변경 이벤트 감지 (다른 페이지에서 닉네임 변경 시)
+    window.addEventListener('nicknamechanged', async (event) => {
+      const newNickname = event.detail?.nickname;
+      if (newNickname && nicknameMobile) {
+        nicknameMobile.textContent = newNickname;
+        console.log('[Hub] Nickname updated from event:', newNickname);
+      }
+      // 사용자 정보 다시 가져오기
+      const currentUser = await getUser();
+      await updateHeaderUI(currentUser);
+    });
+    
+    // authstatechange 이벤트도 감지 (닉네임 변경 후 발생)
+    window.addEventListener('authstatechange', async () => {
+      const currentUser = await getUser();
+      await updateHeaderUI(currentUser);
+    });
+    
+  } catch (error) {
+    console.warn('[Hub] Header auth init failed, using guest mode:', error);
+    // 에러 발생 시 게스트 모드로 설정
+    const loginBtn = document.getElementById('headerLoginBtn');
+    const accountMenu = document.getElementById('headerAccountMenu');
+    if (loginBtn) loginBtn.style.display = 'block';
+    if (accountMenu) accountMenu.style.display = 'none';
+  }
 }
-
-const initialLang = getInitialLang();
-applyLang(initialLang);
-initVersion();
-initLangSelect();
-initDrawerLangSelect();
-initAccountLangSelect();
-initDrawer();
-
-// 언어 선택 초기값 동기화
-const headerSelect = $('#langSelect');
-const drawerSelect = $('#drawerLangSelect');
-const accountLangSelect = $('#accountLangSelect');
-if (headerSelect) headerSelect.value = initialLang;
-if (drawerSelect) drawerSelect.value = initialLang;
-if (accountLangSelect) accountLangSelect.value = initialLang;
-
-// authBoot.js 로드 후 드로어 UI 동기화
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(syncDrawerAuthUI, 100);
-  });
-} else {
-  setTimeout(syncDrawerAuthUI, 100);
-}
-
 

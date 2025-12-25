@@ -2,8 +2,8 @@
  * 공용 i18n 유틸 (hub/i18n.js 재사용)
  */
 
-import ko from '../../hub/translations/ko.js';
-import en from '../../hub/translations/en.js';
+import ko from './translations/ko.js';
+import en from './translations/en.js';
 
 export const STORAGE_KEY = 'clicksurvivor_lang';
 
@@ -27,13 +27,19 @@ export function getLangFromUrl() {
 
 export function getInitialLang() {
   if (typeof window === 'undefined') return 'ko';
-  const fromUrl = getLangFromUrl();
-  if (fromUrl) return fromUrl;
-  const saved = resolveLang(localStorage.getItem(STORAGE_KEY));
-  if (saved) return saved;
-  const nav = String(navigator.language || '').toLowerCase();
-  if (nav.startsWith('ko')) return 'ko';
-  return 'en';
+  try {
+    const fromUrl = getLangFromUrl();
+    if (fromUrl) return fromUrl;
+    const saved = resolveLang(localStorage.getItem(STORAGE_KEY));
+    if (saved) return saved;
+    const nav = String(navigator.language || '').toLowerCase();
+    if (nav.startsWith('ko')) return 'ko';
+    return 'en';
+  } catch (error) {
+    // localStorage 접근 실패 시 기본값 반환
+    console.warn('[lang] Failed to access localStorage, using default:', error);
+    return 'ko';
+  }
 }
 
 export function getActiveLang() {
@@ -73,23 +79,39 @@ export function applyLang(lang) {
   });
 
   if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, resolved);
-  }
-
-  // URL에서 lang 파라미터 처리 (리로드 없이)
-  if (typeof window !== 'undefined' && typeof URL !== 'undefined') {
-    const u = new URL(window.location.href);
-    const currentLang = u.searchParams.get('lang');
-    
-    // URL에 lang이 있고 동일하면 변경하지 않음 (리로드 루프 방지)
-    if (currentLang === resolved) {
-      // 이미 올바른 lang이 URL에 있으면 아무것도 하지 않음
-    } else {
-      // URL에 lang이 없거나 다르면 제거 (리로드 없이)
-      u.searchParams.delete('lang');
-      history.replaceState(null, '', u.toString());
+    try {
+      localStorage.setItem(STORAGE_KEY, resolved);
+    } catch (error) {
+      console.warn('[lang] Failed to save to localStorage:', error);
     }
   }
+
+  // URL에서 lang 파라미터 처리 비활성화 (무한 루프 방지)
+  // 필요시 나중에 다시 활성화할 수 있지만, 현재는 블로킹 문제를 방지하기 위해 비활성화
+  // if (typeof window !== 'undefined' && typeof URL !== 'undefined' && typeof history !== 'undefined') {
+  //   try {
+  //     const u = new URL(window.location.href);
+  //     const currentLang = u.searchParams.get('lang');
+  //     
+  //     if (currentLang === resolved) {
+  //       return resolved;
+  //     }
+  //     
+  //     if (!window._langUpdating) {
+  //       window._langUpdating = true;
+  //       u.searchParams.delete('lang');
+  //       const newUrl = u.toString();
+  //       if (newUrl !== window.location.href) {
+  //         history.replaceState(null, '', newUrl);
+  //       }
+  //       setTimeout(() => {
+  //         window._langUpdating = false;
+  //       }, 100);
+  //     }
+  //   } catch (error) {
+  //     console.warn('[lang] Failed to update URL:', error);
+  //   }
+  // }
 
   return resolved;
 }

@@ -1,7 +1,8 @@
 // Delete user account via Supabase Edge Function
 import { getSupabaseClient } from './supabaseClient.js';
 import { getUser } from './core.js';
-import { SUPABASE_URL } from './config.js';
+// config.js는 동적 import로 변경 (모듈 로드 시 블로킹 방지)
+// import { SUPABASE_URL } from './config.js';
 import { releaseNickname } from '../leaderboard.js';
 
 /**
@@ -9,7 +10,7 @@ import { releaseNickname } from '../leaderboard.js';
  * @returns {Promise<{ ok: boolean, status: string, reason?: string, error?: any }>}
  */
 export async function deleteAccount() {
-  const supabase = getSupabaseClient();
+  const supabase = await getSupabaseClient();
   if (!supabase) {
     return { ok: false, status: 'NOT_CONFIGURED', reason: 'not_configured' };
   }
@@ -19,19 +20,25 @@ export async function deleteAccount() {
     return { ok: false, status: 'AUTH_FAILED', reason: 'not_signed_in' };
   }
 
-  // Release nickname before account deletion
+  // Note: nickname_registry 삭제는 Edge Function에서 처리됨
+  // 클라이언트에서 releaseNickname을 호출하지 않아도 됨 (중복 처리 방지)
+  // 하지만 클라이언트에서도 호출해도 무방 (Edge Function에서도 삭제하므로)
+  // 
+  // Release nickname before account deletion (선택사항, Edge Function에서도 처리)
   // This allows the nickname to be claimed by other users after account deletion
   try {
     const releaseResult = await releaseNickname(user.id, 'seoulsurvival');
     if (releaseResult.success) {
-      console.log('[DeleteAccount] Nickname released successfully');
+      console.log('[DeleteAccount] Nickname released successfully (client-side)');
     } else {
       // Log but don't fail account deletion if nickname release fails
-      console.warn('[DeleteAccount] Nickname release failed:', releaseResult.message);
+      // Edge Function에서도 nickname_registry를 삭제하므로 문제없음
+      console.warn('[DeleteAccount] Nickname release failed (will be handled by Edge Function):', releaseResult.message);
     }
   } catch (error) {
     // Log but don't fail account deletion if nickname release fails
-    console.warn('[DeleteAccount] Nickname release exception:', error);
+    // Edge Function에서도 nickname_registry를 삭제하므로 문제없음
+    console.warn('[DeleteAccount] Nickname release exception (will be handled by Edge Function):', error);
   }
 
   // Get current session token
@@ -42,7 +49,9 @@ export async function deleteAccount() {
   }
 
   const token = session.access_token;
-  const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/delete-account`;
+  // 동적 import로 config 모듈 로드
+  const { getSupabaseUrl } = await import('./config.js');
+  const edgeFunctionUrl = `${getSupabaseUrl()}/functions/v1/delete-account`;
 
   try {
     const controller = new AbortController();

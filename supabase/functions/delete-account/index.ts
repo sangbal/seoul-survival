@@ -3,9 +3,20 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
+// CORS 설정: 환경 변수로 제어 가능 (프로덕션에서는 특정 도메인만 허용 권장)
+const getAllowedOrigin = (): string => {
+  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN');
+  if (allowedOrigin) {
+    return allowedOrigin;
+  }
+  // 기본값: 모든 Origin 허용 (개발 환경)
+  return '*';
+};
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': getAllowedOrigin(),
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface DeleteAccountResponse {
@@ -75,7 +86,7 @@ serve(async (req) => {
       },
     });
 
-    // 1. 관련 데이터 삭제 (game_saves, leaderboard)
+    // 1. 관련 데이터 삭제 (game_saves, leaderboard, nickname_registry, reviews)
     let dataDeleteSuccess = true;
     let dataDeleteError = null;
 
@@ -102,6 +113,34 @@ serve(async (req) => {
         console.error('Failed to delete leaderboard:', leaderboardError.message);
         dataDeleteSuccess = false;
         dataDeleteError = leaderboardError;
+      }
+
+      // nickname_registry 삭제 (닉네임 회수)
+      const { error: nicknameError } = await supabaseAdmin
+        .from('nickname_registry')
+        .delete()
+        .eq('user_id', userId);
+
+      if (nicknameError) {
+        console.error('Failed to delete nickname_registry:', nicknameError.message);
+        // 닉네임 삭제 실패는 치명적이지 않으므로 경고만 (계정 삭제는 계속 진행)
+        console.warn('Nickname registry deletion failed, but continuing with account deletion');
+      }
+
+      // reviews 삭제 (있는 경우)
+      try {
+        const { error: reviewsError } = await supabaseAdmin
+          .from('reviews')
+          .delete()
+          .eq('user_id', userId);
+
+        if (reviewsError) {
+          // reviews 테이블이 없을 수 있으므로 경고만
+          console.warn('Failed to delete reviews (table may not exist):', reviewsError.message);
+        }
+      } catch (reviewsTableError) {
+        // reviews 테이블이 없을 수 있으므로 무시
+        console.warn('Reviews table may not exist, skipping deletion');
       }
     } catch (e) {
       console.error('Exception during data deletion:', e);
@@ -149,10 +188,13 @@ serve(async (req) => {
       );
     } else {
       // 데이터 삭제 실패
+      const errorMessage = dataDeleteError 
+        ? `Failed to delete data: ${dataDeleteError instanceof Error ? dataDeleteError.message : String(dataDeleteError)}`
+        : 'Failed to delete data';
       return new Response(
         JSON.stringify({
           status: 'UNKNOWN_ERROR',
-          message: 'Failed to delete data',
+          message: errorMessage,
         } as DeleteAccountResponse),
         {
           status: 500,
@@ -162,10 +204,13 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Unexpected error:', error);
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'An unexpected error occurred';
     return new Response(
       JSON.stringify({
         status: 'UNKNOWN_ERROR',
-        message: 'An unexpected error occurred',
+        message: errorMessage,
       } as DeleteAccountResponse),
       {
         status: 500,
@@ -174,6 +219,11 @@ serve(async (req) => {
     );
   }
 });
+
+
+
+
+
 
 
 

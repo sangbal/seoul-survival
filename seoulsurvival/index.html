@@ -35,12 +35,11 @@
   <link rel="shortcut icon" type="image/png" href="assets/images/logo.png" />
   <link rel="apple-touch-icon" href="assets/images/logo.png" />
   <link rel="icon" href="assets/images/logo.png" type="image/png" sizes="any" />
+  <link rel="stylesheet" href="../shared/styles/uniform-core.css" />
+  <link rel="stylesheet" href="../shared/styles/header.css" />
   <title>Capital Clicker: SeoulSurvivor — 서울 생존 자본 클리커</title>
   <style>
-    :root {
-      --bg:#0b1220; --panel:#121a2b; --accent:#5eead4; --muted:#94a3b8; --text:#e5e7eb; --btn:#1f2a44; --btn2:#192238; --good:#34d399; --bad:#fb7185;
-      --bg2:#0f1628; --bg3:#0c1322; --primary:#60a5fa; --secondary:#a78bfa; --warning:#fbbf24; --info:#3b82f6;
-    }
+    /* :root 변수는 uniform-core.css의 [data-theme="seoulsurvival"]로 이동됨 */
     
     /* 스크롤바 스타일링 (웹킷 브라우저: Chrome, Edge, Safari) */
     ::-webkit-scrollbar {
@@ -91,66 +90,11 @@
       box-sizing:border-box;
     }
     .grid{display:grid; grid-template-columns: 1.1fr 0.9fr; gap:16px}
-    header{
-      position:fixed;
-      top:0;
-      left:50%;
-      transform:translateX(-50%);
-      z-index:100;
-      background:linear-gradient(180deg,#0b1220,#0b1324);
-      box-shadow:0 4px 20px rgba(0,0,0,.5);
-      padding:8px 24px;       /* 좌우 여백을 .app/.tab-wrapper와 통일 */
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
-      max-width:2000px;       /* .app 과 동일 최대 폭 */
-      width:100%;
-      box-sizing:border-box;
-    }
-    .header-brand{
-      flex: 1 1 auto;
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      gap:8px;
-      padding:6px 10px;
-      border-radius:999px;
-      background: rgba(18, 26, 43, 0.55);
-      border: 1px solid rgba(255,255,255,.06);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      user-select: none;
-    }
-    .header-brand .brand-icon{
-      width:16px;
-      height:16px;
-      border-radius:4px;
-      flex:0 0 auto;
-      filter: drop-shadow(0 3px 8px rgba(0,0,0,0.35));
-    }
-    .header-brand .brand-text{
-      font-size:12px;
-      letter-spacing:.2px;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-    }
-    .header-brand .brand-text b{
-      color: var(--text);
-      font-weight: 700;
-    }
+    /* header, .header-brand 스타일은 shared/styles/header.css로 이동됨 */
     .statbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; flex:1 1 100%; min-width:0;}
     .share-btn{flex-shrink:0;}
-    .chip{background:var(--panel); padding:6px 10px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; font-size:12px;}
-    .chip b{font-size:12px; font-weight:700;}
-    .muted{color:var(--muted)}
-
-    .card{background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,.3)}
-    .card h2{margin:0 0 10px; font-size:18px}
+    /* .chip, .card 스타일은 shared/styles/uniform-core.css로 이동됨 */
+    /* .muted는 shared/styles/uniform-core.css에 있음 */
 
     .work{
       display:flex; 
@@ -215,38 +159,7 @@
     #workBtn.auto-click-pulse {
       animation: autoClickPulse 0.25s ease-out;
     }
-    .btn{
-      cursor:pointer; 
-      border:none; 
-      background:var(--accent); 
-      color:var(--bg); 
-      padding:8px 16px; 
-      border-radius:6px; 
-      font-weight:700; 
-      font-size:12px;
-      letter-spacing:.2px; 
-      transition:all 0.2s ease;
-      pointer-events:auto;
-    }
-    .btn:hover{
-      filter:brightness(1.1);
-      transform:scale(1.05);
-    }
-    .btn:active{transform:scale(0.98)}
-    .btn[disabled]{
-      opacity:.5; 
-      cursor:not-allowed;
-      background:var(--muted);
-    }
-    .btn-lg{
-      font-size:20px; 
-      padding:18px 28px; 
-      background:linear-gradient(180deg,#1f2a44,#1a2340);
-      color:var(--text);
-      border:1px solid rgba(255,255,255,.1);
-      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-    }
+    /* .btn, .btn-lg 스타일은 shared/styles/uniform-core.css로 이동됨 */
 
     .upg-list{display:flex; flex-direction:column; gap:8px}
     .row{
@@ -2383,7 +2296,7 @@
     }
   </style>
 </head>
-<body>
+<body data-theme="seoulsurvival">
   <div class="app" data-testid="seoulsurvival-root">
     <header>
       <div class="header-brand" aria-label="Capital Clicker: Seoul Survival">

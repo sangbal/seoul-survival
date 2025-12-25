@@ -53,8 +53,10 @@ upgrade_report.md
 # Playwright test results
 test-results/
 playwright-report/
+playwright/.auth/user.json
 
 # Env files (Supabase 등 민감 정보)
 .env.local
 .env
+.env.*.local
 
