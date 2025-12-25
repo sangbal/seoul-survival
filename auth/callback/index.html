@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 처리 중... - ClickSurvivor</title>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .callback-container {
+      text-align: center;
+      max-width: 400px;
+      padding: var(--spacing-xl);
+    }
+    .spinner {
+      border: 3px solid var(--border);
+      border-top: 3px solid var(--accent);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto var(--spacing-md);
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .error-message {
+      color: #ff4444;
+      margin-top: var(--spacing-md);
+    }
+    .retry-btn {
+      margin-top: var(--spacing-md);
+    }
+  </style>
+  <script type="module" crossorigin src="../../assets/auth-callback-DQE7DoyG.js"></script>
+  <link rel="modulepreload" crossorigin href="../../assets/preload-helper-WPMeT1xN.js">
+  <link rel="modulepreload" crossorigin href="../../assets/supabaseClient-BZSWgoCJ.js">
+  <link rel="stylesheet" crossorigin href="../../assets/preload-helper-DFlHEO2w.css">
+  <link rel="stylesheet" crossorigin href="../../assets/hub-mE1-amfd.css">
+</head>
+<body data-theme="seoulsurvival">
+  <div class="callback-container">
+    <div id="loading-state">
+      <div class="spinner"></div>
+      <p>로그인 처리 중...</p>
+    </div>
+    <div id="error-state" style="display: none;">
+      <h2>로그인 실패</h2>
+      <p class="error-message" id="error-message"></p>
+      <button id="retry-btn" class="btn retry-btn">다시 시도</button>
+      <a href="/" class="btn" style="margin-top: var(--spacing-sm);">홈으로 이동</a>
+    </div>
+  </div>
+</body>
+</html>
+
+
+
+
+
