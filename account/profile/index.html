@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>프로필 정보 - ClickSurvivor</title>
+  <script type="module" crossorigin src="../../assets/account-profile-BO0-ylmu.js"></script>
+  <link rel="modulepreload" crossorigin href="../../assets/preload-helper-WPMeT1xN.js">
+  <link rel="modulepreload" crossorigin href="../../assets/footer-BfoEdRuT.js">
+  <link rel="stylesheet" crossorigin href="../../assets/preload-helper-DFlHEO2w.css">
+  <link rel="stylesheet" crossorigin href="../../assets/header-DtkDAqYt.css">
+  <link rel="stylesheet" crossorigin href="../../assets/hub-mE1-amfd.css">
+</head>
+<body data-theme="seoulsurvival">
+  <div id="header-mount"></div>
+  <main id="app">
+    <div class="account-container">
+      <!-- 네비게이션 -->
+      <nav class="account-nav">
+        <h1 class="account-nav-title">프로필 정보</h1>
+      </nav>
+
+      <!-- 프로필 정보 섹션 -->
+      <section class="account-section">
+        <div class="section-header">
+          <h2 class="section-title">닉네임</h2>
+        </div>
+        <div class="panel">
+          <div class="form-group">
+            <label for="nickname-input" class="form-label">닉네임</label>
+            <div id="current-nickname-display" class="current-value" style="display: none;">
+              <span class="muted">현재: </span>
+              <strong id="current-nickname-text"></strong>
+            </div>
+            <div id="cooldown-display" class="cooldown-notice" style="display: none;">
+              <span class="cooldown-icon">⏱️</span>
+              <span class="muted">닉네임 변경 쿨타임: <strong id="cooldown-timer">0초</strong> 남음</span>
+            </div>
+            <div class="input-group">
+              <input 
+                type="text" 
+                id="nickname-input" 
+                class="form-input"
+                placeholder="닉네임 입력 (1~6자)"
+                maxlength="6"
+                aria-label="닉네임 입력"
+              />
+              <button 
+                id="nickname-save" 
+                class="btn btn-primary"
+                disabled
+                aria-label="닉네임 저장"
+              >
+                저장
+              </button>
+            </div>
+            <p id="nickname-error" class="form-error" style="display: none;"></p>
+            <p class="form-help muted">닉네임은 1~6자로 설정할 수 있으며, 30초마다 변경 가능합니다.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div id="footer-mount"></div>
+</body>
+</html>
+
