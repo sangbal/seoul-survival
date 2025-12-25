@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./ui-DNXjQp4A.js","./preload-helper-WPMeT1xN.js","./preload-helper-DFlHEO2w.css","./core-DFjEd1v7.js","./supabaseClient-BZSWgoCJ.js"])))=>i.map(i=>d[i]);
-import{_ as A}from"./preload-helper-WPMeT1xN.js";function B(a){if(!a)return;const f=typeof window<"u"?window.location.pathname:"";let i="/",s="./seoulsurvival/assets/images/logo.png",o="./account/";f.includes("/seoulsurvival/")?(i="/",s="./assets/images/logo.png",o="/account/"):f.includes("/account/")?(i="/",s="../seoulsurvival/assets/images/logo.png",o="./"):f.includes("/auth/callback/")&&(i="/",s="../../seoulsurvival/assets/images/logo.png",o="/account/"),a.innerHTML=`
+import{_ as A}from"./preload-helper-WPMeT1xN.js";function B(a){if(!a)return;const f=typeof window<"u"?window.location.pathname:"";let i="/",s="/images/logo.png",o="./account/";f.includes("/seoulsurvival/")?(i="/",s="/images/logo.png",o="/account/"):f.includes("/account/")?(i="/",s="/images/logo.png",o="./"):f.includes("/auth/callback/")&&(i="/",s="/images/logo.png",o="/account/"),a.innerHTML=`
     <header>
       <div class="header-brand" aria-label="ClickSurvivor Hub">
         <a href="${i}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;">

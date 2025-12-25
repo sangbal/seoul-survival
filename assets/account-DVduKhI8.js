@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./core-DFjEd1v7.js","./preload-helper-WPMeT1xN.js","./preload-helper-DFlHEO2w.css","./supabaseClient-BZSWgoCJ.js","./ui-DNXjQp4A.js"])))=>i.map(i=>d[i]);
-import{_ as N}from"./preload-helper-WPMeT1xN.js";/* empty css               *//* empty css            */import{r as S,a as H}from"./footer-2snf0EAe.js";import{signOut as V}from"./core-DFjEd1v7.js";import{deleteAccount as R}from"./deleteAccount-Co5dRfwP.js";import{v as P,c as G}from"./leaderboard-1jeTildv.js";import"./supabaseClient-BZSWgoCJ.js";function f(g,w="info"){const u=document.createElement("div");u.textContent=g,u.style.cssText=`
+import{_ as N}from"./preload-helper-WPMeT1xN.js";/* empty css               *//* empty css            */import{r as S,a as H}from"./footer-C1ze9EoY.js";import{signOut as V}from"./core-DFjEd1v7.js";import{deleteAccount as R}from"./deleteAccount-Co5dRfwP.js";import{v as P,c as G}from"./leaderboard-1jeTildv.js";import"./supabaseClient-BZSWgoCJ.js";function f(g,w="info"){const u=document.createElement("div");u.textContent=g,u.style.cssText=`
     position: fixed;
     bottom: 20px;
     left: 50%;
