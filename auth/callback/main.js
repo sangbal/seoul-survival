@@ -74,17 +74,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // 세션 확인 성공
+    // 세션 확인 성공 (sessionData 사용)
     if (sessionData?.session) {
-      // ... (리다이렉트 로직)
-
-    // 세션 교환 성공
-    if (data?.session) {
-      // URL에서 code, state 파라미터 제거
+      // URL에서 code, state, access_token 파라미터 제거
       const cleanUrl = new URL(window.location.href);
       cleanUrl.searchParams.delete('code');
       cleanUrl.searchParams.delete('state');
-      history.replaceState(null, '', cleanUrl.toString());
+      cleanUrl.searchParams.delete('access_token');
+      // 해시 제거를 위해 history.replaceState 사용
+      history.replaceState(null, '', cleanUrl.pathname + cleanUrl.search); // 해시 제거
 
       // 원래 목적지로 리다이렉트
       // nextUrl이 상대 경로인지 절대 경로인지 확인
