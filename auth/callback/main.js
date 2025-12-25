@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const hashParams = new URLSearchParams(window.location.hash.substring(1)); // # 제거
   
   const code = searchParams.get('code') || hashParams.get('code');
+  const accessToken = hashParams.get('access_token');
   const error = searchParams.get('error') || hashParams.get('error');
   const errorDesc = searchParams.get('error_description') || hashParams.get('error_description') || error;
   
@@ -24,11 +25,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // code 파라미터가 없으면 에러
-  if (!code) {
+  // code나 access_token 둘 다 없으면 에러
+  if (!code && !accessToken) {
     // URL 디버깅 정보를 포함하여 에러 표시
-    console.warn('No login code found. URL:', window.location.href);
-    showError('로그인 코드가 없습니다. 다시 로그인해주세요.');
+    console.warn('No login code or access token found. URL:', window.location.href);
+    showError('로그인 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
     return;
   }
 
@@ -40,14 +41,42 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // OAuth 코드를 세션으로 교환
-    const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+    let sessionData = null;
+    let sessionError = null;
 
-    if (error) {
-      console.error('OAuth exchange error:', error);
-      showError(`로그인 처리 중 오류가 발생했습니다: ${error.message}`);
+    // A) PKCE Flow: code가 있는 경우 교환 수행
+    if (code) {
+      console.log('Processing PKCE flow with code...');
+      const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+      sessionData = data;
+      sessionError = error;
+    } 
+    // B) Implicit Flow: access_token이 있는 경우 (Supabase 클라이언트가 자동 처리했는지 확인)
+    else if (accessToken) {
+      console.log('Processing Implicit flow with access_token...');
+      // createClient 시 detectSessionInUrl: true 옵션으로 인해 이미 세션이 수립되었을 수 있음
+      // getSession()으로 확인
+      const { data, error } = await supabase.auth.getSession();
+      sessionData = data;
+      sessionError = error;
+      
+      // 만약 세션이 아직 없다면, 해시에서 직접 세션 복구 시도 (드문 경우)
+      if (!sessionData?.session && !sessionError) {
+         console.log('Session not detected automatically, verifying token...');
+         // 사실 access_token이 유효하다면 getSession이나 onAuthStateChange에서 잡혀야 함.
+         // 여기서는 잠시 대기 후 재확인하거나, 다음 단계로 진행 시도
+      }
+    }
+
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+      showError(`로그인 처리 중 오류가 발생했습니다: ${sessionError.message}`);
       return;
     }
+
+    // 세션 확인 성공
+    if (sessionData?.session) {
+      // ... (리다이렉트 로직)
 
     // 세션 교환 성공
     if (data?.session) {
