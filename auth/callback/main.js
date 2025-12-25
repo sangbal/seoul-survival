@@ -7,14 +7,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   const errorMessage = document.getElementById('error-message');
   const retryBtn = document.getElementById('retry-btn');
 
-  // URL에서 nextUrl 파라미터 추출 (원래 목적지)
-  const urlParams = new URLSearchParams(window.location.search);
-  const nextUrl = urlParams.get('next') || '/';
-  const code = urlParams.get('code');
-  const state = urlParams.get('state');
+  // URL 파라미터 또는 해시에서 code 추출
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.substring(1)); // # 제거
+  
+  const code = searchParams.get('code') || hashParams.get('code');
+  const error = searchParams.get('error') || hashParams.get('error');
+  const errorDesc = searchParams.get('error_description') || hashParams.get('error_description') || error;
+  
+  const nextUrl = searchParams.get('next') || '/';
+  
+  // 에러 파라미터가 있으면 표시
+  if (error) {
+    showError(`로그인 실패: ${errorDesc}`);
+    console.error('Login error params:', error, errorDesc);
+    return;
+  }
 
   // code 파라미터가 없으면 에러
   if (!code) {
+    // URL 디버깅 정보를 포함하여 에러 표시
+    console.warn('No login code found. URL:', window.location.href);
     showError('로그인 코드가 없습니다. 다시 로그인해주세요.');
     return;
   }
