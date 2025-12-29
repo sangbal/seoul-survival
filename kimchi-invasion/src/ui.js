@@ -408,7 +408,7 @@ export class UI {
         let sellAmount = 1 + (getMk ? (getMk.effects.sellAmount || 0) : 0);
         let sellSpeed = (getSo ? (getSo.effects.sellSpeed || 0) : 0) * amBuffs.sellSpeedMult;
         const price = this.game.getProductPrice(line.productId);
-        const buffedPrice = price * amBuffs.sellPriceMult;
+        const buffedPrice = price * (amBuffs.priceMult || 1);
         const sellRate = sellSpeed;
 
         card.innerHTML = `

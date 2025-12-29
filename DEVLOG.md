@@ -41,7 +41,11 @@
   - Sales: 정상 (Cash 증가 확인)
 - **Data Persistence**: Node.js 시뮬레이션 스크립트(`src/verify_save_load.js`)를 통해 레거시 데이터 마이그레이션 정상 동작 확인.
   - Legacy `logistics` 슬롯 -> `storage`/`transporter` 기본값 자동 복구 로직 검증 완료.
-- **Visual Check**: 헤더 디자인 일치 및 카드 이미지 정상 표시 예상.
+- **Browser Verification**:
+  - `browser_subagent`를 통해 실제 게임 루프(Produce x5 -> Logistics x5 -> Sell x5) 실행.
+  - 현금 증가($0 -> $50,000 -> $75,000) 확인으로 최종 E2E 검증 완료.
+  - _Bug Fix_: 판매 카드의 Unit Price가 `NaN`으로 표시되는 버그 발견 및 수정 (`amBuffs.sellPriceMult` -> `amBuffs.priceMult`).
+- **Visual Check**: 헤더 디자인 일치 및 카드 이미지 정상 표시 확인.
 
 ### 주의사항
 
