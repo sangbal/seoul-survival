@@ -44,7 +44,9 @@
 - **Browser Verification**:
   - `browser_subagent`를 통해 실제 게임 루프(Produce x5 -> Logistics x5 -> Sell x5) 실행.
   - 현금 증가($0 -> $50,000 -> $75,000) 확인으로 최종 E2E 검증 완료.
-  - _Bug Fix_: 판매 카드의 Unit Price가 `NaN`으로 표시되는 버그 발견 및 수정 (`amBuffs.sellPriceMult` -> `amBuffs.priceMult`).
+  - _Bug Fix (Critical)_:
+    1. 판매 단가 `NaN` 수정 (`amBuffs.priceMult`).
+    2. **아이템 관리 팝오버가 화면 밖에 생성되어 보이지 않던 문제(CSS 누락)** 해결 (`.popover` 스타일 추가).
 - **Visual Check**: 헤더 디자인 일치 및 카드 이미지 정상 표시 확인.
 
 ### 주의사항
