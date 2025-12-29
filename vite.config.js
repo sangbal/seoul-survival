@@ -24,6 +24,7 @@ export default defineConfig({
         terms: resolve(__dirname, 'terms.html'),
         privacy: resolve(__dirname, 'privacy.html'),
         seoulsurvival: resolve(__dirname, 'seoulsurvival/index.html'),
+        'kimchi-invasion': resolve(__dirname, 'kimchi-invasion/index.html'),
       },
     },
   },

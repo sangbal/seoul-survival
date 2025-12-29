@@ -1,0 +1,149 @@
+/* UNIVERSAL HEADER - PIXEL PERFECT SEOUL SURVIVAL STANDARD
+   v1.0.0
+   Use this file to instantly apply the standardized 2-row header to any ClickSurvivor game.
+   Requires the standard HTML structure (see HEADER_STANDARD.md).
+*/
+
+/* 1. Header Container */
+header {
+  display: flex !important;
+  flex-wrap: wrap !important; /* Key to 2-row layout */
+  width: 100%;
+  height: auto !important; /* Allow expansion */
+  padding: 8px 24px !important; /* Perfect 8px vertical padding */
+  align-content: center;
+  align-items: center;
+  justify-content: space-between;
+  
+  /* Dark Glass Theme */
+  background: rgba(11, 18, 32, 0.95) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+  z-index: 1000;
+  position: fixed;
+  top: 0; left: 0;
+}
+
+/* 2. Header Brand (Top Left) */
+.header-brand {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif !important;
+  font-size: 14px;
+  font-weight: 700;
+  margin-right: auto; /* Pushes standard buttons to the right if needed */
+}
+
+.brand-icon {
+  font-size: 16px !important; /* Match standard 16px icon size */
+  margin-right: 8px !important;
+  vertical-align: middle !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-text {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+}
+
+/* 3. Header Action Buttons (Top Right) */
+/* Commonly: Favorite, Share, Account/Settings */
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+header .chip, 
+.header-btn {
+  height: 32px;
+  padding: 0 12px !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  /* Standard Chip Style */
+  background: rgb(18, 26, 43) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 12px !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+header .chip:hover,
+.header-btn:hover {
+  background: #1f2a44 !important;
+}
+
+/* Utility classes for specific buttons */
+.favorite-btn { margin-left: auto !important; }
+.account-btn { padding: 0 8px !important; }
+
+/* 4. Statbar (Bottom Row) */
+/* The resource bar that strictly sits on the second line */
+.statbar {
+  flex: 1 1 100% !important; /* Force break to new line */
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center;
+  gap: 0 !important; /* Items have internal padding */
+  
+  margin-top: 0px !important; /* Zero gap from top row */
+  padding-top: 4px !important;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* 5. Resource Items (Inside Statbar) */
+.statbar .res-item,
+.statbar .chip {
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important; /* Gap between Label and Value */
+  padding: 6px 10px !important; /* Standard padding */
+  
+  /* Inherit standard chip look just in case, but usually controlled by shared classes */
+  background: rgb(18, 26, 43);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  margin-right: 8px; /* Space between chips */
+}
+
+.res-label {
+  font-size: 11px !important;
+  color: #94a3b8; /* Muted Text */
+  font-weight: 500;
+  margin: 0 !important;
+  text-transform: none !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+}
+
+.res-value {
+  font-size: 12px !important; /* Standard Size */
+  font-weight: 700;
+  color: #fff !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+  header {
+    padding: 8px 16px !important;
+  }
+  .statbar {
+    padding-top: 8px !important;
+    gap: 8px !important;
+    overflow-x: auto; /* Allow scroll if too many resources */
+  }
+}

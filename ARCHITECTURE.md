@@ -3,17 +3,32 @@
 이 문서는 **새 세션/새 프롬프트에서도 AI가 프로젝트 구조를 빠르게 복원**할 수 있도록, 코드 구조와 데이터 흐름을 압축해 둔 문서입니다.
 
 ## 실행/배포
+
 - **Dev**: `npm install` → `npm run dev` (Vite)
 - **정적 배포**: GitHub Pages용 `base: './'` (`vite.config.js`)
 - **엔트리(허브)**: 루트 `index.html` (+ `hub/main.js`)
 - **엔트리(게임: seoulsurvival)**: `seoulsurvival/src/main.js` (ESM)
 
 ## 서비스 URL(중요)
+
 - **허브(홈페이지)**: `http://clicksurvivor.com/`
 - **게임(현재 서비스 경로)**: `https://clicksurvivor.com/seoulsurvival/`
 - **현재 상태**: 루트(`/`)는 **허브(준비 중) 페이지**, 게임은 `/seoulsurvival/` 서브패스에 독립 앱으로 존재.
 
+### UI/UX 철학 및 스타일 가이드
+
+- **디자인 테마**: 고급스러운 다크 모드 (Cyberpunk/Industrial 감성).
+- **Glassmorphism**: 반투명 배경과 미세한 테두리(`rgba(255,255,255,0.06)`) 활용.
+- **폰트 전략**:
+  - **헤더/시스템 UI**: `System UI` (-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto...) → 가독성과 이질감 없는 통합 경험 제공.
+  - **게임 콘텐츠**: `Outfit` (Modern Sans), `JetBrains Mono` (Data/Numbers).
+- **Universal Header Strategy (2025-12)**:
+  - 모든 하위 게임(`seoulsurvival`, `kimchi-invasion` 등)은 `shared/styles/universal_header.css`를 사용하여 **100% 동일한 헤더 프레임**을 유지해야 함.
+  - 구현 가이드는 `HEADER_STANDARD.md` 참조.
+  - 헤더는 2단 구조(Brand/Actions + ResourceBar)로 고정됨.
+
 ## 상위 구조 개요
+
 - **허브/루트**: `index.html`
   - 다게임 허브 페이지 (레지스트리 기반)
   - 히어로(Featured 게임) + 게임 섹션(All Games, Recently Updated) + 앵커 섹션: `#about`, `#account`
@@ -123,6 +138,7 @@
   - 번역 범위: 약 400개 텍스트 (탭, 버튼, 상품명, 업적, 업그레이드, 시장 이벤트, 모달, 일기장, 통계 등)
   - 숫자 포맷: `formatNumberForLang()` 함수로 한국어(만/억/조)와 영어(K/M/B/T) 단위 지원
 - **유틸/모듈 분리**
+
   - `seoulsurvival/src/economy/pricing.js`: 금융/부동산 **구매/판매 비용** 계산(등비 합)
   - `seoulsurvival/src/systems/market.js`: 시장 이벤트 스케줄/배수 계산(모듈형)
   - `seoulsurvival/src/systems/achievements.js`: 업적 체크/알림(모듈형)
@@ -133,7 +149,47 @@
   - `seoulsurvival/src/persist/storage.js`: LocalStorage JSON 안전 저장/로드 유틸
   - **정적 리소스(이미지)**: `seoulsurvival/assets/images/*`
 
+- **게임 UI/마크업(Kimchi Invasion)**: `kimchi-invasion/index.html`
+  - **5단 컬럼 레이아웃**: 기존 단일 리스트 뷰에서 Production/Logistics/Sales/Research/Stats 5개 섹션으로 분리
+  - **반응형 탭 시스템**: 모바일에서는 하단 탭 바(`nav.mobile-tab-bar`)를 통해 섹션 전환, 데스크톱에서는 5개 컬럼 전체 표시
+  - **독립 카드 렌더링**: 각 라인은 Prod/Logi/Sales 카드 3종 세트로 분리되어 각 컬럼에 배치 (`ui.js`의 `renderProdCard`, `renderLogiCard`, `renderSalesCard`)
+  - **시각적 요소**:
+    - **Production**: 생산품 이미지, 장비/인력 슬롯, 생산 진행바 버튼
+    - **Logistics**: 탱크형 보관/출하 게이지, Keep/Sell 우선순위 토글
+    - **Sales**: 실시간 가격 태그, 컨베이어 벨트 애니메이션(수동 판매 시), 출하 탱크
+  - **코드 구조**:
+    - `src/main.js`: 엔트리, 게임 루프, 자동 저장
+    - `src/ui.js`: UI 렌더링 및 업데이트 전담 (DOM 조작 집중)
+    - `src/game.js`: 게임 로직, 데이터 모델, 상태 관리 (순수 로직)
+    - `src/data.js`: 아이템, 연구, 업적 등 정적 데이터 정의
+  - **Asset Strategy (Lite)**:
+    - 75+개의 개별 티어 이미지를 사용하는 대신, `prod_base.png`, `logi_base.png`, `sales_base.png` 3종의 고품질 베이스 이미지를 공통으로 사용.
+    - 향후 티어 구분은 CSS 오버레이나 텍스트 배지로 고도화 예정.
+
+### 3.2. Data Structure (Items)
+
+The game uses a consistent **Facility (Batch)** + **Worker (Speed)** model across all three primary sectors:
+
+- **Production**:
+  - `equipment`: Facility (Increases Batch Size)
+  - `worker`: Human Resource (Increases Production Speed)
+- **Logistics**:
+  - `storage`: Facility (Increases Move Batch Size)
+  - `transporter`: Human Resource (Increases Move Speed)
+- **Sales**:
+  - `market`: Facility (Increases Sell Amount/Batch)
+  - `salesOrg`: Human Resource (Increases Sell Speed)
+    Each category has 5 tiers of items, allowing for 5x5 combinations in each sector.
+
+### 3.3. Game Loop
+
+- **Tick Rate**: 100ms (10 ticks/sec).
+- **Update Logic**:
+  - `game.tick(dt)` handles automation accumulators.
+  - `ui.update()` handles DOM synchronization (text, progress bars, tank levels).
+
 ## 게임 루프 / 데이터 흐름(요약)
+
 1. **입력**: 노동 클릭(`workBtn`) / 구매-판매 버튼 / 탭 전환 / 설정 토글
 2. **상태 변경**:
    - 노동: `totalClicks`, `cash`, `totalLaborIncome`, `careerLevel` 등
@@ -141,13 +197,14 @@
    - 업그레이드: `UPGRADES[id].purchased/unlocked` + 배수/테이블 변경
    - 이벤트: `currentMarketEvent`, `marketEventEndTime` 등
 3. **수익**:
-   - `getRps()`가 금융 + (부동산 * rentMultiplier) + 이벤트 배수를 합산
+   - `getRps()`가 금융 + (부동산 \* rentMultiplier) + 이벤트 배수를 합산
 4. **UI 업데이트**:
    - `safeText(...)`로 주요 UI 갱신
    - 통계 탭은 일부 `seoulsurvival/src/ui/statsTab.js`(모듈) + 일부 `seoulsurvival/src/main.js`(레거시)가 섞여 있음
 5. **저장/로드**: LocalStorage에 상태 저장(자동/수동/리셋)
 
 ## 핵심 데이터/테이블 위치
+
 - **직급(승진)**: `seoulsurvival/src/main.js`의 `CAREER_LEVELS`
 - **업그레이드**: `seoulsurvival/src/main.js`의 `UPGRADES`
 - **서울타워**: `seoulsurvival/src/main.js`의 `towers_run` (현재 런) + `towers_lifetime` (계정 누적) 변수
@@ -180,6 +237,7 @@
   - 엔딩 이펙트: 서울타워 이모지 30개가 z-index 10001로 모달 위에 떨어지는 애니메이션
 
 ## UI 구조 메모(자주 수정되는 곳)
+
 - 노동 탭(`workTab`)
   - 직급 표기(`currentCareer`)는 승진 카드 영역으로 이동되어 모바일 가려짐 문제를 완화
   - 승진 진행: `careerProgress`, `careerProgressText`, `careerRemaining`
@@ -204,12 +262,14 @@
   - "🌐 홈페이지 이동" 링크: 허브 홈페이지(`/`)로 연결
 
 ## “레거시/주의” 포인트
+
 - `seoulsurvival/src/main.js`에 **통계 탭 업데이트 함수가 레거시로 남아 있고**, 동시에 `seoulsurvival/src/ui/statsTab.js` 모듈도 존재.
   - UI/포맷 관련 수정 시 “어느 쪽이 실제로 호출되는지” 확인 필요.
 - 과거에는 루트 `index.html`이 게임/리다이렉트 역할을 했으나, 현재는 **허브 페이지**로 변경됨.
   - UI 수정은 기본적으로 `seoulsurvival/index.html`을 기준으로 한다(루트는 허브).
 
 ## 문서 분리(DEVLOG/ARCHITECTURE) 운영 가이드
+
 - 결론: **당장은 분리 불필요**(허브+게임이 같은 레포/같은 배포 파이프라인을 공유).
 - 권장 운영:
   - `DEVLOG.md`는 하나로 유지하되, 변경 항목에 **[hub] / [seoulsurvival]** 같은 태그를 붙여 구분한다.
@@ -224,5 +284,3 @@
 ## 버전 관리
 
 - **버전 표시 규칙**: `package.json`의 `version` 필드를 source of truth로 사용하며, Vite 빌드 시 `__APP_VERSION__`으로 주입되어 게임 내 버전 표시가 자동으로 동기화됩니다.
-
-
