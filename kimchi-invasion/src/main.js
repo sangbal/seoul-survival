@@ -12,6 +12,7 @@ window.addEventListener('DOMContentLoaded', () => {
     window.ui = ui;
 
     // Initial render
+    game.init();
     ui.init();
 
     // Start tick loop

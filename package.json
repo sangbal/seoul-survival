@@ -1,7 +1,7 @@
 {
   "name": "capital-clicker",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,6 +14,13 @@
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
     "@playwright/test": "^1.57.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
     "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   }
 }

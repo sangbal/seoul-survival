@@ -95,47 +95,49 @@ export const GLOBAL_CONFIG = {
 };
 
 export const ITEMS = {
-    // --- Production: Equipment (Facility -> Batch) ---
-    'eq_mom_fridge': { id: 'eq_mom_fridge', type: 'equipment', name: '엄마 냉장고', tier: 1, cost: 0, effects: { batch: 1 }, desc: '집에 있는 냉장고. 김치를 겨우 보관한다.' },
-    'eq_dimchae': { id: 'eq_dimchae', type: 'equipment', name: '김치 냉장고', tier: 2, cost: 50000, effects: { batch: 5 }, desc: '김치 전용 냉장고. 숙성이 잘된다.' },
-    'eq_community_work': { id: 'eq_community_work', type: 'equipment', name: '동네 공동 작업장', tier: 3, cost: 200000, effects: { batch: 15 }, desc: '부녀회가 함께 작업한다.' },
-    'eq_small_workshop': { id: 'eq_small_workshop', type: 'equipment', name: '소규모 공방', tier: 4, cost: 800000, effects: { batch: 40 }, desc: '전문적인 장비를 갖췄다.' },
-    'eq_haccp_factory': { id: 'eq_haccp_factory', type: 'equipment', name: 'HACCP 공장', tier: 5, cost: 2500000, effects: { batch: 100 }, desc: '위생과 효율을 모두 잡았다.' },
+    // --- Act 1: Kimchi Business ---
 
-    // --- Production: Workers (Worker -> Speed) ---
-    'wk_me': { id: 'wk_me', type: 'worker', name: '나 (CEO)', tier: 1, cost: 0, effects: { prodSpeed: 0 }, desc: '나 혼자 한다.' },
-    'wk_mom': { id: 'wk_mom', type: 'worker', name: '가족 도움', tier: 2, cost: 30000, effects: { prodSpeed: 1 }, desc: '가족이 가끔 도와주신다.' },
-    'wk_alba': { id: 'wk_alba', type: 'worker', name: '동네 알바', tier: 3, cost: 150000, effects: { prodSpeed: 3 }, desc: '성실한 알바생을 고용했다.' },
-    'wk_team': { id: 'wk_team', type: 'worker', name: '작업반', tier: 4, cost: 500000, effects: { prodSpeed: 8 }, desc: '손발이 맞는 팀을 꾸렸다.' },
-    'wk_shift': { id: 'wk_shift', type: 'worker', name: '교대조 운영', tier: 5, cost: 2000000, effects: { prodSpeed: 20 }, desc: '24시간 공장이 돌아간다.' },
+    // --- Production: Space (Facility -> Batch) ---
+    'eq_mom_fridge': { id: 'eq_mom_fridge', act: 1, type: 'equipment', name: '우리집 주방', tier: 1, cost: 0, effects: { batch: 1 }, desc: '빌라의 좁은 주방. 김치를 겨우 담그는 시작점.' },
+    'eq_dimchae': { id: 'eq_dimchae', act: 1, type: 'equipment', name: '공유 주방', tier: 2, cost: 50000, effects: { batch: 5 }, desc: '시간제로 빌리는 넓은 주방. 작업 효율이 올라간다.' },
+    'eq_community_work': { id: 'eq_community_work', act: 1, type: 'equipment', name: '소규모 식품공장', tier: 3, cost: 200000, effects: { batch: 15 }, desc: '정식 식품 제조 허가를 받은 작은 공장.' },
+    'eq_small_workshop': { id: 'eq_small_workshop', act: 1, type: 'equipment', name: '현대식 센트럴 키친', tier: 4, cost: 800000, effects: { batch: 40 }, desc: '최신 장비로 무장한 전문 요리 거점.' },
+    'eq_haccp_factory': { id: 'eq_haccp_factory', act: 1, type: 'equipment', name: '글로벌 HACCP 공장', tier: 5, cost: 2500000, effects: { batch: 100 }, desc: '철저한 위생 관리와 자동화 라인의 정점.' },
 
-    // --- Logistics: Storage (Facility -> Batch/Move Amount) ---
-    'lg_box': { id: 'lg_box', type: 'storage', name: '종이 박스', tier: 1, cost: 0, effects: { moveBatch: 1 }, desc: '가장 기본적인 보관함.' },
-    'lg_pallet': { id: 'lg_pallet', type: 'storage', name: '나무 팔레트', tier: 2, cost: 20000, effects: { moveBatch: 5 }, desc: '대량 이동의 기초.' },
-    'lg_cont_small': { id: 'lg_cont_small', type: 'storage', name: '소형 컨테이너', tier: 3, cost: 100000, effects: { moveBatch: 15 }, desc: '규격화된 운송 용기.' },
-    'lg_warehouse': { id: 'lg_warehouse', type: 'storage', name: '창고 구역', tier: 4, cost: 500000, effects: { moveBatch: 40 }, desc: '체계적인 적재 공간.' },
-    'lg_center_hub': { id: 'lg_center_hub', type: 'storage', name: '허브 센터', tier: 5, cost: 2000000, effects: { moveBatch: 100 }, desc: '초대형 물류 허브.' },
+    // --- Production: Person (Worker -> Speed) ---
+    'wk_me': { id: 'wk_me', act: 1, type: 'worker', name: '나 혼자', tier: 1, cost: 0, effects: { prodSpeed: 0 }, desc: '배추 절이기부터 포장까지 전부 혼자 한다.' },
+    'wk_mom': { id: 'wk_mom', act: 1, type: 'worker', name: '가족의 도움', tier: 2, cost: 30000, effects: { prodSpeed: 1 }, desc: '엄마의 비법과 가족의 손길이 더해진다.' },
+    'wk_alba': { id: 'wk_alba', act: 1, type: 'worker', name: '열정적인 알바생들', tier: 3, cost: 150000, effects: { prodSpeed: 3 }, desc: '패기 넘치는 알바생들이 활기를 불어넣는다.' },
+    'wk_team': { id: 'wk_team', act: 1, type: 'worker', name: '의리의 생산팀', tier: 4, cost: 500000, effects: { prodSpeed: 8 }, desc: '눈빛만 봐도 통하는 베테랑 생산 정예반.' },
+    'wk_shift': { id: 'wk_shift', act: 1, type: 'worker', name: '24시간 베테랑 교대조', tier: 5, cost: 2000000, effects: { prodSpeed: 20 }, desc: '숙련된 인력들이 3교대로 끊임없이 생산한다.' },
 
-    // --- Logistics: Transporter (Worker -> Speed) ---
-    'tr_hand': { id: 'tr_hand', type: 'transporter', name: '손으로 옮기기', tier: 1, cost: 0, effects: { moveSpeed: 0 }, desc: '직접 나른다.' },
-    'tr_cart': { id: 'tr_cart', type: 'transporter', name: '손수레', tier: 2, cost: 30000, effects: { moveSpeed: 1 }, desc: '바퀴가 달려서 편하다.' },
-    'tr_truck': { id: 'tr_truck', type: 'transporter', name: '용달 트럭', tier: 3, cost: 150000, effects: { moveSpeed: 3 }, desc: '도로를 달린다.' },
-    'tr_fleet': { id: 'tr_fleet', type: 'transporter', name: '물류팀', tier: 4, cost: 500000, effects: { moveSpeed: 8 }, desc: '전문 배송팀.' },
-    'tr_auto_sys': { id: 'tr_auto_sys', type: 'transporter', name: '자동 분류기', tier: 5, cost: 2000000, effects: { moveSpeed: 20 }, desc: '무인 자동화 시스템.' },
+    // --- Logistics: Space (Facility -> Move Amount/Batch) ---
+    'lg_box': { id: 'lg_box', act: 1, type: 'storage', name: '우리집 거실', tier: 1, cost: 0, effects: { moveBatch: 1 }, desc: '포장된 김치가 쌓여가는 좁은 거실.' },
+    'lg_pallet': { id: 'lg_pallet', act: 1, type: 'storage', name: '허름한 냉장창고', tier: 2, cost: 20000, effects: { moveBatch: 5 }, desc: '신선도 유지가 가능한 작은 저장 창고.' },
+    'lg_cont_small': { id: 'lg_cont_small', act: 1, type: 'storage', name: '외곽 임대 컨테이너', tier: 3, cost: 100000, effects: { moveBatch: 15 }, desc: '본격적인 물류 이동을 위한 규격화 공간.' },
+    'lg_warehouse': { id: 'lg_warehouse', act: 1, type: 'storage', name: '대형 물류 창고', tier: 4, cost: 500000, effects: { moveBatch: 40 }, desc: '체계적인 선입선출이 이루어지는 대형 기지.' },
+    'lg_center_hub': { id: 'lg_center_hub', act: 1, type: 'storage', name: '최첨단 스마트 허브', tier: 5, cost: 2000000, effects: { moveBatch: 100 }, desc: '모든 데이터가 실시간으로 관리되는 물류 거점.' },
 
-    // --- Sales: Market (Facility -> Batch/Sell Amount) ---
-    'mk_neighborhood': { id: 'mk_neighborhood', type: 'market', name: '동네 장터', tier: 1, cost: 0, effects: { sellAmount: 1 }, desc: '알음알음 판다.' },
-    'mk_supermarket': { id: 'mk_supermarket', type: 'market', name: '슈퍼 납품', tier: 2, cost: 50000, effects: { sellAmount: 5 }, desc: '동네 슈퍼에 진열된다.' },
-    'mk_online': { id: 'mk_online', type: 'market', name: '온라인몰', tier: 3, cost: 200000, effects: { sellAmount: 15 }, desc: '전국에서 주문이 들어온다.' },
-    'mk_franchise': { id: 'mk_franchise', type: 'market', name: '프랜차이즈', tier: 4, cost: 800000, effects: { sellAmount: 40 }, desc: '브랜드 파워가 생겼다.' },
-    'mk_enterprise': { id: 'mk_enterprise', type: 'market', name: '기업 급식', tier: 5, cost: 2500000, effects: { sellAmount: 100 }, desc: '대규모 납품 계약.' },
+    // --- Logistics: Person (Worker -> Speed) ---
+    'tr_hand': { id: 'tr_hand', act: 1, type: 'transporter', name: '나 혼자', tier: 1, cost: 0, effects: { moveSpeed: 0 }, desc: '직접 상자를 들고 계단을 오르내린다.' },
+    'tr_cart': { id: 'tr_cart', act: 1, type: 'transporter', name: '우체국 집배원', tier: 2, cost: 30000, effects: { moveSpeed: 1 }, desc: '든든한 우체국 서비스를 통해 안정적으로 배송한다.' },
+    'tr_truck': { id: 'tr_truck', act: 1, type: 'transporter', name: '당일배송 택배', tier: 3, cost: 150000, effects: { moveSpeed: 3 }, desc: '전국 어디든 하루 만에 도달하는 택배 시스템.' },
+    'tr_fleet': { id: 'tr_fleet', act: 1, type: 'transporter', name: '직영 배송 네트워크', tier: 4, cost: 500000, effects: { moveSpeed: 8 }, desc: '우리 브랜드만의 전용 차량과 배송 인력팀.' },
+    'tr_auto_sys': { id: 'tr_auto_sys', act: 1, type: 'transporter', name: 'AI 자동화 로봇', tier: 5, cost: 2000000, effects: { moveSpeed: 20 }, desc: '무인 자율 주행 로봇이 최적의 경로로 운송한다.' },
 
-    // --- Sales: Org (Worker -> Speed) ---
-    'so_solo': { id: 'so_solo', type: 'salesOrg', name: '직접 판매', tier: 1, cost: 0, effects: { sellSpeed: 0 }, desc: '발로 뛴다.' },
-    'so_alba': { id: 'so_alba', type: 'salesOrg', name: '판매 알바', tier: 2, cost: 30000, effects: { sellSpeed: 1 }, desc: '보조 인력이 생겼다.' },
-    'so_contract': { id: 'so_contract', type: 'salesOrg', name: '계약직 사원', tier: 3, cost: 150000, effects: { sellSpeed: 3 }, desc: '더 많이 팔아온다.' },
-    'so_team': { id: 'so_team', type: 'salesOrg', name: '영업팀', tier: 4, cost: 500000, effects: { sellSpeed: 8 }, desc: '조직적인 영업 활동.' },
-    'so_hq': { id: 'so_hq', type: 'salesOrg', name: '영업 본부', tier: 5, cost: 2000000, effects: { sellSpeed: 20 }, desc: '전략적인 시장 공략.' }
+    // --- Sales: Space (Facility -> Sell Amount) ---
+    'mk_neighborhood': { id: 'mk_neighborhood', act: 1, type: 'market', name: '집 근처 직거래', tier: 1, cost: 0, effects: { sellAmount: 1 }, desc: '이웃 사람들에게 직접 만나서 판매한다.' },
+    'mk_supermarket': { id: 'mk_supermarket', act: 1, type: 'market', name: '동네 슈퍼 매대', tier: 2, cost: 50000, effects: { sellAmount: 5 }, desc: '슈퍼마켓 입구 좋은 자리를 차지했다.' },
+    'mk_online': { id: 'mk_online', act: 1, type: 'market', name: '온라인 스토어 입점', tier: 3, cost: 200000, effects: { sellAmount: 15 }, desc: '전 국민을 상대로 한 24시간 오픈 매장.' },
+    'mk_franchise': { id: 'mk_franchise', act: 1, type: 'market', name: '라이브커머스 진출', tier: 4, cost: 800000, effects: { sellAmount: 40 }, desc: '방송 즉시 주문이 쏟아지는 실시간 판매 채널.' },
+    'mk_enterprise': { id: 'mk_enterprise', act: 1, type: 'market', name: '강남 글로벌 사옥', tier: 5, cost: 2500000, effects: { sellAmount: 100 }, desc: '기업 간 대규모 계약이 성사되는 럭셔리 사무실.' },
+
+    // --- Sales: Person (Worker -> Speed) ---
+    'so_solo': { id: 'so_solo', act: 1, type: 'salesOrg', name: '나 혼자', tier: 1, cost: 0, effects: { sellSpeed: 0 }, desc: '전단지를 돌리며 직접 구매자를 찾아다닌다.' },
+    'so_alba': { id: 'so_alba', act: 1, type: 'salesOrg', name: '친절한 시식 판매원', tier: 2, cost: 30000, effects: { sellSpeed: 1 }, desc: '맛을 본 사람들이 지갑을 열게 만드는 판매 장인.' },
+    'so_contract': { id: 'so_contract', act: 1, type: 'salesOrg', name: '계약직 영업사원', tier: 3, cost: 150000, effects: { sellSpeed: 3 }, desc: '실적 기반으로 김치를 전국에 알리는 전문가.' },
+    'so_team': { id: 'so_team', act: 1, type: 'salesOrg', name: '소수정예 영업팀', tier: 4, cost: 500000, effects: { sellSpeed: 8 }, desc: '기업 홍보와 마케팅 전략을 실행하는 정예 멤버.' },
+    'so_hq': { id: 'so_hq', act: 1, type: 'salesOrg', name: '글로벌 영업본부', tier: 5, cost: 2000000, effects: { sellSpeed: 20 }, desc: '전 세계 유통망을 관리하는 거대 판매 조직.' }
 };
 
 export const RESEARCH = {

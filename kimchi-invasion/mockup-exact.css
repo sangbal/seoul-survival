@@ -1,0 +1,423 @@
+/* ========================================
+   목업 완벽 매칭 스타일 (Mockup-Exact Styles)
+   ======================================== */
+
+/* 3열 그리드 레이아웃 */
+.game-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 16px;
+  height: calc(100vh - var(--header-height) - 60px);
+  overflow-y: auto;
+}
+
+/* 컬럼 기본 설정 */
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+.col-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+}
+
+.col-sub {
+  font-size: 11px;
+  opacity: 0.5;
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+.col-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 카드 기본 구조 - Absolute Positioning for Perfect CTA Alignment */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  position: relative;
+  min-height: 450px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+/* Fixed component heights for consistent layout */
+.card-header {
+  height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  padding: 10px;
+  box-sizing: border-box;
+  background: var(--card-header-bg);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.card-image {
+  height: 150px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.slot-row {
+  position: absolute;
+  top: 170px;
+  left: 10px;
+  right: 10px;
+  height: 70px;
+}
+
+.cta-main {
+  position: absolute;
+  top: 250px;
+  left: 10px;
+  right: 10px;
+  width: calc(100% - 20px);
+  height: 60px;
+}
+
+/* Info and toggle positioned below CTA */
+.card-info {
+  position: absolute;
+  top: 320px;
+  left: 0;
+  right: 0;
+}
+
+.card-toggle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.card-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* 이미지 영역 내부 요소 */
+
+/* 이미지 영역 내부 요소 */
+.card-image {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #0f1115;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.card:hover .card-image img {
+  transform: scale(1.05);
+}
+
+/* 배지 오버레이 */
+.badge-facility,
+.badge-worker {
+  position: absolute;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.badge-facility {
+  bottom: 10px;
+  left: 10px;
+}
+
+.badge-worker {
+  bottom: 10px;
+  right: 10px;
+}
+
+.card--prod .badge-facility {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.card--logi .badge-facility {
+  border-color: var(--accent-secondary);
+  color: var(--accent-secondary);
+}
+
+.card--sales .badge-facility {
+  border-color: var(--accent-tertiary);
+  color: var(--accent-tertiary);
+}
+
+/* 슬롯 행 (2개 버튼) - positioned absolutely in card */
+.slot-row {
+  display: flex;
+  gap: 8px;
+  background: transparent;
+}
+
+.slot-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #1e2430;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 12px;
+  min-height: 44px;
+}
+
+.slot-btn:hover {
+  background: #252b36;
+  border-color: rgba(255,255,255,0.15);
+}
+
+.slot-icon {
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+.slot-name {
+  flex: 1;
+  text-align: left;
+  font-weight: 600;
+}
+
+.slot-tier {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* 메인 CTA 버튼 (가장 중요) - positioned absolutely for perfect alignment */
+.cta-main {
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.cta-main:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+.cta-main:active {
+  transform: translateY(0);
+}
+
+.cta--prod {
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  border-bottom: 2px solid #7f1d1d;
+}
+
+.cta--logi {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  border-bottom: 2px solid #1e3a8a;
+}
+
+.cta--sales {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  border-bottom: 2px solid #78350f;
+}
+
+/* 정보 영역 (최소 정보) */
+.card-info {
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-row strong {
+  color: var(--text-main);
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+}
+
+/* 토글 영역 (작게) */
+.card-toggle {
+  padding: 10px 14px;
+  background: #0b0d12;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.toggle-text {
+  flex: 1;
+}
+
+/* 우선순위 토글 (물류 카드) */
+.toggle-label--priority {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.priority-btn {
+  flex: 1;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.priority-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.priority-btn.is-active {
+  background: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+  color: #fff;
+}
+
+/* Empty State */
+.card--empty {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.02);
+  border-style: dashed;
+}
+
+.card-empty-state {
+  text-align: center;
+}
+
+.btn-assign-product {
+  padding: 12px 24px;
+  background: var(--accent-primary);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.btn-assign-product:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(255,51,51,0.4);
+}
+
+/* 모바일 대응: 탭 전환 시 3열 -> 1열 */
+@media (max-width: 768px) {
+  .game-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .col {
+    display: none;
+  }
+  
+  .col.active {
+    display: flex;
+  }
+}
+
+/* 기존 스타일 덮어쓰기 */
+.card-shell {
+  all: unset;
+}
+
+.card-shell + .card {
+  all: unset;
+}
+
+/* 불필요한 기존 스타일 무효화 */
+.tank-container,
+.btn-pump,
+.progress-bar-container,
+.advanced,
+.footer-row {
+  display: none !important;
+}

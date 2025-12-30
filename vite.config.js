@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
+import react from '@vitejs/plugin-react';
 
 // package.json에서 버전 읽기
 const packageJson = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'));
@@ -8,6 +9,7 @@ const packageJson = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 
 // ClickSurvivor Hub 멀티페이지 구성
 export default defineConfig({
   base: './',
+  plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
   },
@@ -25,6 +27,7 @@ export default defineConfig({
         privacy: resolve(__dirname, 'privacy.html'),
         seoulsurvival: resolve(__dirname, 'seoulsurvival/index.html'),
         'kimchi-invasion': resolve(__dirname, 'kimchi-invasion/index.html'),
+        'mma-manager': resolve(__dirname, 'mma-manager/index.html'),
       },
     },
   },

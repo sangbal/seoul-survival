@@ -30,12 +30,27 @@ export class UI {
     }
 
     getImageUrl(area, line) {
-        // Simplified Asset Strategy: Use high-quality base images for each area
-        // Future: Can overlay Tier icons or modify hue via CSS filter if needed
-        if (area === 'prod') return 'src/assets/images/prod_base.png';
-        if (area === 'logi') return 'src/assets/images/logi_base.png';
-        if (area === 'sales') return 'src/assets/images/sales_base.png';
-        return null;
+        if (!line || !line.slots) return 'src/assets/images/placeholder.png';
+
+        let t1 = 1, t2 = 1;
+        let prefix = 'base';
+
+        if (area === 'prod') {
+            t1 = ITEMS[line.slots.equipment]?.tier || 1;
+            t2 = ITEMS[line.slots.worker]?.tier || 1;
+            prefix = 'prod';
+        } else if (area === 'logi') {
+            t1 = ITEMS[line.slots.storage]?.tier || 1;
+            t2 = ITEMS[line.slots.transporter]?.tier || 1;
+            prefix = 'logi';
+        } else if (area === 'sales') {
+            t1 = ITEMS[line.slots.market]?.tier || 1;
+            t2 = ITEMS[line.slots.salesOrg]?.tier || 1;
+            prefix = 'sales';
+        }
+
+        // Return path for 5x5 combination: e.g. "prod_t1_t1.jpg"
+        return `src/assets/images/${prefix}/${prefix}_t${t1}_t${t2}.jpg`;
     }
 
     init() {
@@ -122,21 +137,25 @@ export class UI {
 
         const shareBtn = document.querySelector('.share-btn');
         if (shareBtn) shareBtn.addEventListener('click', async () => {
-             if (navigator.share) {
-                 try {
+             const url = location.href;
+             try {
+                 if (navigator.share) {
                      await navigator.share({
                          title: 'Kimchi Invasion',
                          text: '김치로 우주를 정복하라! Kimchi Invasion',
-                         url: location.href
+                         url: url
                      });
                      this.showToast('공유 창이 열렸습니다.');
-                 } catch (err) {
-                     // Check if it's an abort error (user closed modal) - don't show "copied" if failed unless fallback
-                     console.log('Share canceled or failed', err);
+                 } else {
+                     throw new Error('No Share API');
                  }
-             } else {
-                 navigator.clipboard.writeText(location.href);
-                 this.showToast('링크 복사 완료!');
+             } catch (err) {
+                 try {
+                     await navigator.clipboard.writeText(url);
+                     this.showToast('링크가 클립보드에 복사되었습니다!');
+                 } catch (clipErr) {
+                     prompt("URL을 복사하세요:", url);
+                 }
              }
         });
         
@@ -225,246 +244,412 @@ export class UI {
         return btn;
     }
 
-    renderProdCard(line, index) {
+    renderCardShell({ id, type, headTitle, headBadge, imageUrl, tierBadgeTR, tierBadgeBR, slotChipsHTML, ctaHTML, advancedHTML, footerHTML }) {
         const card = document.createElement('div');
-        card.className = 'card prod-card animate-fade-in';
-        card.id = `card-prod-${line.id}`;
-        card.dataset.lineId = line.id;
+        card.className = `card-shell card--${type} animate-fade-in`;
+        card.id = `card-${type}-${id}`;
+        card.dataset.lineId = id;
 
-        const product = PRODUCTS[line.productId];
-        
-        if (!product) {
-            card.innerHTML = `
-                <div class="card-comp-header">
-                    <span class="card-comp-title">LINE #${index + 1}</span>
+        // Ensure badges are safe strings
+        const trBadge = tierBadgeTR ? `<div class="badge-tr">${tierBadgeTR}</div>` : '';
+        const brBadge = tierBadgeBR ? `<div class="badge-br">${tierBadgeBR}</div>` : '';
+
+        card.innerHTML = `
+            <div class="card-head">
+                <div class="head-title">${headTitle}</div>
+                <div class="head-badge">${headBadge}</div>
+            </div>
+
+            <div class="card-image">
+                <img src="${imageUrl}" onerror="this.style.opacity='0.2'" alt="${headTitle}">
+                <div class="tier-badges">
+                    ${trBadge}
+                    ${brBadge}
                 </div>
-                <div class="card-body" style="align-items:center; justify-content:center; min-height:100px; display:flex; flex-direction:column;">
-                    <button class="btn btn-sm btn-assign">생산 품목 할당</button>
-                    <div style="font-size:10px; color:var(--text-muted); margin-top:8px;">Ready to Start</div>
+            </div>
+
+            <div class="slot-chips">
+                ${slotChipsHTML}
+            </div>
+
+            <div class="cta-row">
+                ${ctaHTML}
+            </div>
+
+            <details class="advanced">
+                <summary>ADVANCED OPTIONS ▼</summary>
+                <div class="advanced-content">
+                    ${advancedHTML || ''}
+                </div>
+            </details>
+            
+            <div class="card-footer">
+                ${footerHTML || ''}
+            </div>
+            
+            <button class="btn-remove-line-top" style="top:4px; right:4px;">&times;</button>
+        `;
+
+        // Wire up remove
+        card.querySelector('.btn-remove-line-top').onclick = (e) => {
+            e.stopPropagation();
+            if(confirm('이 라인을 삭제하시겠습니까? (복구 불가)')) {
+                this.game.removeLine(id);
+                this.update();
+            }
+        };
+        
+        // Slot clicks (Delegation or explicit bind)
+        // We will stick to binding individually in the sub-render methods or bind generally here if possible,
+        // but current architecture expects specific binding. 
+        // We will rely on sub-render methods calling bindSlotEvent, OR we can try to bind all known types here.
+        // For safety/legacy compatibility, let's keep explicit binding in sub-renderers OR just helper here.
+        
+        return card;
+    }
+
+    getTier(line, slotType) {
+        if (!line || !line.slots || !line.slots[slotType]) return 1;
+        const it = ITEMS[line.slots[slotType]];
+        return it ? it.tier : 1;
+    }
+
+    getMultiplier(line, attr) {
+        let val = 1;
+        if (!line || !line.slots) return val;
+        // Check all slots for this attribute
+        for (const [slot, itemId] of Object.entries(line.slots)) {
+             if (itemId && ITEMS[itemId] && ITEMS[itemId].effects) {
+                 val += (ITEMS[itemId].effects[attr] || 0);
+             }
+        }
+        return val;
+    }
+
+    renderSlotHTML(lineId, type, itemId, defaultLabel = 'Slot') {
+        let contentLeft = `<span class="icon">➕</span> ${defaultLabel}`;
+        let contentRight = `<span style="opacity:0.5;">Empty</span>`;
+        let activeClass = '';
+
+        if (itemId && ITEMS[itemId]) {
+            const item = ITEMS[itemId];
+            const icon = this.getIconForType(type);
+            contentLeft = `<span class="icon">${icon}</span> ${item.name}`;
+            contentRight = `<span style="color:var(--accent-secondary);">T${item.tier}</span>`;
+            activeClass = 'active';
+        }
+
+        return `
+            <div class="slot-item-wide btn-slot ${activeClass}" data-line="${lineId}" data-type="${type}">
+                <div class="slot-inner-left">${contentLeft}</div>
+                <div class="slot-inner-right">${contentRight}</div>
+            </div>
+        `;
+    }
+    
+    getIconForType(type) {
+        switch(type) {
+            case 'equipment': return '🏭';
+            case 'worker': return '👷';
+            case 'storage': return '📦';
+            case 'transporter': return '🚚';
+            case 'market': return '🏪';
+            case 'salesOrg': return '🤝';
+            default: return '🧩';
+        }
+    }
+
+    renderProdCard(line) {
+        const product = PRODUCTS[line.productId];
+        if (!product) {
+            // Empty state - show product picker button
+            const card = document.createElement('div');
+            card.className = 'card card--prod card--empty';
+            card.innerHTML = `
+                <div class="card-empty-state">
+                    <button class="btn-assign-product">생산 품목 선택</button>
                 </div>
             `;
-            card.querySelector('.btn-assign').onclick = (e) => this.showProductPicker(e, line.id);
+            card.querySelector('.btn-assign-product').onclick = (e) => this.showProductPicker(e, line.id);
             return card;
         }
 
+        const index = this.game.lines.indexOf(line);
+        
+        // Get Tier from items
+        const t1 = ITEMS[line.slots.equipment]?.tier || 1;
+        const t2 = ITEMS[line.slots.worker]?.tier || 1;
+        
+        // Calculate batch (from equipment)
+        let batch = 1;
+        if (line.slots.equipment && ITEMS[line.slots.equipment]) {
+            batch += (ITEMS[line.slots.equipment].effects.batch || 0);
+        }
+        
+        // Calculate production speed (from worker)
         const amBuffs = this.game.getAMBuffs();
-        const getEff = (slot, attr) => {
-            if(!line.slots[slot]) return 0;
-            const it = ITEMS[line.slots[slot]];
-            return it ? (it.effects[attr] || 0) : 0;
-        };
-
-        let prodRate = getEff('worker', 'prodSpeed') * amBuffs.prodSpeedMult * amBuffs.startBuffVal;
-        let batch = 1 + getEff('equipment', 'batch');
-        if (prodRate > 0) card.classList.add('producing');
-
+        let prodSpeed = 0;
+        if (line.slots.worker && ITEMS[line.slots.worker]) {
+            prodSpeed = (ITEMS[line.slots.worker].effects.prodSpeed || 0) * amBuffs.prodSpeedMult * amBuffs.startBuffVal;
+        }
+        
+        const keepStock = Math.floor(this.game.productInventory[line.productId]?.keep || 0);
+        
+        // Create card with mockup structure
+        const card = document.createElement('div');
+        card.className = 'card card--prod';
+        card.dataset.lineId = line.id;
+        
+        // Build card HTML (목업 순서: 헤더→이미지→슬롯→CTA→정보→토글)
         card.innerHTML = `
-            <div class="card-comp-header">
-                <span class="card-comp-title">${product.name} 생산</span>
-                <span class="card-comp-badge">T1</span>
+            <div class="card-header">
+                <span class="card-title">${product.name}</span>
+                <span class="card-badge">T${Math.max(t1, t2)}</span>
             </div>
-            <div class="image-area">
-                <img src="${this.getImageUrl('prod', line)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'" style="width:100%; height:100%; object-fit:contain;">
-                <span class="image-placeholder-text" style="display:none;">${product.emoji} ${product.name} Factory<br>T${ITEMS[line.slots.equipment]?.tier}-W${ITEMS[line.slots.worker]?.tier}</span>
+            
+            <div class="card-image">
+                <img src="${this.getImageUrl('prod', line)}" alt="${product.name}">
+                <div class="badge-facility">T${t1} 시설</div>
+                <div class="badge-worker">W${t2} 직원</div>
             </div>
-            <div class="card-body">
-                <div class="slots-grid">
-                    ${this.renderSlotHTML(line.id, 'equipment', line.slots.equipment)}
-                    ${this.renderSlotHTML(line.id, 'worker', line.slots.worker)}
-                </div>
-                
-                <button class="btn btn-produce" id="btn-prod-${line.id}" style="margin-bottom: 0;">
-                    <span style="font-size:18px;">${product.emoji}</span> 생산 개시 (+${batch})
+            
+            <div class="slot-row">
+                <button class="slot-btn slot-facility" data-slot-type="equipment">
+                    <span class="slot-icon">${this.getIconForType('equipment')}</span>
+                    <span class="slot-name">${ITEMS[line.slots.equipment]?.name || '없음'}</span>
+                    <span class="slot-tier">T${t1}</span>
                 </button>
-                <div class="progress-bar-container" style="margin-top: -6px; margin-bottom: 8px;">
-                    <div class="progress-bar-fill" id="prog-fill-prod-${line.id}"></div>
+                <button class="slot-btn slot-worker" data-slot-type="worker">
+                    <span class="slot-icon">${this.getIconForType('worker')}</span>
+                    <span class="slot-name">${ITEMS[line.slots.worker]?.name || '없음'}</span>
+                    <span class="slot-tier">W${t2}</span>
+                </button>
+            </div>
+            
+            <button class="cta-main cta--prod" data-btn-type="produce">
+                ${product.emoji} 생산하기 +${batch}
+            </button>
+            
+            <div class="card-info">
+                <div class="info-row">
+                    <span>생산량: +${batch} 클릭 / ${prodSpeed.toFixed(1)}초당</span>
                 </div>
-                
-                <div style="display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--text-muted);">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span>Batch Size</span>
-                        <span style="color:var(--text-main); font-weight:700;">${batch.toLocaleString()}개</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between;">
-                        <span>Auto Rate</span>
-                        <span style="color:var(--accent-primary); font-weight:700;">${prodRate.toFixed(1)}/s</span>
-                    </div>
+                <div class="info-row">
+                    <span>창고 재고: <strong>${keepStock.toLocaleString()}</strong></span>
                 </div>
             </div>
-            <button class="btn-remove-line-top">&times;</button>
+            
+            <div class="card-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" class="toggle-auto">
+                    <span class="toggle-text">🔁 토석 만상</span>
+                </label>
+            </div>
         `;
         
-        this.bindSlotEvent(card, line.id, 'equipment');
-        this.bindSlotEvent(card, line.id, 'worker');
-
-        card.querySelector('.btn-remove-line-top').onclick = (e) => {
-            e.stopPropagation();
-            if(confirm('이 생산라인을 철거하시겠습니까?')) {
-                this.game.removeLine(line.id);
-                this.renderLines();
-            }
+        // Bind events
+        const prodBtn = card.querySelector('[data-btn-type="produce"]');
+        prodBtn.onclick = () => {
+            this.game.produce(line.id);
+            this.update();
         };
         
-        card.querySelector(`#btn-prod-${line.id}`).onclick = (e) => {
-            const res = this.game.produce(line.id);
-            if(res > 0) {
-                this.spawnParticles(e.clientX, e.clientY, '#ef4444');
-                this.createFloatingText(e.clientX, e.clientY, `+${res}`, 'item');
-            } else if (res === -1) {
-                this.createFloatingText(e.clientX, e.clientY, `재료 부족`, 'err');
-            }
-        };
-
+        // Slot clicks
+        this.bindSlotEvent(card, line.id, 'equipment');
+        this.bindSlotEvent(card, line.id, 'worker');
+        
         return card;
     }
 
     renderLogiCard(line, index) {
-        const card = document.createElement('div');
-        card.className = 'card logi-card animate-fade-in';
-        card.id = `card-logi-${line.id}`;
-        
         const product = PRODUCTS[line.productId];
-        if (!product) {
-            card.innerHTML = `<div class="card-body muted" style="text-align:center; padding:40px;">Waiting for Production...</div>`;
-            return card;
+        if (!product) return document.createElement('div');
+        
+        const t1 = ITEMS[line.slots.storage]?.tier || 1;
+        const t2 = ITEMS[line.slots.transporter]?.tier || 1;
+        
+        // Calculate ship batch (from storage)
+        let moveBatch = 1;
+        if (line.slots.storage && ITEMS[line.slots.storage]) {
+            moveBatch += (ITEMS[line.slots.storage].effects.moveBatch || 0);
         }
-
+        
+        // Calculate move speed (from transporter)
         const amBuffs = this.game.getAMBuffs();
+        let moveSpeed = 0;
+        if (line.slots.transporter && ITEMS[line.slots.transporter]) {
+            moveSpeed = (ITEMS[line.slots.transporter].effects.moveSpeed || 0) * amBuffs.moveSpeedMult;
+        }
+        
+        const keepStock = Math.floor(this.game.productInventory[line.productId]?.keep || 0);
+        const sellStock = Math.floor(this.game.productInventory[line.productId]?.sell || 0);
+        
+        // Create card with mockup structure
+        const card = document.createElement('div');
+        card.className = 'card card--logi';
+        card.dataset.lineId = line.id;
         
         card.innerHTML = `
-            <div class="card-comp-header">
-                <span class="card-comp-title">물류 스테이션</span>
-                <span class="card-comp-badge">L${index+1}</span>
+            <div class="card-header">
+                <span class="card-title">물류 트레이션</span>
+                <span class="card-badge">T${Math.max(t1, t2)}</span>
             </div>
-            <div class="image-area">
-                <img src="${this.getImageUrl('logi', line)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'" style="width:100%; height:100%; object-fit:contain;">
-                <span class="image-placeholder-text" style="display:none;">📦 Logistics Hub<br>T${ITEMS[line.slots.storage]?.tier || '?'}-W${ITEMS[line.slots.transporter]?.tier || '?'}</span>
+            
+            <div class="card-image">
+                <img src="${this.getImageUrl('logi', line)}" alt="물류">
+                <div class="badge-facility">T${t1} 창고</div>
+                <div class="badge-worker">W${t2} 운송</div>
             </div>
-            <div class="card-body">
-                <div class="slots-grid">
-                    ${this.renderSlotHTML(line.id, 'storage', line.slots.storage)}
-                    ${this.renderSlotHTML(line.id, 'transporter', line.slots.transporter)}
+            
+            <div class="slot-row">
+                <button class="slot-btn slot-facility" data-slot-type="storage">
+                    <span class="slot-icon">${this.getIconForType('storage')}</span>
+                    <span class="slot-name">${ITEMS[line.slots.storage]?.name || '없음'}</span>
+                    <span class="slot-tier">T${t1}</span>
+                </button>
+                <button class="slot-btn slot-worker" data-slot-type="transporter">
+                    <span class="slot-icon">${this.getIconForType('transporter')}</span>
+                    <span class="slot-name">${ITEMS[line.slots.transporter]?.name || '없음'}</span>
+                    <span class="slot-tier">W${t2}</span>
+                </button>
+            </div>
+            
+            <button class="cta-main cta--logi" data-btn-type="ship">
+                🚚 출하하기 +${moveBatch}
+            </button>
+            
+            <div class="card-info">
+                <div class="info-row">
+                    <span>창고 재고: <strong>${keepStock.toLocaleString()}</strong></span>
+                    <span>판매 재고: <strong>${sellStock.toLocaleString()}</strong></span>
                 </div>
-
-                <div class="tank-container">
-                    <div class="tank tank-keep">
-                        <div class="tank-label">보관 (Storage)</div>
-                        <div class="tank-bar-bg"><div class="tank-bar-fill" id="fill-keep-${line.id}"></div></div>
-                        <div class="tank-value" id="val-keep-${line.id}">0</div>
-                        <button class="btn btn-pump btn-pump-keep" id="btn-pump-keep-${line.id}">PUMP</button>
-                    </div>
-                    <div class="tank tank-sell">
-                        <div class="tank-label">출하 (Shipping)</div>
-                        <div class="tank-bar-bg"><div class="tank-bar-fill" id="fill-sell-logi-${line.id}"></div></div>
-                        <div class="tank-value" id="val-sell-logi-${line.id}">0</div>
-                        <button class="btn btn-pump btn-pump-sell" id="btn-pump-sell-${line.id}">PUMP</button>
-                    </div>
-                </div>
-
-                <div class="priority-toggle">
-                     <button class="priority-btn ${line.logisticsDir === 'keep' ? 'active' : ''}" data-mode="keep" id="toggle-keep-${line.id}">STORAGE</button>
-                     <button class="priority-btn ${line.logisticsDir !== 'keep' ? 'active' : ''}" data-mode="sell" id="toggle-sell-${line.id}">SHIPPING</button>
-                </div>
+            </div>
+            
+            <div class="card-toggle">
+                <label class="toggle-label toggle-label--priority">
+                    <button class="priority-btn ${line.logisticsDir === 'keep' ? 'is-active' : ''}" data-mode="keep">🧭 창고 우선</button>
+                    <button class="priority-btn ${line.logisticsDir !== 'keep' ? 'is-active' : ''}" data-mode="sell">🧭 출하 우선</button>
+                </label>
             </div>
         `;
-
+        
+        // Bind main CTA
+        const shipBtn = card.querySelector('[data-btn-type="ship"]');
+        shipBtn.onclick = () => {
+            this.game.moveLogistics(line.id, 'sell');
+            this.update();
+        };
+        
+        // Priority toggles
+        const priorityBtns = card.querySelectorAll('.priority-btn');
+        priorityBtns.forEach(btn => {
+            btn.onclick = () => {
+                const newMode = btn.dataset.mode;
+                if (line.logisticsDir !== newMode) {
+                    this.game.toggleLogisticsDir(line.id);
+                    this.renderLines();
+                }
+            };
+        });
+        
+        // Slot clicks
         this.bindSlotEvent(card, line.id, 'storage');
         this.bindSlotEvent(card, line.id, 'transporter');
         
-        card.querySelector(`#toggle-keep-${line.id}`).onclick = () => { if(line.logisticsDir !== 'keep') { this.game.toggleLogisticsDir(line.id); this.renderLines(); } };
-        card.querySelector(`#toggle-sell-${line.id}`).onclick = () => { if(line.logisticsDir !== 'sell') { this.game.toggleLogisticsDir(line.id); this.renderLines(); } };
-        
-        card.querySelector(`#btn-pump-sell-${line.id}`).onclick = (e) => {
-            const oldSell = this.game.productInventory[line.productId]?.sell || 0;
-            this.game.moveLogistics(line.id, 'sell');
-            if((this.game.productInventory[line.productId]?.sell || 0) > oldSell) {
-                this.spawnParticles(e.clientX, e.clientY, '#0ea5e9');
-                this.update();
-            }
-        };
-        card.querySelector(`#btn-pump-keep-${line.id}`).onclick = (e) => {
-             this.game.moveLogistics(line.id, 'keep');
-             this.update();
-        };
-
         return card;
     }
 
     renderSalesCard(line, index) {
-        const card = document.createElement('div');
-        card.className = 'card sales-card animate-fade-in';
-        card.id = `card-sales-${line.id}`;
-
         const product = PRODUCTS[line.productId];
-        if (!product) {
-            card.innerHTML = `<div class="card-body muted" style="text-align:center; padding:40px;">Market Closed</div>`;
-            return card;
-        }
+        if (!product) return document.createElement('div');
 
         const amBuffs = this.game.getAMBuffs();
-        const getMk = ITEMS[line.slots.market];
-        const getSo = ITEMS[line.slots.salesOrg];
+        const t1 = ITEMS[line.slots.market]?.tier || 1;
+        const t2 = ITEMS[line.slots.salesOrg]?.tier || 1;
         
-        let sellAmount = 1 + (getMk ? (getMk.effects.sellAmount || 0) : 0);
-        let sellSpeed = (getSo ? (getSo.effects.sellSpeed || 0) : 0) * amBuffs.sellSpeedMult;
+        // Calculate sell amount (from market)
+        let sellAmount = 1;
+        if (line.slots.market && ITEMS[line.slots.market]) {
+            sellAmount += (ITEMS[line.slots.market].effects.sellAmount || 0);
+        }
+        
+        // Calculate sell speed (from salesOrg)
+        let sellSpeed = 0;
+        if (line.slots.salesOrg && ITEMS[line.slots.salesOrg]) {
+            sellSpeed = (ITEMS[line.slots.salesOrg].effects.sellSpeed || 0) * amBuffs.sellSpeedMult;
+        }
+        
         const price = this.game.getProductPrice(line.productId);
-        const buffedPrice = price * (amBuffs.priceMult || 1);
-        const sellRate = sellSpeed;
-
+        const sellStock = Math.floor(this.game.productInventory[line.productId]?.sell || 0);
+        
+        // Create card with mockup structure
+        const card = document.createElement('div');
+        card.className = 'card card--sales';
+        card.dataset.lineId = line.id;
+        
         card.innerHTML = `
-            <div class="card-comp-header">
-                <span class="card-comp-title">글로벌 마켓</span>
-                <span class="card-comp-badge">S${index+1}</span>
+            <div class="card-header">
+                <span class="card-title">판매</span>
+                <span class="card-badge">T${Math.max(t1, t2)}</span>
             </div>
-            <div class="image-area">
-                <img src="${this.getImageUrl('sales', line)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'" style="width:100%; height:100%; object-fit:contain;">
-                <span class="image-placeholder-text" style="display:none;">🏪 Street Store<br>T${ITEMS[line.slots.market]?.tier || '?'}-W${ITEMS[line.slots.salesOrg]?.tier || '?'}</span>
+            
+            <div class="card-image">
+                <img src="${this.getImageUrl('sales', line)}" alt="판매">
+                <div class="badge-facility">T${t1} 마켓</div>
+                <div class="badge-worker">W${t2} 영업</div>
             </div>
-            <div class="card-body">
-                <div class="slots-grid">
-                    ${this.renderSlotHTML(line.id, 'market', line.slots.market)}
-                    ${this.renderSlotHTML(line.id, 'salesOrg', line.slots.salesOrg)}
-                </div>
-
-                <div class="tank-container" style="flex:initial; margin-bottom:12px;">
-                    <div class="tank tank-sell">
-                        <div class="tank-label">출하 (Shipping)</div>
-                        <div class="tank-bar-bg"><div class="tank-bar-fill" id="fill-sell-${line.id}"></div></div>
-                        <div class="tank-value" id="val-sell-${line.id}">0</div>
-                    </div>
-                </div>
-
-                <div class="price-tag-lg">
-                    <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">UNIT PRICE</div>
-                    <span class="price-val">${Math.floor(buffedPrice).toLocaleString()}</span>
-                    <span class="currency">원</span>
-                </div>
-
-                <div class="progress-bar-container" style="margin-bottom:8px;">
-                    <div class="progress-bar-fill" id="prog-fill-sell-${line.id}"></div>
-                </div>
-
-                <div class="rate-info">${sellRate > 0 ? '자동: ' + sellRate.toFixed(1) + '/s' : ''}</div>
-                <button class="btn btn-sell-action" id="btn-sell-${line.id}" style="margin-bottom: 0;">
-                    <span style="font-size:18px;">💰</span> 즉시 판매 (+${sellAmount})
+            
+            <div class="slot-row">
+                <button class="slot-btn slot-facility" data-slot-type="market">
+                    <span class="slot-icon">${this.getIconForType('market')}</span>
+                    <span class="slot-name">${ITEMS[line.slots.market]?.name || '없음'}</span>
+                    <span class="slot-tier">T${t1}</span>
+                </button>
+                <button class="slot-btn slot-worker" data-slot-type="salesOrg">
+                    <span class="slot-icon">${this.getIconForType('salesOrg')}</span>
+                    <span class="slot-name">${ITEMS[line.slots.salesOrg]?.name || '없음'}</span>
+                    <span class="slot-tier">W${t2}</span>
                 </button>
             </div>
+            
+            <button class="cta-main cta--sales" data-btn-type="sell">
+                💰 판매하기 +${Math.floor(price * sellAmount).toLocaleString()}원
+            </button>
+            
+            <div class="card-info">
+                <div class="info-row">
+                    <span>자동 판매: ${sellSpeed.toFixed(1)}초당</span>
+                    <span>단가: <strong>${Math.floor(price).toLocaleString()}원</strong></span>
+                </div>
+                <div class="info-row">
+                    <span>판매 재고: <strong>${sellStock.toLocaleString()}</strong></span>
+                </div>
+            </div>
+            
+            <div class="card-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" class="toggle-auto" checked disabled>
+                    <span class="toggle-text">🔁 토석 만상</span>
+                </label>
+            </div>
         `;
-
-        this.bindSlotEvent(card, line.id, 'market');
-        this.bindSlotEvent(card, line.id, 'salesOrg');
-
-        card.querySelector(`#btn-sell-${line.id}`).onclick = (e) => {
+        
+        // Bind sell button
+        const btn = card.querySelector('[data-btn-type="sell"]');
+        btn.onclick = () => {
             const gained = this.game.sell(line.id);
-            if(gained > 0) {
-                this.spawnParticles(e.clientX, e.clientY, '#fbbf24');
-                this.createFloatingText(e.clientX, e.clientY, `+${Math.floor(gained).toLocaleString()}원`, 'cash');
+            if (gained > 0) {
+                this.createFloatingText(btn.getBoundingClientRect().left + 50, btn.getBoundingClientRect().top, `+${Math.floor(gained).toLocaleString()}원`, 'cash');
                 this.update();
             } else {
                 this.showToast('판매할 재고가 부족합니다.', 'error');
             }
         };
-
+        
+        // Slot clicks
+        this.bindSlotEvent(card, line.id, 'market');
+        this.bindSlotEvent(card, line.id, 'salesOrg');
+        
         return card;
     }
 
@@ -783,8 +968,8 @@ export class UI {
         this.game.lines.forEach(line => {
             if (!line.productId) return;
             const inv = this.game.productInventory[line.productId];
-            const invEl = document.getElementById(`card-logi-${line.id}`); // Check if logi card exists
             
+            // Progress Bars (IDs preserved)
             const prodFill = document.getElementById(`prog-fill-prod-${line.id}`);
             if (prodFill && line.prodAccumulator !== undefined) {
                 prodFill.style.width = Math.min((line.prodAccumulator * 100), 100) + '%';
@@ -793,20 +978,30 @@ export class UI {
             if (sellFill && line.sellAccumulator !== undefined) {
                 sellFill.style.width = Math.min((line.sellAccumulator * 100), 100) + '%';
             }
-            if (invEl) {
+
+            if (inv) {
                 const keep = inv.keep || 0;
                 const sell = inv.sell || 0;
                 const cap = inv.cap || 100;
                 
-                // Update Texts
+                // 1. Update New Status Spans (in status-row)
+                const statusKeep = document.getElementById(`val-keep-status-${line.id}`);
+                const statusSellLogi = document.getElementById(`val-sell-logi-status-${line.id}`);
+                const statusSell = document.getElementById(`val-sell-status-${line.id}`);
+                
+                if (statusKeep) statusKeep.textContent = Math.floor(keep).toLocaleString();
+                if (statusSellLogi) statusSellLogi.textContent = Math.floor(sell).toLocaleString();
+                if (statusSell) statusSell.textContent = Math.floor(sell).toLocaleString();
+
+                // 2. Update Advanced Tank UI (Old IDs)
                 const kVal = document.getElementById(`val-keep-${line.id}`);
                 const sVal = document.getElementById(`val-sell-${line.id}`);
                 const sValLogi = document.getElementById(`val-sell-logi-${line.id}`);
-                if(kVal) kVal.textContent = keep.toLocaleString();
-                if(sVal) sVal.textContent = sell.toLocaleString(); 
-                if(sValLogi) sValLogi.textContent = sell.toLocaleString();
+                if(kVal) kVal.textContent = Math.floor(keep).toLocaleString();
+                if(sVal) sVal.textContent = Math.floor(sell).toLocaleString(); 
+                if(sValLogi) sValLogi.textContent = Math.floor(sell).toLocaleString();
 
-                // Update Fill Bars
+                // Fill Bars
                 const kFill = document.getElementById(`fill-keep-${line.id}`);
                 const sFill = document.getElementById(`fill-sell-${line.id}`);
                 const sFillLogi = document.getElementById(`fill-sell-logi-${line.id}`);
@@ -815,21 +1010,27 @@ export class UI {
                 if(sFill) sFill.style.height = Math.min((sell / cap) * 100, 100) + '%';
                 if(sFillLogi) sFillLogi.style.height = Math.min((sell / cap) * 100, 100) + '%';
                 
-                // Signals
+                // 3. CTA Glow Logic
+                const btnShip = document.getElementById(`btn-ship-${line.id}`);
+                const btnSell = document.getElementById(`btn-sell-${line.id}`);
+                
+                if (btnShip) {
+                    if (keep > 0) btnShip.classList.add('cta-glow');
+                    else btnShip.classList.remove('cta-glow');
+                }
+                
+                if (btnSell) {
+                    if (sell > 0) btnSell.classList.add('cta-glow');
+                    else btnSell.classList.remove('cta-glow');
+                }
+
+                // 4. Status Signals (Halted / Rich)
                 if (keep + sell >= cap) {
                     const pc = document.getElementById(`card-prod-${line.id}`);
                     if(pc && !pc.classList.contains('status-halted')) pc.classList.add('status-halted');
                 } else {
                     const pc = document.getElementById(`card-prod-${line.id}`);
                     if(pc) pc.classList.remove('status-halted');
-                }
-
-                if (sell > 0) {
-                     const sc = document.getElementById(`card-sales-${line.id}`);
-                     if(sc && !sc.classList.contains('status-rich')) sc.classList.add('status-rich');
-                } else {
-                     const sc = document.getElementById(`card-sales-${line.id}`);
-                     if(sc) sc.classList.remove('status-rich');
                 }
             }
         });

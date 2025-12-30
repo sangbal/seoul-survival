@@ -3,7 +3,131 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
-## [2025-12-29] [kimchi-invasion] Assets Generation & Visual Revival
+## [2025-12-31] [mma-manager] v1.2.2 Critical Fix: Nickname Rendering
+
+### 작업 목표
+
+- **P0: 닉네임 렌더링 크래시 방지**: 일부 UI에서 `Fighter.nickname` (Object `{ko, en}`)을 직접 렌더링 시도하여 발생한 `Objects are not valid as a React child` 에러 해결.
+- **P1: 안전한 렌더링 헬퍼 도입**: 구버전(String)과 신버전(Object) 모두 호환되는 `getNicknameParts`, `formatFighterName` 유틸 생성 및 적용.
+
+### 주요 변경사항
+
+- **공통 헬퍼 생성**: `src/ui/utils/fighterName.ts`
+  - `getNicknameParts(f)`: `{ ko, en }` 반환 (데이터 타입 자동 감지).
+  - `formatFighterName(f)`: `한글이름 (EngName)` 포맷팅.
+- **전수 교체**:
+  - `FighterChip.tsx`, `League.tsx`, `Matchmaking.tsx`, `EventDetail.tsx` 내 직접 렌더링 코드를 모두 헬퍼 함수로 교체.
+  - `grep` 검색을 통해 `fighter.nickname` 직접 사용 지점 0건 확인.
+
+### 검증 결과
+
+- **브라우저 QA**:
+  - `League` (Rankings): 닉네임 정상 출력 확인.
+  - `Matchmaking`: 파이터 선택 모달 정상 출력 및 선택 동작 확인.
+  - `EventDetail`: 경기 결과 화면 정상 출력 확인.
+- **하위 호환성**: String 타입 닉네임(레거시)도 정상 처리됨 확인 (헬퍼 내부 분기).
+
+---
+
+## [2025-12-31] [mma-manager] v0.2.0 First Playable Loop
+
+### 작업 목표
+
+- **P0: 매치메이킹-이벤트-결과 게임 루프 완성**: 이벤트를 확정하고 시뮬레이션 결과를 확인한 뒤 시즌을 진행하는 핵심 루프 구현.
+- **P1: 자동 매칭 기능**: 편의성을 위한 원클릭 자동 매칭 알고리즘 구현.
+- **P2: 닉네임 로컬라이제이션**: 한글/영문 닉네임 병기 및 국가 기반 출력.
+- **P3: 재무 포맷 개선**: 한국 통화 단위(만원/억원) 적용.
+
+### 주요 변경사항
+
+#### 1. 게임 루프 (Game Loop)
+
+- **이벤트 확정**: 매치메이킹 완료 후 `pendingEvent` 상태로 전환 및 이벤트 상세 화면 이동.
+- **시뮬레이션**: `simulateBout` 함수로 6경기 진행, 결과(KO/Sub/Dec) 및 승자 결정.
+- **시즌 진행**: 이벤트 완료 시 `eventsCompleted` 증가, 파이터 전적/쿨타임/부상 업데이트, 단체 자금/팬베이스 갱신.
+
+#### 2. 자동 매칭 (Auto Match)
+
+- **알고리즘**: 가용 파이터(체급/쿨타임/소속) 필터링 -> 티켓 파워 내림차순 정렬 -> 최적 흥행도(Hype) 조합 탐색.
+- **UX**: 버튼 클릭 시 빈 슬롯(또는 전체) 자동 채움.
+
+#### 3. 로컬라이제이션 (L10n)
+
+- **닉네임**: `Fighter.nickname` 타입을 `{ ko, en }` 객체로 확장. 마이그레이션 로직 추가.
+- **화폐**: `formatKRW` 유틸리티로 `1.2억원`, `6,000만원` 형태 표기.
+- **번역**: `ko.ts`에 누락된 재무/이벤트 관련 키 추가.
+
+### 검증 결과
+
+- **루프 테스트**: 매치메이킹 -> 확정 -> 시뮬레이션(결과 화면) -> 시즌 계속하기 -> 다음 이벤트 기획 루프 정상 동작 확인.
+- **데이터 정합성**: 시뮬레이션 후 파이터 전적(승/패) 및 단체 자금($) 반영 확인.
+- **자동 매칭**: 버튼 클릭 시 체급에 맞는 파이터들이 채워짐 확인.
+
+---
+
+## [2025-01-XX] [mma-manager] Hard-Rail Fix Pack (v0.1.1)
+
+### 작업 목표
+
+- **P0: 치명적 버그 수정**: 시즌 진행률 NaN% 및 즉시 종료 버그 해결
+- **P1: 로컬라이제이션**: UI 문자열 한글화 적용
+- **P2: 닉네임 시스템 강화**: 500명 규모의 유니크 닉네임 생성 로직 확보
+- **P3: 사용자 경험 개선**: 단체명(Promotion Name) 변경 기능 추가
+
+### 주요 변경사항
+
+#### 1. P0: Season Logic Fix (NaN%)
+
+- **원인**: `eventsPlanned`가 0으로 초기화되어 발생한 0으로 나누기 오류.
+- **해결**: `utils/season.ts` 생성.
+  - `getSeasonTotalEvents()`: `eventsPlanned`가 없거나 0일 경우 안전값(12) 반환.
+  - `bootstrapEngine.ts`: 초기 `eventsPlanned`를 0에서 12로 수정.
+  - `Home.tsx`, `League.tsx` 등 계산 로직을 유틸 함수로 대체.
+
+#### 2. P1: Korean Localization
+
+- **구현**: `src/i18n/{index.ts, ko.ts}` 도입.
+- **적용**: `Home`, `League`, `Matchmaking`, `Settings` 전반에 `t()` 함수 적용.
+- **범위**: UI 레이블, 버튼 텍스트, 상태 메시지 등 사용자 노출 텍스트 100% 한글화 지향.
+
+#### 3. P2: Unique Nickname System
+
+- **구현**: `utils/nickname.ts` 생성.
+  - 영문(EN_NICKS)/한글(KO_NICKS) 대규모 닉네임 풀 확보.
+  - `pickUniqueNickname()`: `fighterId` 해싱 기반의 결정론적 선택 + `Set`을 이용한 중복 검사 로직 적용.
+- **적용**: 500명 로스터 생성 시 충돌 없이 고유 닉네임 부여.
+
+#### 4. P3: Promotion Renaming
+
+- **구현**: `Settings.tsx` 내 단체명 변경 UI 추가.
+- **연동**: `App.tsx`에서 상태 업데이트 핸들러(`onRenamePromotion`) 주입, 즉시 반영 구현.
+
+### 검증 결과
+
+- **P0**: 새 게임 시작 시 시즌 진행률 0% 정상 표시, 시즌 즉시 종료되지 않음 확인.
+- **P1**: 주요 화면(홈, 리그, 매치메이킹, 설멍) 한글 텍스트 출력 확인.
+- **P2**: 로스터 생성 시 중복 닉네임 미발생 및 국가별 언어(영어/한글) 적용 확인.
+- **P3**: 설정 탭에서 이름 변경 후 저장 시 홈/리그 화면에 즉시 반영 확인.
+
+---
+
+## [2025-12-31] [mma-manager] React Framework Dependencies Installation
+
+### 작업 목표
+
+- `mma-manager` 프로젝트의 React 기반 UI 구현을 위한 필수 라이브러리 설치
+
+### 주요 변경사항
+
+- **Dependency**: `react`, `react-dom` 패키지 설치 완료 (v19.x)
+- **HISTORY.md**: 알려진 이슈에서 의존성 미설치 항목 해결됨으로 업데이트
+
+### 검증 결과
+
+- `package.json` 에 `dependencies` 항목 추가 확인
+- `npm install` 정상 수행 확인
+
+---
 
 ### 작업 목표
 

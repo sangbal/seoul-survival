@@ -284,3 +284,17 @@ The game uses a consistent **Facility (Batch)** + **Worker (Speed)** model acros
 ## 버전 관리
 
 - **버전 표시 규칙**: `package.json`의 `version` 필드를 source of truth로 사용하며, Vite 빌드 시 `__APP_VERSION__`으로 주입되어 게임 내 버전 표시가 자동으로 동기화됩니다.
+
+## 게임 구조: mma-manager
+
+- **엔트리**: `mma-manager/src/App.tsx` (React Root)
+- **핵심 루프**: 이벤트 턴제 방식 (Planning -> Event -> Result)
+- **데이터 흐름**: `App.tsx`가 `GameState`를 보유하고 각 화면(`Home`, `League`, `Matchmaking`)에 Props로 전달.
+- **주요 모듈**:
+  - `domain/state`: 전체 게임 상태 (`Season`, `Promotion`, `Fighter`)
+  - `systems/bootstrapEngine`: 초기 게임 생성 (500 Fighters, 50 Promotions)
+  - `systems/matchmakingEngine`: 매치메이킹 승패 및 흥행 시뮬레이션
+  - `utils/season.ts`: 시즌 진행률 및 종료 조건 계산 (NaN 방지 안전 로직)
+  - `utils/nickname.ts`: 유니크 닉네임 생성기 (영문/한글 지원, 중복 방지)
+  - `ui/utils/fighterName.ts`: UI 렌더링 안전 헬퍼 (구버전/신버전 닉네임 호환 처리)
+  - `i18n/`: 단순 키-값 매핑 기반 로컬라이제이션 (`ko.ts` 중심)
