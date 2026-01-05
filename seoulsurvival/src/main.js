@@ -30,29 +30,24 @@ import * as Modal from './ui/modal.js'
 import * as Animations from './ui/animations.js'
 import * as Diary from './systems/diary.js'
 import * as LeaderboardUI from './ui/leaderboardUI.js'
+import {
+  gameState,
+  FINANCIAL_INCOME,
+  BASE_RENT,
+  CAREER_LEVELS,
+  SAVE_KEY,
+  CLOUD_RESTORE_BLOCK_KEY,
+  CLOUD_RESTORE_SKIP_KEY,
+  SETTINGS_KEY,
+  resetIncomeTablesToDefault,
+  reapplyIncomeTableAffectingUpgradeEffects,
+  getTotalFinancialProducts,
+  getTotalProperties,
+  BASE_CLICK_GAIN,
+} from './state/gameState.js'
 
 // ===== 밸런스 설정 import =====
-import {
-  BASE_CLICK_GAIN,
-  CAREER_LEVELS as CAREER_BALANCE,
-  FINANCIAL_COSTS,
-  DEFAULT_FINANCIAL_INCOME,
-  BASE_COSTS,
-  DEFAULT_BASE_RENT,
-  MARKET_EVENTS,
-} from './balance/index.js'
-
-// 노동 직급별 배경 이미지 (Vite asset import로 번들링 시 경로 안정화)
-import workBg01 from '../assets/images/work_bg_01_alba_night.png'
-import workBg02 from '../assets/images/work_bg_02_gyeyakjik_night.png'
-import workBg03 from '../assets/images/work_bg_03_sawon_night.png'
-import workBg04 from '../assets/images/work_bg_04_daeri_night.png'
-import workBg05 from '../assets/images/work_bg_05_gwajang_night.png'
-import workBg06 from '../assets/images/work_bg_06_chajang_night.png'
-import workBg07 from '../assets/images/work_bg_07_bujang_night.png'
-import workBg08 from '../assets/images/work_bg_08_sangmu_night.png'
-import workBg09 from '../assets/images/work_bg_09_jeonmu_night.png'
-import workBg10 from '../assets/images/work_bg_10_ceo_night.png'
+import { MARKET_EVENTS } from './balance/index.js'
 
 // 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
 // - Vite 빌드/개발서버: import.meta.env.DEV 사용
@@ -756,79 +751,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // ======= 상태 =======
   const fmt = new Intl.NumberFormat('ko-KR')
 
-  // 단계별 가격 증가율 시스템 (Cookie Clicker 스타일)
-  function getPriceMultiplier(count) {
-    if (count < 5)
-      return 1.1 // 초기: 10% (빠른 성취감)
-    else if (count < 15)
-      return 1.15 // 중기: 15% (현재와 동일)
-    else if (count < 30)
-      return 1.2 // 후기: 20% (도전적)
-    else return 1.25 // 최종: 25% (희소성)
-  }
-
-  // 금융상품별 기본 가격 - balance/financial.js에서 import됨 (FINANCIAL_COSTS)
-  // 부동산별 기본 가격 - balance/property.js에서 import됨 (BASE_COSTS)
-
-  // 금융상품 가격 계산 함수
-  function getFinancialCost(type, count, quantity = 1) {
-    const baseCost = FINANCIAL_COSTS[type]
-    let totalCost = 0
-    for (let i = 0; i < quantity; i++) {
-      const currentIndex = count + i
-      // 첫 번째 아이템(index=0)은 기본 가격, 그 이후부터 배수 적용
-      let cost = baseCost * Math.pow(1.05, currentIndex) // 밸런싱: 1.10 → 1.05로 완화
-      totalCost += cost
-    }
-    return Math.floor(totalCost)
-  }
-
-  // 금융상품 판매 가격 계산 함수 (현재가의 100%)
-  function getFinancialSellPrice(type, count, quantity = 1) {
-    if (count <= 0) return 0
-    let totalSellPrice = 0
-    for (let i = 0; i < quantity; i++) {
-      if (count - i <= 0) break
-      const buyPrice = getFinancialCost(type, count - i - 1, 1)
-      totalSellPrice += Math.floor(buyPrice * 1.0) // 100% 환급 (현실성/재미)
-    }
-    return totalSellPrice
-  }
-
-  // 부동산 가격 계산 함수
-  function getPropertyCost(type, count, quantity = 1) {
-    const baseCost = BASE_COSTS[type]
-    if (!baseCost) return 0
-
-    // 서울타워는 고정 가격 (가격 성장 없음)
-    if (type === 'tower') {
-      return baseCost * quantity
-    }
-
-    let totalCost = 0
-    for (let i = 0; i < quantity; i++) {
-      const currentIndex = count + i
-      // 첫 번째 아이템(index=0)은 기본 가격, 그 이후부터 배수 적용
-      let cost = baseCost * Math.pow(1.05, currentIndex) // 밸런싱: 1.10 → 1.05로 완화
-      totalCost += cost
-    }
-    return Math.floor(totalCost)
-  }
-
-  // 부동산 판매 가격 계산 함수 (현재가의 100%)
-  function getPropertySellPrice(type, count, quantity = 1) {
-    // 서울타워는 판매 불가
-    if (type === 'tower') return 0
-
-    if (count <= 0) return 0
-    let totalSellPrice = 0
-    for (let i = 0; i < quantity; i++) {
-      if (count - i <= 0) break
-      const buyPrice = getPropertyCost(type, count - i - 1, 1)
-      totalSellPrice += Math.floor(buyPrice * 1.0) // 100% 환급 (현실성/재미)
-    }
-    return totalSellPrice
-  }
   let cash = 0
 
   // 누적 플레이시간 시스템 (전역 변수)
