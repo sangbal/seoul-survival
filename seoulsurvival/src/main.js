@@ -8,6 +8,7 @@ import {
 import { createMarketSystem } from './systems/market.js'
 import { createAchievementsSystem } from './systems/achievements.js'
 import { createUpgradeUnlockSystem } from './systems/upgrades.js'
+import { createUpgradeManager } from './systems/upgradeManager.js'
 import { getDomRefs } from './ui/domRefs.js'
 import { safeClass, safeHTML, safeText } from './ui/domUtils.js'
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js'
@@ -1739,6 +1740,18 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   }
 
+  // ======= 업그레이드 관리 시스템 초기화 =======
+  const upgradeManager = createUpgradeManager({
+    UPGRADES,
+    getCash: () => cash,
+    setCash: newCash => {
+      cash = newCash
+    },
+    CAREER_LEVELS,
+  })
+  const { updateUpgradeAffordability, updateUpgradeProgress, updateUpgradeList, purchaseUpgrade } =
+    upgradeManager
+
   // 부동산 보유 수량
   let villas = 0 // 빌라
   let officetels = 0 // 오피스텔
@@ -2606,269 +2619,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (newUnlocks > 0) {
       updateUpgradeList()
     }
-  }
-
-  // 업그레이드 구매 가능 여부만 업데이트 (성능 최적화)
-  function updateUpgradeAffordability() {
-    const upgradeItems = document.querySelectorAll('.upgrade-item')
-
-    upgradeItems.forEach(item => {
-      const upgradeId = item.dataset.upgradeId
-      const upgrade = UPGRADES[upgradeId]
-
-      if (upgrade && !upgrade.purchased) {
-        // 구매 가능 여부에 따라 클래스만 토글
-        if (cash >= upgrade.cost) {
-          item.classList.add('affordable')
-        } else {
-          item.classList.remove('affordable')
-        }
-      }
-    })
-  }
-
-  // 업그레이드 진행률 업데이트
-  function updateUpgradeProgress() {
-    const progressElements = document.querySelectorAll('.upgrade-progress')
-
-    progressElements.forEach(progressEl => {
-      // 부모 요소에서 업그레이드 ID 찾기
-      const upgradeItem = progressEl.closest('.upgrade-item')
-      if (!upgradeItem) return
-
-      const upgradeId = upgradeItem.dataset.upgradeId
-      if (!upgradeId) return
-
-      // 해금되지 않은 업그레이드 중 가장 가까운 것을 찾기
-      const lockedUpgrades = Object.entries(UPGRADES)
-        .filter(([id, u]) => u.category === 'labor' && !u.unlocked && !u.purchased)
-        .map(([id, u]) => {
-          const conditionStr = u.unlockCondition.toString()
-          const match = conditionStr.match(/totalClicks\s*>=\s*(\d+)/)
-          if (match) {
-            return { id, requiredClicks: parseInt(match[1]), upgrade: u }
-          }
-          const careerMatch = conditionStr.match(/careerLevel\s*>=\s*(\d+)/)
-          if (careerMatch) {
-            return {
-              id,
-              requiredClicks: CAREER_LEVELS[parseInt(careerMatch[1])]?.requiredClicks || Infinity,
-              upgrade: u,
-            }
-          }
-          return null
-        })
-        .filter(x => x !== null)
-        .sort((a, b) => a.requiredClicks - b.requiredClicks)
-
-      // 진행률 표시 제거
-      progressEl.textContent = ''
-    })
-  }
-
-  // 업그레이드 리스트 UI 생성 (해금/구매 시에만 호출)
-  function updateUpgradeList() {
-    const upgradeList = document.getElementById('upgradeList')
-    const upgradeCount = document.getElementById('upgradeCount')
-
-    if (!upgradeList || !upgradeCount) return
-
-    // 해금되었고 아직 구매하지 않은 업그레이드만 표시
-    const availableUpgrades = Object.entries(UPGRADES).filter(
-      ([id, upgrade]) => upgrade.unlocked && !upgrade.purchased
-    )
-
-    upgradeCount.textContent = `(${availableUpgrades.length})`
-
-    // 빈 상태 메시지 처리
-    const noUpgradesMsg = document.getElementById('noUpgradesMessage')
-    if (availableUpgrades.length === 0) {
-      upgradeList.innerHTML = ''
-      if (noUpgradesMsg) {
-        noUpgradesMsg.textContent = t('ui.noUpgrades')
-        noUpgradesMsg.style.display = 'block'
-      }
-      return
-    }
-
-    // 업그레이드가 있으면 빈 상태 메시지 숨김
-    if (noUpgradesMsg) {
-      noUpgradesMsg.style.display = 'none'
-    }
-
-    upgradeList.innerHTML = ''
-
-    console.log(`🔄 Regenerating upgrade list with ${availableUpgrades.length} items`)
-
-    availableUpgrades.forEach(([id, upgrade]) => {
-      const item = document.createElement('div')
-      item.className = 'upgrade-item'
-      item.dataset.upgradeId = id
-
-      // 구매 가능 여부 체크
-      if (cash >= upgrade.cost) {
-        item.classList.add('affordable')
-      }
-
-      // 아이콘 생성
-      const icon = document.createElement('div')
-      icon.className = 'upgrade-icon'
-      icon.textContent = upgrade.icon
-
-      // 정보 영역 생성
-      const info = document.createElement('div')
-      info.className = 'upgrade-info'
-
-      const name = document.createElement('div')
-      name.className = 'upgrade-name'
-      name.textContent = t(`upgrade.${id}.name`, {}, upgrade.name)
-
-      const desc = document.createElement('div')
-      desc.className = 'upgrade-desc'
-      desc.textContent = t(`upgrade.${id}.desc`, {}, upgrade.desc)
-
-      // 가격은 우측 배지로 이동 (NEW! 대신) → 카드 높이 축소
-      const priceText = NumberFormat.formatFinancialPrice(upgrade.cost)
-
-      // 진행률 정보 추가 (해금 조건이 클릭 수인 경우)
-      if (upgrade.category === 'labor' && upgrade.unlockCondition) {
-        try {
-          // 해금 조건을 역으로 계산 (간단한 추정)
-          // 실제로는 unlockCondition 함수를 분석해야 하지만,
-          // 여기서는 다음 업그레이드까지 남은 클릭 수를 표시
-          const progressInfo = document.createElement('div')
-          progressInfo.className = 'upgrade-progress'
-          progressInfo.style.fontSize = '11px'
-          progressInfo.style.color = 'var(--muted)'
-          progressInfo.style.marginTop = '4px'
-
-          // 해금되지 않은 업그레이드 중 가장 가까운 것을 찾기
-          const lockedUpgrades = Object.entries(UPGRADES)
-            .filter(([id, u]) => u.category === 'labor' && !u.unlocked && !u.purchased)
-            .map(([id, u]) => {
-              // unlockCondition에서 클릭 수 추출 시도
-              const conditionStr = u.unlockCondition.toString()
-              const match = conditionStr.match(/totalClicks\s*>=\s*(\d+)/)
-              if (match) {
-                return { id, requiredClicks: parseInt(match[1]), upgrade: u }
-              }
-              return null
-            })
-            .filter(x => x !== null)
-            .sort((a, b) => a.requiredClicks - b.requiredClicks)
-
-          // 진행률 표시 제거
-          // progressInfo는 생성하지 않음
-        } catch (e) {
-          // 진행률 계산 실패 시 무시
-        }
-      }
-
-      info.appendChild(name)
-      info.appendChild(desc)
-      // (삭제) info에 가격 줄을 두지 않음
-
-      // 우측 가격 배지 생성 (NEW! 대체)
-      const status = document.createElement('div')
-      status.className = 'upgrade-status'
-      status.textContent = priceText
-      status.style.animation = 'none'
-      status.style.background = 'rgba(94, 234, 212, 0.12)'
-      status.style.color = 'var(--accent)'
-      status.style.border = '1px solid rgba(94, 234, 212, 0.25)'
-      status.style.borderRadius = '999px'
-
-      // 요소 조립
-      item.appendChild(icon)
-      item.appendChild(info)
-      item.appendChild(status)
-
-      // 클릭 이벤트 추가 (캡처링 단계에서 처리)
-      item.addEventListener(
-        'click',
-        e => {
-          e.stopPropagation()
-          console.log('🖱️ Upgrade item clicked!', id)
-          console.log('Event target:', e.target)
-          console.log('Current item:', item)
-          console.log('Dataset:', item.dataset)
-          purchaseUpgrade(id)
-        },
-        false
-      )
-
-      // 추가 보험: mousedown 이벤트도 추가
-      item.addEventListener('mousedown', e => {
-        console.log('🖱️ Mousedown detected on upgrade:', id)
-      })
-
-      upgradeList.appendChild(item)
-
-      console.log(`✅ Upgrade item created and appended: ${id}`, item)
-    })
-  }
-
-  // 업그레이드 구매
-  function purchaseUpgrade(upgradeId) {
-    console.log('=== PURCHASE UPGRADE DEBUG ===')
-    console.log('Attempting to purchase:', upgradeId)
-    console.log('Current cash:', cash)
-
-    const upgrade = UPGRADES[upgradeId]
-
-    if (!upgrade) {
-      console.error('업그레이드를 찾을 수 없습니다:', upgradeId)
-      console.log('Available upgrade IDs:', Object.keys(UPGRADES))
-      return
-    }
-
-    console.log('Upgrade found:', {
-      name: upgrade.name,
-      cost: upgrade.cost,
-      unlocked: upgrade.unlocked,
-      purchased: upgrade.purchased,
-    })
-
-    if (upgrade.purchased) {
-      Diary.addLog(t('msg.upgradeAlreadyPurchased'))
-      console.log('Already purchased')
-      return
-    }
-
-    if (cash < upgrade.cost) {
-      Diary.addLog(
-        t('msg.upgradeInsufficientFunds', { cost: NumberFormat.formatFinancialPrice(upgrade.cost) })
-      )
-      console.log('Not enough cash. Need:', upgrade.cost, 'Have:', cash)
-      return
-    }
-
-    // 구매 처리
-    console.log('Purchase successful! Applying effect...')
-    cash -= upgrade.cost
-    upgrade.purchased = true
-
-    try {
-      upgrade.effect() // 효과 적용
-      Diary.addLog(
-        t('msg.upgradePurchased', {
-          name: t(`upgrade.${upgradeId}.name`),
-          desc: t(`upgrade.${upgradeId}.desc`),
-        })
-      )
-      console.log('Effect applied successfully')
-    } catch (error) {
-      console.error(`업그레이드 효과 적용 실패 (${upgradeId}):`, error)
-      Diary.addLog(t('msg.upgradeError', { name: t(`upgrade.${upgradeId}.name`) }))
-    }
-
-    console.log('New cash:', cash)
-    console.log('==============================')
-
-    // UI 업데이트
-    updateUpgradeList()
-    updateUI()
-    saveGame()
   }
 
   // 구매 가능 알림 체크
