@@ -26,6 +26,7 @@ import {
 import { t, applyI18nToDOM, setLang, getLang, getInitialLang } from './i18n/index.js'
 import { GAME_VERSION } from './version.js'
 import * as NumberFormat from './utils/numberFormat.js'
+import * as Modal from './ui/modal.js'
 
 // ===== 밸런스 설정 import =====
 import {
@@ -141,6 +142,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const initialLang = getInitialLang()
   setLang(initialLang)
   applyI18nToDOM()
+
+  // ======= 모달 시스템 초기화 =======
+  Modal.initModal()
 
   // 초기 UI 업데이트 (동적 텍스트 포함)
   // updateUI()는 나중에 setInterval로 주기적으로 호출되지만,
@@ -2234,13 +2238,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const elClickIncomeLabel = document.getElementById('clickIncomeLabel')
   const elClickMultiplier = document.getElementById('clickMultiplier')
   const elRentMultiplier = document.getElementById('rentMultiplier')
-
-  // 공통 모달 요소
-  const elModalRoot = document.getElementById('gameModalRoot')
-  const elModalTitle = document.getElementById('gameModalTitle')
-  const elModalMessage = document.getElementById('gameModalMessage')
-  const elModalPrimary = document.getElementById('gameModalPrimary')
-  const elModalSecondary = document.getElementById('gameModalSecondary')
 
   // 금융상품 관련
   const elDepositCount = document.getElementById('depositCount')
@@ -4655,7 +4652,7 @@ document.addEventListener('DOMContentLoaded', () => {
             default:
               errorMessage = t('settings.nickname.change.invalid')
           }
-          openInfoModal(t('modal.error.nicknameFormat.title'), errorMessage, '⚠️')
+          Modal.openInfoModal(t('modal.error.nicknameFormat.title'), errorMessage, '⚠️')
           __nicknameModalShown = false
           ensureNicknameModal()
           return
@@ -4688,13 +4685,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (!claimResult.success) {
             if (claimResult.error === 'taken') {
-              openInfoModal(
+              Modal.openInfoModal(
                 t('modal.error.nicknameTaken.title'),
                 t('settings.nickname.change.taken'),
                 '⚠️'
               )
             } else {
-              openInfoModal(
+              Modal.openInfoModal(
                 t('modal.error.nicknameFormat.title'),
                 t('settings.nickname.change.claimFailed'),
                 '⚠️'
@@ -4732,7 +4729,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         } catch (error) {
           console.error('닉네임 설정 실패:', error)
-          openInfoModal(
+          Modal.openInfoModal(
             t('modal.error.nicknameFormat.title'),
             t('settings.nickname.change.claimFailed'),
             '⚠️'
@@ -4742,7 +4739,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      openInputModal(t('modal.nickname.title'), t('modal.nickname.message'), handleConfirm, {
+      Modal.openInputModal(t('modal.nickname.title'), t('modal.nickname.message'), handleConfirm, {
         icon: '✏️',
         primaryLabel: t('button.confirm'),
         placeholder: t('modal.nickname.placeholder'),
@@ -4880,7 +4877,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function resetGame() {
     console.log('🔄 resetGame function called (A안: 수동 프레스티지)') // 디버깅용
 
-    openConfirmModal(
+    Modal.openConfirmModal(
       t('modal.confirm.reset.title'),
       t('modal.confirm.reset.message'),
       () => {
@@ -4903,7 +4900,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('❌ Error in resetGame:', error)
             console.error('에러 스택:', error.stack)
             // 실제 치명적 오류만 사용자에게 알림
-            openInfoModal(
+            Modal.openInfoModal(
               t('modal.error.resetError.title'),
               t('modal.error.resetError.message'),
               '⚠️'
@@ -6445,198 +6442,6 @@ document.addEventListener('DOMContentLoaded', () => {
     handleWorkAction(e.clientX, e.clientY)
   })
 
-  // ======= 공통 모달 유틸 =======
-  let modalOnConfirm = null
-
-  function closeModal() {
-    if (!elModalRoot) return
-    elModalRoot.classList.add('game-modal-hidden')
-    modalOnConfirm = null
-  }
-
-  function openInfoModal(title, message, icon = 'ℹ️') {
-    if (!elModalRoot || !elModalTitle || !elModalMessage || !elModalPrimary || !elModalSecondary) {
-      alert(message)
-      return
-    }
-    elModalRoot.classList.remove('game-modal-hidden')
-    const titleIcon = elModalTitle.querySelector('.icon')
-    const titleText = elModalTitle.querySelector('.text')
-    if (titleIcon) titleIcon.textContent = icon
-    if (titleText) titleText.textContent = title
-    elModalMessage.textContent = message
-
-    elModalSecondary.style.display = 'none'
-    elModalPrimary.textContent = t('button.confirm')
-
-    elModalPrimary.onclick = () => {
-      closeModal()
-    }
-    elModalSecondary.onclick = () => {
-      closeModal()
-    }
-  }
-
-  function openConfirmModal(title, message, onConfirm, options = {}) {
-    if (!elModalRoot || !elModalTitle || !elModalMessage || !elModalPrimary || !elModalSecondary) {
-      const userConfirmed = confirm(message)
-      if (userConfirmed && typeof onConfirm === 'function') onConfirm()
-      return
-    }
-
-    elModalRoot.classList.remove('game-modal-hidden')
-    const titleIcon = elModalTitle.querySelector('.icon')
-    const titleText = elModalTitle.querySelector('.text')
-    if (titleIcon) titleIcon.textContent = options.icon || '⚠️'
-    if (titleText) titleText.textContent = title
-    elModalMessage.textContent = message
-
-    elModalSecondary.style.display = 'inline-flex'
-    elModalPrimary.textContent = options.primaryLabel || t('button.yes')
-    elModalSecondary.textContent = options.secondaryLabel || t('button.no')
-
-    modalOnConfirm = typeof onConfirm === 'function' ? onConfirm : null
-
-    elModalPrimary.onclick = () => {
-      const cb = modalOnConfirm
-      closeModal()
-      if (cb) cb()
-    }
-    elModalSecondary.onclick = () => {
-      closeModal()
-      // onCancel 콜백이 있으면 호출
-      if (options.onCancel && typeof options.onCancel === 'function') {
-        options.onCancel()
-      }
-    }
-  }
-
-  // 닉네임 입력 모달
-  function openInputModal(title, message, onConfirm, options = {}) {
-    if (!elModalRoot || !elModalTitle || !elModalMessage || !elModalPrimary || !elModalSecondary) {
-      const input = prompt(message)
-      if (input && typeof onConfirm === 'function') {
-        onConfirm(input.trim())
-      }
-      return
-    }
-
-    elModalRoot.classList.remove('game-modal-hidden')
-    const titleIcon = elModalTitle.querySelector('.icon')
-    const titleText = elModalTitle.querySelector('.text')
-    if (titleIcon) titleIcon.textContent = options.icon || '✏️'
-    if (titleText) titleText.textContent = title
-
-    // 모달 메시지 영역 완전 초기화 (중복 렌더링 방지)
-    elModalMessage.innerHTML = ''
-
-    // 메시지 텍스트 추가 (있는 경우) - input보다 먼저 추가
-    if (message) {
-      const msgText = document.createElement('div')
-      msgText.className = 'game-modal-message-text'
-      msgText.textContent = message
-      msgText.style.marginBottom = '10px'
-      msgText.style.color = 'var(--muted)'
-      msgText.style.fontSize = '13px'
-      elModalMessage.appendChild(msgText)
-    }
-
-    // 입력 필드 생성
-    const inputEl = document.createElement('input')
-    inputEl.type = 'text'
-    inputEl.className = 'game-modal-input'
-    inputEl.value = options.defaultValue || ''
-
-    // placeholder / maxLength 적용
-    inputEl.placeholder =
-      options.placeholder || inputEl.placeholder || t('modal.nickname.placeholder')
-    if (typeof options.maxLength === 'number') {
-      inputEl.maxLength = options.maxLength
-    } else if (!inputEl.maxLength || inputEl.maxLength <= 0) {
-      inputEl.maxLength = 20
-    }
-
-    elModalMessage.appendChild(inputEl)
-
-    if (options.secondaryLabel) {
-      elModalSecondary.style.display = 'inline-flex'
-      elModalSecondary.textContent = options.secondaryLabel
-    } else {
-      elModalSecondary.style.display = 'none'
-    }
-    elModalPrimary.textContent = options.primaryLabel || t('ui.confirm')
-
-    // Enter 키로 확인, ESC로 닫기
-    const handleKeyDown = e => {
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        elModalPrimary.click()
-      } else if (e.key === 'Escape') {
-        e.preventDefault()
-        if (options.secondaryLabel && elModalSecondary.onclick) {
-          elModalSecondary.click()
-        } else {
-          closeModal()
-        }
-      }
-    }
-
-    // 이벤트 리스너 중복 등록 방지 (기존 리스너 제거 후 추가)
-    const existingHandler = inputEl.dataset.keydownHandler
-    if (existingHandler) {
-      inputEl.removeEventListener('keydown', window[existingHandler])
-    }
-    const handlerId = 'modalKeyDown_' + Date.now()
-    inputEl.dataset.keydownHandler = handlerId
-    window[handlerId] = handleKeyDown
-    inputEl.addEventListener('keydown', handleKeyDown)
-
-    // 자동 포커스 및 전체 선택
-    inputEl.focus()
-    inputEl.select()
-
-    elModalPrimary.onclick = () => {
-      const value = inputEl.value.trim()
-      if (!value && options.required !== false) {
-        inputEl.style.borderColor = 'var(--bad)'
-        setTimeout(() => {
-          inputEl.style.borderColor = ''
-        }, 1000)
-        return
-      }
-      // 이벤트 리스너 정리
-      const handlerId = inputEl.dataset.keydownHandler
-      if (handlerId && window[handlerId]) {
-        inputEl.removeEventListener('keydown', window[handlerId])
-        delete window[handlerId]
-        delete inputEl.dataset.keydownHandler
-      }
-      closeModal()
-      if (typeof onConfirm === 'function') {
-        onConfirm(value || options.defaultValue || '익명')
-      }
-    }
-    // secondary 버튼은 options.secondaryLabel이 있을 때만 의미 있음
-    if (options.secondaryLabel) {
-      elModalSecondary.onclick = () => {
-        // 이벤트 리스너 정리
-        const handlerId = inputEl.dataset.keydownHandler
-        if (handlerId && window[handlerId]) {
-          inputEl.removeEventListener('keydown', window[handlerId])
-          delete window[handlerId]
-          delete inputEl.dataset.keydownHandler
-        }
-        closeModal()
-        // onCancel 콜백이 있으면 호출
-        if (options.onCancel && typeof options.onCancel === 'function') {
-          options.onCancel()
-        }
-      }
-    } else {
-      elModalSecondary.onclick = null
-    }
-  }
-
   // ======= 공유하기 기능 =======
   async function shareGame() {
     const gameUrl = window.location.href
@@ -6712,7 +6517,7 @@ document.addEventListener('DOMContentLoaded', () => {
       message = `${shortcut} 를 눌러 이 페이지를 브라우저 즐겨찾기에 추가할 수 있습니다.`
     }
 
-    openInfoModal(modalTitle, message, icon)
+    Modal.openInfoModal(modalTitle, message, icon)
   }
 
   if (elFavoriteBtn) {
@@ -7016,7 +6821,13 @@ document.addEventListener('DOMContentLoaded', () => {
       createTowerFallEffect()
 
       // 엔딩 모달 표시 (자동 프레스티지 실행)
-      showEndingModal(towers_lifetime)
+      Modal.showEndingModal(towers_lifetime, async () => {
+        try {
+          await performAutoPrestige('ending')
+        } catch (error) {
+          console.error('❌ 프레스티지 실행 중 오류:', error)
+        }
+      })
 
       // 파티클 애니메이션
       if (settings.particles) {
@@ -7263,33 +7074,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('스택:', error.stack)
       // 치명적 오류만 사용자에게 알림
       throw error // 상위 try-catch에서 처리
-    }
-  }
-
-  // 엔딩 모달 표시 함수 (자동 프레스티지)
-  function showEndingModal(towerCount) {
-    const message =
-      `🗼 서울타워 완성 🗼\n\n` +
-      `알바에서 시작해 CEO까지.\n` +
-      `예금에서 시작해 서울타워까지.\n\n` +
-      `서울 한복판에 당신의 이름이 새겨졌다.\n\n` +
-      `서울타워 🗼 획득 (누적 ${towerCount}개)\n\n` +
-      `이제 새로운 시작을 합니다.`
-
-    openInfoModal('🎉 엔딩', message, '🗼')
-
-    // 모달 확인 버튼 클릭 시 자동 프레스티지 실행 (타이머 없음, 버튼 클릭만)
-    elModalPrimary.textContent = t('button.newStart') || '새로운 시작'
-    elModalPrimary.onclick = () => {
-      closeModal()
-      // 모달이 완전히 닫힌 후 프레스티지 실행 (DOM 안정화 대기)
-      setTimeout(async () => {
-        try {
-          await performAutoPrestige('ending')
-        } catch (error) {
-          console.error('❌ 프레스티지 실행 중 오류:', error)
-        }
-      }, 100)
     }
   }
 
@@ -7583,7 +7367,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function cloudUpload() {
     const user = await getUser()
     if (!user) {
-      openInfoModal(
+      Modal.openInfoModal(
         t('modal.error.loginRequired.title'),
         t('modal.error.loginRequired.message'),
         '🔐'
@@ -7593,7 +7377,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const raw = localStorage.getItem(SAVE_KEY)
     if (!raw) {
-      openInfoModal(t('modal.error.noSaveData.title'), t('modal.error.noSaveData.message'), '💾')
+      Modal.openInfoModal(
+        t('modal.error.noSaveData.title'),
+        t('modal.error.noSaveData.message'),
+        '💾'
+      )
       return
     }
 
@@ -7601,7 +7389,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       saveObj = JSON.parse(raw)
     } catch {
-      openInfoModal(
+      Modal.openInfoModal(
         t('modal.error.invalidSaveData.title'),
         t('modal.error.invalidSaveData.message'),
         '⚠️'
@@ -7612,14 +7400,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const r = await upsertCloudSave('seoulsurvival', saveObj)
     if (!r.ok) {
       if (r.reason === 'missing_table') {
-        openInfoModal(
+        Modal.openInfoModal(
           t('modal.error.cloudTableMissing.title'),
           t('modal.error.cloudTableMissing.message'),
           '🛠️'
         )
         return
       }
-      openInfoModal(
+      Modal.openInfoModal(
         t('modal.error.uploadFailed.title'),
         t('modal.error.uploadFailed.message', { error: r.error?.message || '' }),
         '⚠️'
@@ -7628,7 +7416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     addLog(t('msg.cloudSaved'))
-    openInfoModal(
+    Modal.openInfoModal(
       t('modal.info.cloudSaveComplete.title'),
       t('modal.info.cloudSaveComplete.message'),
       '☁️'
@@ -7638,7 +7426,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function cloudDownload() {
     const user = await getUser()
     if (!user) {
-      openInfoModal(
+      Modal.openInfoModal(
         t('modal.error.loginRequired.title'),
         t('modal.error.loginRequired.message'),
         '🔐'
@@ -7649,14 +7437,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const r = await fetchCloudSave('seoulsurvival')
     if (!r.ok) {
       if (r.reason === 'missing_table') {
-        openInfoModal(
+        Modal.openInfoModal(
           t('modal.error.cloudTableMissing.title'),
           t('modal.error.cloudTableMissing.message'),
           '🛠️'
         )
         return
       }
-      openInfoModal(
+      Modal.openInfoModal(
         t('modal.error.downloadFailed.title'),
         t('modal.error.downloadFailed.message', { error: r.error?.message || '' }),
         '⚠️'
@@ -7665,7 +7453,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!r.found) {
-      openInfoModal(t('modal.error.noCloudSave.title'), t('modal.error.noCloudSave.message'), '☁️')
+      Modal.openInfoModal(
+        t('modal.error.noCloudSave.title'),
+        t('modal.error.noCloudSave.message'),
+        '☁️'
+      )
       return
     }
 
@@ -7675,7 +7467,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : r.updated_at
         ? new Date(r.updated_at).toLocaleString(locale)
         : t('ui.noTimeInfo')
-    openConfirmModal(
+    Modal.openConfirmModal(
       t('modal.confirm.cloudLoad.title'),
       t('modal.confirm.cloudLoad.message', { time: cloudTime }),
       () => {
@@ -7684,7 +7476,7 @@ document.addEventListener('DOMContentLoaded', () => {
           addLog(t('msg.cloudApplied'))
           setTimeout(() => location.reload(), 600)
         } catch (e) {
-          openInfoModal(
+          Modal.openInfoModal(
             t('modal.error.cloudApplyFailed.title'),
             t('modal.error.cloudApplyFailed.message', { error: String(e) }),
             '⚠️'
@@ -7752,7 +7544,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      openConfirmModal(
+      Modal.openConfirmModal(
         t('modal.confirm.cloudRestore.title'),
         message,
         () => {
@@ -7874,7 +7666,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      openConfirmModal(
+      Modal.openConfirmModal(
         t('modal.confirm.progressSwitch.title'),
         t('modal.confirm.progressSwitch.message', { message }),
         () => {
@@ -7886,7 +7678,7 @@ document.addEventListener('DOMContentLoaded', () => {
             done(true)
           } catch (error) {
             console.error('클라우드 세이브 적용 실패:', error)
-            openInfoModal(
+            Modal.openInfoModal(
               t('modal.error.progressSwitchFailed.title'),
               t('modal.error.progressSwitchFailed.message', {
                 error: error.message || String(error),
@@ -10181,7 +9973,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 쿨타임 체크
     const cooldown = checkNicknameCooldown()
     if (!cooldown.allowed) {
-      openInfoModal(
+      Modal.openInfoModal(
         t('modal.error.nicknameLength.title'),
         t('settings.nickname.change.cooldown', { seconds: cooldown.remainingSeconds || 0 }),
         '⏱️'
@@ -10192,7 +9984,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 현재 닉네임을 기본값으로 설정
     const currentNickname = playerNickname || ''
 
-    openInputModal(
+    Modal.openInputModal(
       t('settings.nickname.modal.title'),
       t('settings.nickname.modal.message'),
       handleNicknameChangeFromModal,
@@ -10235,7 +10027,7 @@ document.addEventListener('DOMContentLoaded', () => {
         default:
           errorMessage = t('settings.nickname.change.invalid')
       }
-      openInfoModal(t('modal.error.nicknameFormat.title'), errorMessage, '⚠️')
+      Modal.openInfoModal(t('modal.error.nicknameFormat.title'), errorMessage, '⚠️')
       return
     }
 
@@ -10276,7 +10068,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 실패 처리
         if (claimResult.error === 'taken') {
           // taken 에러: 에러 모달 표시 후 입력 모달 재오픈 (재입력 가능)
-          openInfoModal(
+          Modal.openInfoModal(
             t('modal.error.nicknameTaken.title'),
             t('settings.nickname.change.taken'),
             '⚠️'
@@ -10286,7 +10078,7 @@ document.addEventListener('DOMContentLoaded', () => {
             openNicknameChangeModal()
           }, 500)
         } else {
-          openInfoModal(
+          Modal.openInfoModal(
             t('modal.error.nicknameLength.title'),
             t('settings.nickname.change.claimFailed'),
             '⚠️'
@@ -10343,7 +10135,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('닉네임 변경 실패:', error)
-      openInfoModal(
+      Modal.openInfoModal(
         t('modal.error.nicknameLength.title'),
         t('settings.nickname.change.claimFailed'),
         '⚠️'
