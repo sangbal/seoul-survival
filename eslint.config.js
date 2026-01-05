@@ -1,4 +1,5 @@
 import js from '@eslint/js'
+import globals from 'globals'
 import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import typescript from '@typescript-eslint/eslint-plugin'
@@ -20,9 +21,9 @@ export default [
         },
       },
       globals: {
-        browser: true,
-        es2021: true,
-        node: true,
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
       },
     },
     plugins: {
@@ -42,6 +43,7 @@ export default [
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prettier/prettier': 'warn',
+      'no-undef': 'off', // TypeScript handles this
     },
     settings: {
       react: {
