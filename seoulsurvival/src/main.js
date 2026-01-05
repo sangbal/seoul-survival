@@ -27,6 +27,7 @@ import { t, applyI18nToDOM, setLang, getLang, getInitialLang } from './i18n/inde
 import { GAME_VERSION } from './version.js'
 import * as NumberFormat from './utils/numberFormat.js'
 import * as Modal from './ui/modal.js'
+import * as Animations from './ui/animations.js'
 
 // ===== 밸런스 설정 import =====
 import {
@@ -145,6 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ======= 모달 시스템 초기화 =======
   Modal.initModal()
+
+  // ======= 애니메이션 시스템 초기화 =======
+  Animations.initAnimations(elWork)
 
   // 초기 UI 업데이트 (동적 텍스트 포함)
   // updateUI()는 나중에 setInterval로 주기적으로 호출되지만,
@@ -698,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
         building: '🏙️',
       }
       if (settings.particles) {
-        createFallingBuilding(buildingIcons[type] || '🏠', qty)
+        Animations.createFallingBuilding(buildingIcons[type] || '🏠', qty)
       }
 
       return { success: true, newCount }
@@ -6381,7 +6385,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 떨어지는 쿠키 애니메이션 생성 (설정에서 활성화된 경우만)
     if (settings.particles) {
-      createFallingCookie(clientX ?? 0, clientY ?? 0)
+      Animations.createFallingCookie(clientX ?? 0, clientY ?? 0)
     }
 
     cash += income
@@ -6433,7 +6437,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => elWork.classList.remove('click-effect'), 300)
 
     // 수익 증가 텍스트 애니메이션
-    showIncomeAnimation(income)
+    Animations.showIncomeAnimation(income)
 
     updateUI()
   }
@@ -6531,91 +6535,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const elResetBtnSettings = document.getElementById('resetBtnSettings')
   if (elResetBtnSettings) {
     elResetBtnSettings.addEventListener('click', resetGame)
-  }
-
-  // 떨어지는 지폐 애니메이션 함수 (노동 클릭 시)
-  function createFallingCookie(clickX, clickY) {
-    const cookie = document.createElement('div')
-    cookie.className = 'falling-cookie'
-    cookie.textContent = '💵' // 지폐만 떨어뜨리기
-
-    // 클릭 위치 기준으로 설정
-    cookie.style.left = clickX + Math.random() * 100 - 50 + 'px'
-    cookie.style.top = clickY - 100 + 'px'
-
-    document.body.appendChild(cookie)
-
-    // 애니메이션 완료 후 요소 제거
-    setTimeout(() => {
-      if (cookie.parentNode) {
-        cookie.parentNode.removeChild(cookie)
-      }
-    }, 2000)
-  }
-
-  // 떨어지는 건물 애니메이션 함수
-  function createFallingBuilding(icon, count) {
-    for (let i = 0; i < Math.min(count, 5); i++) {
-      // 최대 5개까지만 애니메이션
-      setTimeout(() => {
-        const building = document.createElement('div')
-        building.className = 'falling-cookie'
-        building.textContent = icon
-
-        // 화면 상단에서 랜덤하게 떨어뜨리기
-        building.style.left = Math.random() * window.innerWidth + 'px'
-        building.style.top = '-100px'
-
-        document.body.appendChild(building)
-
-        // 애니메이션 완료 후 요소 제거
-        setTimeout(() => {
-          if (building.parentNode) {
-            building.parentNode.removeChild(building)
-          }
-        }, 2000)
-      }, i * 200) // 0.2초 간격으로 순차 생성
-    }
-  }
-
-  // 수익 증가 애니메이션 함수 (개선된 float-up 효과)
-  function showIncomeAnimation(amount) {
-    const animation = document.createElement('div')
-    animation.className = 'income-increase'
-    const formattedAmount = NumberFormat.formatKoreanNumber(amount)
-    animation.textContent = t('ui.incomeFormat', { amount: formattedAmount })
-
-    // 노동 버튼 위치 기준으로 애니메이션 위치 설정
-    const workRect = elWork.getBoundingClientRect()
-    const containerRect = elWork.parentElement.getBoundingClientRect()
-
-    // 노동 버튼 위쪽에 랜덤하게 표시
-    animation.style.position = 'absolute'
-    animation.style.left = workRect.left - containerRect.left + Math.random() * 100 - 50 + 'px'
-    animation.style.top = workRect.top - containerRect.top - 50 + 'px'
-    animation.style.zIndex = '1000'
-    animation.style.pointerEvents = 'none'
-
-    elWork.parentElement.style.position = 'relative'
-    elWork.parentElement.appendChild(animation)
-
-    // 애니메이션 효과
-    animation.style.opacity = '1'
-    animation.style.transform = 'translateY(0px) scale(1)'
-
-    // 떠오르는 애니메이션
-    setTimeout(() => {
-      animation.style.transition = 'all 1.5s ease-out'
-      animation.style.opacity = '0'
-      animation.style.transform = 'translateY(-80px) scale(1.2)'
-    }, 100)
-
-    // 애니메이션 완료 후 제거
-    setTimeout(() => {
-      if (animation.parentElement) {
-        animation.parentElement.removeChild(animation)
-      }
-    }, 1600)
   }
 
   // 금융상품 거래 이벤트 (구매/판매 통합)
@@ -6818,7 +6737,7 @@ document.addEventListener('DOMContentLoaded', () => {
       addLog(`🗼 서울타워 완성.\n서울의 정상에 도달했다.\n이제야 진짜 시작인가?`)
 
       // 서울타워 이펙트 (하늘에서 이모지 떨어지는 애니메이션)
-      createTowerFallEffect()
+      Animations.createTowerFallEffect()
 
       // 엔딩 모달 표시 (자동 프레스티지 실행)
       Modal.showEndingModal(towers_lifetime, async () => {
@@ -6831,46 +6750,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 파티클 애니메이션
       if (settings.particles) {
-        createFallingBuilding('🗼', 1)
+        Animations.createFallingBuilding('🗼', 1)
       }
 
       updateUI()
       saveGame()
     })
-  }
-
-  // 서울타워 이펙트: 하늘에서 이모지 떨어지는 애니메이션
-  function createTowerFallEffect() {
-    // prefers-reduced-motion 체크
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReducedMotion) {
-      return // 애니메이션 생략
-    }
-
-    const emojiCount = 30 // 이모지 개수 증가 (15 → 30)
-    const duration = 2000 // 2초
-
-    for (let i = 0; i < emojiCount; i++) {
-      setTimeout(() => {
-        const tower = document.createElement('div')
-        tower.className = 'falling-tower'
-        tower.textContent = '🗼'
-
-        // 화면 상단에서 랜덤하게 떨어뜨리기
-        tower.style.left = Math.random() * window.innerWidth + 'px'
-        tower.style.top = '-100px'
-
-        // body에 직접 추가하여 모달 오버레이 위에 표시
-        document.body.appendChild(tower)
-
-        // 애니메이션 완료 후 요소 제거
-        setTimeout(() => {
-          if (tower.parentNode) {
-            tower.parentNode.removeChild(tower)
-          }
-        }, duration)
-      }, i * 40) // 0.04초 간격으로 순차 생성 (더 빠르게)
-    }
   }
 
   // 런(현재 게임) 보유 수량 일괄 초기화 함수
@@ -7149,7 +7034,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elWork.classList.add('auto-click-pulse')
       }
       // 수익 증가 애니메이션(초록색 돈 텍스트)도 함께 표시
-      showIncomeAnimation(income)
+      Animations.showIncomeAnimation(income)
 
       // 성과급은 오토클릭에도 적용
       if (
