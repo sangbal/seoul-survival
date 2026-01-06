@@ -3,6 +3,84 @@
 이 파일은 "매 세션 작업 내역/의도/주의사항"을 짧게 남기는 로그입니다.  
 새 프롬프트/새 창에서 시작할 때, AI는 이 파일의 **최근 항목**을 먼저 읽고 맥락을 복원합니다.
 
+## [2026-01-02] [mma-manager] v1.3.1 Cooldown Fix
+
+### 작업 목표
+
+- **P0 Fix**: 한번 경기를 뛴 선수가 영구적으로 출전 불가능해지는(Cooldown Stuck) 버그 수정.
+- **Rules Implement**: 기획안(README)에 정의된 승패별 차등 Cooldown 적용.
+
+### 주요 변경사항
+
+- **Engine** (`fightSim.ts`):
+  - **Variable Cooldown**: 승자(0), 판정패(0~1), KO/TKO패(1~2)로 차등 부여.
+  - **Cooldown Tick**: 이벤트 종료 시(`applyEventResultToState`) 모든 파이터의 Cooldown 1 감소 로직 추가.
+- **UI** (`FighterChip.tsx`):
+  - "12d" 등의 일(day) 단위 표기를 제거하고 정수(Tick) 단위로 심플하게 표시.
+
+### 검증 결과
+
+- **Browser Test**:
+  - 이벤트 시뮬레이션 후 패자에게 Cooldown(1) 부여 확인.
+  - 다음 이벤트 진행 후 해당 파이터의 Cooldown이 0(Ready)으로 감소하여 태그 사라짐 확인.
+
+---
+
+## [2026-01-02] [mma-manager] v1.3.0 Season End Pipeline
+
+### 작업 목표
+
+- **P0: 시즌 종료 루프 구현**: 단년도 플레이가 아닌 영구적(Perpetual) 시즌 진행 구조 완성.
+- **P1: 생태계 순환**: 은퇴/루키 생성 및 이적 시장을 통해 500명 로스터의 역동성 부여.
+- **P2: 승강 시스템**: 12개 단체의 성적(Power Score)에 따른 티어 변동 구현.
+
+### 주요 변경사항
+
+- **Engine** (`seasonEndEngine.ts`):
+  - **Retirements**: 35~45세 확률적 은퇴 -> 1:1 루키 생성 (500명 유지).
+  - **Transfers**: "Domino 1-Stage" (Step Up + Trade Down) 로직으로 상위 티어 이동 및 하위 티어 보강 구현.
+  - **Relegation**: Fanbase 기준 정렬 후 Tier 1~6 재배정 (변동폭 ±1 제한).
+- **UI** (`SeasonEnd.tsx`):
+  - 시즌 리포트 화면 구현 (은퇴/이적/승강 요약).
+  - "Start Next Season"으로 연도 증가 및 이벤트 리셋.
+
+### 검증 결과
+
+- **Browser Test**:
+  - `eventsCompleted` 강제 조작으로 시즌 엔드 진입.
+  - 리포트 화면 정상 출력 (은퇴자 목록, 이적 테이블 확인).
+  - 다음 시즌(2026) 진입 시 초기화 확인.
+
+---
+
+## [2026-01-01] [mma-manager] v1.2.3 Event Match Features
+
+### 작업 목표
+
+- **P0: 이벤트 스펙테이팅**: 텍스트 중계 및 실시간(처럼 보이는) 스탯 보드 구현.
+- **P1: 정밀 시뮬레이션**: 라운드별 시뮬레이션, 타격/그래플링 스탯 상세 생성.
+- **P2: 스토리 보너스**: 매치메이킹 Hype 계산에 랭킹 인접성(Story) 보너스 추가.
+
+### 주요 변경사항
+
+- **UI 컴포넌트 추가**:
+  - `SpectatorBoard.tsx`: Tapology 스타일의 상세 스탯(타격 부위별 성공률, 컨트롤 타임 등) 표시.
+  - `CommentaryFeed.tsx`: 실시간 로그 스크롤 뷰.
+- **시스템 개선**:
+  - `fightSim.ts`: 단순 승패 결정에서 라운드별 액션(Strike/Grapple) 시뮬레이션으로 고도화. `FightStats`, `FightLogEntry` 생성.
+  - `matchmakingEngine.ts`: `calculateMatchHype`에 랭킹(히든 레이팅) 인접 시 스토리 보너스 부여 로직 추가.
+  - `EventDetail.tsx`: `PREVIEW` -> `SPECTATING` (Playback) -> `RESULTS` 상태 머신 구현.
+
+### 검증 결과
+
+- **브라우저 QA**:
+  - 이벤트 확정 후 "Start Event" 진입 확인.
+  - 로그 스크롤 및 스탯 보드 렌더링 확인.
+  - "Skip Bout", "Next Fight" 등 진행 흐름 정상 동작.
+  - 결과 화면에서 재무(Net Profit) 및 승패 반영 확인.
+
+---
+
 ## [2025-12-31] [mma-manager] v1.2.2 Critical Fix: Nickname Rendering
 
 ### 작업 목표

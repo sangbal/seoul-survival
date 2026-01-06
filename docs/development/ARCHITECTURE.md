@@ -297,4 +297,8 @@ The game uses a consistent **Facility (Batch)** + **Worker (Speed)** model acros
   - `utils/season.ts`: 시즌 진행률 및 종료 조건 계산 (NaN 방지 안전 로직)
   - `utils/nickname.ts`: 유니크 닉네임 생성기 (영문/한글 지원, 중복 방지)
   - `ui/utils/fighterName.ts`: UI 렌더링 안전 헬퍼 (구버전/신버전 닉네임 호환 처리)
+  - `ui/components/SpectatorBoard.tsx`: 상세 파이트 스탯 보드
+  - `systems/fightSim.ts`: 라운드별 파이트 시뮬레이션 및 로그/스탯 생성
+  - `systems/seasonEndEngine.ts`: 시즌 종료 처리 (은퇴/루키/이적/승강)
+  - `ui/screens/SeasonEnd.tsx`: 시즌 리포트 및 연도 전환 UI
   - `i18n/`: 단순 키-값 매핑 기반 로컬라이제이션 (`ko.ts` 중심)
