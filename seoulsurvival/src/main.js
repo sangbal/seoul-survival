@@ -12,6 +12,7 @@ import { createUpgradeManager } from './systems/upgradeManager.js'
 import { getDomRefs } from './ui/domRefs.js'
 import { safeClass, safeHTML, safeText } from './ui/domUtils.js'
 import { updateStatsTab as updateStatsTabImpl } from './ui/statsTab.js'
+import { createInvestmentTab } from './ui/investmentTab.js'
 import { fetchCloudSave, upsertCloudSave } from '../../shared/cloudSave.js'
 import { getUser, onAuthStateChange, signInGoogle } from '../../shared/auth/core.js'
 import { isSupabaseConfigured } from '../../shared/auth/config.js'
@@ -144,31 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ======= 모달 시스템 초기화 =======
   Modal.initModal()
-
-  // ======= 애니메이션 시스템 초기화 =======
-  Animations.initAnimations(elWork)
-
-  // ======= 일기장 시스템 초기화 =======
-  Diary.initDiary(elLog, { gameStartTime, sessionStartTime })
-
-  // ======= 리더보드 UI 시스템 초기화 =======
-  LeaderboardUI.initLeaderboardUI(() => ({
-    playerNickname,
-    cash,
-    calculateTotalAssetValue,
-    sessionStartTime,
-    totalPlayTime,
-    towers_lifetime,
-    __IS_DEV__,
-  }))
-
-  // 초기 UI 업데이트 (동적 텍스트 포함)
-  // updateUI()는 나중에 setInterval로 주기적으로 호출되지만,
-  // 초기 로드 시에도 한 번 호출하여 모든 텍스트가 올바르게 표시되도록 함
-  setTimeout(() => {
-    updateUI()
-    updateProductLockStates()
-  }, 100)
 
   // ======= fixed header 높이만큼 본문 상단 여백 자동 보정 =======
   // 모바일에서 헤더가 2줄로 늘어나면(.statbar 래핑) 본문 상단 요소(직급 등)가 헤더에 가려질 수 있어,
@@ -676,77 +652,6 @@ document.addEventListener('DOMContentLoaded', () => {
         element.classList.remove(className)
       }
     }
-  }
-
-  // 구매/판매 통합 함수
-  function handleTransaction(category, type, currentCount) {
-    const qty = purchaseQuantity
-
-    if (purchaseMode === 'buy') {
-      // 구매 로직
-      const cost =
-        category === 'financial'
-          ? getFinancialCost(type, currentCount) * qty
-          : getPropertyCost(type, currentCount, qty)
-
-      if (cash < cost) {
-        Diary.addLog(t('msg.insufficientFunds', { amount: NumberFormat.formatKoreanNumber(cost) }))
-        return { success: false, newCount: currentCount }
-      }
-
-      cash -= cost
-      const newCount = currentCount + qty
-      const unit = category === 'financial' ? t('ui.unit.count') : t('ui.unit.property')
-      const productName = getProductName(type)
-      Diary.addLog(t('msg.purchased', { product: productName, qty, unit, count: newCount }))
-
-      // 구매 성공 시 떨어지는 애니메이션
-      const buildingIcons = {
-        deposit: '💰',
-        savings: '🏦',
-        bond: '📈',
-        usStock: '🇺🇸',
-        crypto: '₿',
-        villa: '🏠',
-        officetel: '🏢',
-        apartment: '🏘️',
-        shop: '🏪',
-        building: '🏙️',
-      }
-      if (settings.particles) {
-        Animations.createFallingBuilding(buildingIcons[type] || '🏠', qty)
-      }
-
-      return { success: true, newCount }
-    } else if (purchaseMode === 'sell') {
-      // 판매 로직
-      if (currentCount < qty) {
-        Diary.addLog(t('msg.insufficientQuantity', { count: currentCount }))
-        return { success: false, newCount: currentCount }
-      }
-
-      const sellPrice =
-        category === 'financial'
-          ? getFinancialSellPrice(type, currentCount) * qty
-          : getPropertySellPrice(type, currentCount, qty)
-
-      cash += sellPrice
-      const newCount = currentCount - qty
-      const unit = category === 'financial' ? t('ui.unit.count') : t('ui.unit.property')
-      const productName = getProductName(type)
-      Diary.addLog(
-        t('msg.sold', {
-          product: productName,
-          qty,
-          unit,
-          amount: NumberFormat.formatKoreanNumber(sellPrice),
-          count: newCount,
-        })
-      )
-      return { success: true, newCount }
-    }
-
-    return { success: false, newCount: currentCount }
   }
 
   // ======= 상태 =======
@@ -1774,49 +1679,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tower: false,
   }
 
-  // 금융상품별 기본 수익률 (초당) - balance/financial.js에서 import됨
-  // 업그레이드로 변경 가능하도록 mutable copy 생성
-  const FINANCIAL_INCOME = { ...DEFAULT_FINANCIAL_INCOME }
-
-  // 부동산별 기본 수익률 (초당) - balance/property.js에서 import됨
-  // 업그레이드로 변경 가능하도록 mutable copy 생성
-  const BASE_RENT = { ...DEFAULT_BASE_RENT }
-
-  // NOTE:
-  // 일부 업그레이드는 구매 시 FINANCIAL_INCOME / BASE_RENT를 직접 변경한다.
-  // (예: "상가 수익 2배" -> BASE_RENT.shop *= 2)
-  // 그런데 저장/로드는 업그레이드 구매 상태만 복원하고, 중복 적용 버그를 피하려고
-  // 로드 시 effect 재실행을 막아둔 적이 있어, 재접속 후 수익이 줄어드는 현상이 발생할 수 있다.
-  // 해결: 기본 수익 테이블을 "초기값으로 리셋" 후, 수익 테이블에 영향을 주는 업그레이드만 1회 재적용(멱등).
-
-  function resetIncomeTablesToDefault() {
-    for (const k of Object.keys(DEFAULT_FINANCIAL_INCOME)) {
-      FINANCIAL_INCOME[k] = DEFAULT_FINANCIAL_INCOME[k]
-    }
-    for (const k of Object.keys(DEFAULT_BASE_RENT)) {
-      BASE_RENT[k] = DEFAULT_BASE_RENT[k]
-    }
-  }
-
-  function reapplyIncomeTableAffectingUpgradeEffects() {
-    resetIncomeTablesToDefault()
-
-    for (const upgrade of Object.values(UPGRADES)) {
-      if (!upgrade?.purchased || typeof upgrade.effect !== 'function') continue
-
-      // clickMultiplier/rentMultiplier 등 "저장되는 상태"에 대한 effect는 중복 적용 위험이 있어 제외한다.
-      // 반면 FINANCIAL_INCOME / BASE_RENT는 저장되지 않으므로, 여기에만 영향을 주는 업그레이드는 재적용이 필요하다.
-      const src = Function.prototype.toString.call(upgrade.effect)
-      const affectsIncomeTables = src.includes('FINANCIAL_INCOME') || src.includes('BASE_RENT')
-      if (!affectsIncomeTables) continue
-
-      try {
-        upgrade.effect()
-      } catch {
-        // 업그레이드 effect 실패는 무시(로드/진행 유지)
-      }
-    }
-  }
+  // Note: FINANCIAL_INCOME, BASE_RENT, resetIncomeTablesToDefault,
+  // reapplyIncomeTableAffectingUpgradeEffects는 gameState.js에서 이미 import됨
 
   // 업그레이드 배수
   let clickMultiplier = 1 // 노동 효율 배수
@@ -1836,49 +1700,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let careerLevel = 0 // 현재 커리어 레벨
   let totalLaborIncome = 0 // 총 노동 수익
 
-  // 직급별 배경 이미지 배열 (Vite asset import)
-  const careerBgImages = [
-    workBg01,
-    workBg02,
-    workBg03,
-    workBg04,
-    workBg05,
-    workBg06,
-    workBg07,
-    workBg08,
-    workBg09,
-    workBg10,
-  ]
-
-  // CAREER_LEVELS: balance/career.js에서 import된 CAREER_BALANCE에 bgImage 병합
-  const CAREER_LEVELS = CAREER_BALANCE.map((level, idx) => ({
-    ...level,
-    bgImage: careerBgImages[idx],
-  }))
+  // Note: CAREER_LEVELS는 gameState.js에서 이미 bgImage와 함께 import됨
 
   // 직급 이름 가져오기 함수
   function getCareerName(level) {
     if (level < 0 || level >= CAREER_LEVELS.length) return ''
     return t(CAREER_LEVELS[level].nameKey)
-  }
-
-  // 상품 이름 가져오기 함수
-  function getProductName(type) {
-    const productKeys = {
-      deposit: 'product.deposit',
-      savings: 'product.savings',
-      bond: 'product.bond',
-      usStock: 'product.usStock',
-      crypto: 'product.crypto',
-      villa: 'property.villa',
-      officetel: 'property.officetel',
-      apartment: 'property.apartment',
-      shop: 'property.shop',
-      building: 'property.building',
-      tower: 'property.tower',
-    }
-    const key = productKeys[type]
-    return key ? t(key) : type
   }
 
   // 가격은 이제 동적으로 계산됨 (getPropertyCost 함수 사용)
@@ -2277,6 +2104,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 업그레이드 관련 (구형 DOM 제거됨 - 새로운 Cookie Clicker 스타일 사용)
 
+  // ======= 애니메이션 시스템 초기화 (DOM 요소 선언 후) =======
+  Animations.initAnimations(elWork)
+
   // ======= 유틸 =======
   function getTotalFinancialProducts() {
     return deposits + savings + bonds + usStocks + cryptos
@@ -2284,84 +2114,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getTotalProperties() {
     return villas + officetels + apartments + shops + buildings
-  }
-
-  // ======= 순차 해금 시스템 =======
-  function isProductUnlocked(productName) {
-    const unlockConditions = {
-      // 금융상품
-      deposit: () => true, // 항상 해금
-      savings: () => deposits >= 1, // 예금 1개 필요
-      bond: () => savings >= 1, // 적금 1개 필요
-      usStock: () => bonds >= 1, // 국내주식 1개 필요
-      crypto: () => usStocks >= 1, // 미국주식 1개 필요
-
-      // 부동산
-      villa: () => cryptos >= 1, // 코인 1개 필요
-      officetel: () => villas >= 1, // 빌라 1개 필요
-      apartment: () => officetels >= 1, // 오피스텔 1개 필요
-      shop: () => apartments >= 1, // 아파트 1개 필요
-      building: () => shops >= 1, // 상가 1개 필요
-      tower: () => careerLevel >= 9 && buildings >= 1, // CEO 달성 + 빌딩 1개 이상
-    }
-
-    return unlockConditions[productName] ? unlockConditions[productName]() : false
-  }
-
-  function checkNewUnlocks(productName) {
-    const unlockMessages = {
-      deposit: { next: 'savings', msg: '🔓 적금이 해금되었습니다!' },
-      savings: { next: 'bond', msg: '🔓 국내주식이 해금되었습니다!' },
-      bond: { next: 'usStock', msg: '🔓 미국주식이 해금되었습니다!' },
-      usStock: { next: 'crypto', msg: '🔓 코인이 해금되었습니다!' },
-      crypto: { next: 'villa', msg: '🔓 빌라가 해금되었습니다!' },
-      villa: { next: 'officetel', msg: '🔓 오피스텔이 해금되었습니다!' },
-      officetel: { next: 'apartment', msg: '🔓 아파트가 해금되었습니다!' },
-      apartment: { next: 'shop', msg: '🔓 상가가 해금되었습니다!' },
-      shop: { next: 'building', msg: '🔓 빌딩이 해금되었습니다!' },
-      building: { next: 'tower', msg: '🔓 서울타워가 해금되었습니다!' },
-    }
-
-    const unlock = unlockMessages[productName]
-    if (!unlock) return
-
-    // 버그 수정: 이미 해금 기록이 있으면 스킵
-    if (unlockedProducts[unlock.next]) return
-
-    // 해금 조건을 충족했는지 확인
-    if (!isProductUnlocked(unlock.next)) return
-
-    // 이미 보유하고 있는 상품은 해금 로그를 출력하지 않음 (중복 방지)
-    const productCounts = {
-      savings: savings,
-      bond: bonds,
-      usStock: usStocks,
-      crypto: cryptos,
-      villa: villas,
-      officetel: officetels,
-      apartment: apartments,
-      shop: shops,
-      building: buildings,
-      tower: towers_run,
-    }
-
-    // 이미 보유하고 있으면 해금 로그를 출력하지 않음 (타워는 수량 상품이지만 체크)
-    if (productCounts[unlock.next] !== undefined && productCounts[unlock.next] > 0) {
-      unlockedProducts[unlock.next] = true // 해금 상태만 기록
-      return
-    }
-
-    // 새로 해금된 경우에만 로그 출력 및 애니메이션
-    unlockedProducts[unlock.next] = true
-    Diary.addLog(unlock.msg)
-
-    // 해금 애니메이션
-    const itemId = unlock.next + 'Item'
-    const itemElement = document.getElementById(itemId)
-    if (itemElement) {
-      itemElement.classList.add('just-unlocked')
-      setTimeout(() => itemElement.classList.remove('just-unlocked'), 1000)
-    }
   }
 
   // (단순화) 랜덤 변동 제거: 초당 수익은 예측 가능하게 유지하고,
@@ -2436,110 +2188,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elAutoWorkIndicator) {
       elAutoWorkIndicator.style.display = autoClickEnabled ? '' : 'none'
     }
-  }
-
-  // 시장 이벤트 시작
-  function startMarketEvent() {
-    const event = MARKET_EVENTS[Math.floor(Math.random() * MARKET_EVENTS.length)]
-    currentMarketEvent = event
-    marketEventEndTime = Date.now() + event.duration
-
-    Diary.addLog(
-      t('msg.eventStarted', { name: event.name, duration: Math.floor(event.duration / 1000) })
-    )
-    Diary.addLog(t('msg.eventDescription', { description: event.description }))
-    showMarketEventNotification(event)
-  }
-
-  // 시장 이벤트 알림 표시
-  function showMarketEventNotification(event) {
-    const notification = document.createElement('div')
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${event.color};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        font-weight: bold;
-        z-index: 1000;
-        animation: slideIn 0.5s ease-out;
-        max-width: 300px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      `
-
-    // 상품별 효과 표시
-    let effectsText = ''
-    if (event.effects.financial) {
-      const financialEffects = Object.entries(event.effects.financial)
-        .filter(([_, multiplier]) => multiplier !== 1.0)
-        .map(([product, multiplier]) => {
-          const m = Math.round(multiplier * 10) / 10
-          return `${getProductName(product)} x${String(m).replace(/\.0$/, '')}`
-        })
-      if (financialEffects.length > 0) {
-        effectsText += `💰 ${financialEffects.join(', ')}\n`
-      }
-    }
-
-    if (event.effects.property) {
-      const propertyEffects = Object.entries(event.effects.property)
-        .filter(([_, multiplier]) => multiplier !== 1.0)
-        .map(([product, multiplier]) => {
-          const productNames = {
-            villa: getProductName('villa'),
-            officetel: getProductName('officetel'),
-            apartment: getProductName('apartment'),
-            shop: getProductName('shop'),
-            building: getProductName('building'),
-          }
-          const m = Math.round(multiplier * 10) / 10
-          return `${productNames[product]} x${String(m).replace(/\.0$/, '')}`
-        })
-      if (propertyEffects.length > 0) {
-        effectsText += `🏠 ${propertyEffects.join(', ')}`
-      }
-    }
-
-    const durationSec = Math.floor((event.duration ?? 0) / 1000)
-    notification.innerHTML = `
-        <div style="font-size: 16px; margin-bottom: 6px;">📈 ${event.name}</div>
-        <div style="font-size: 11px; opacity: 0.95; margin-bottom: 8px;">지속: ${durationSec}초</div>
-        <div style="font-size: 12px; opacity: 0.9;">${event.description}</div>
-        ${effectsText ? `<div style="font-size: 11px; margin-top: 8px; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px;">${effectsText}</div>` : ''}
-      `
-
-    document.body.appendChild(notification)
-
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.parentElement.removeChild(notification)
-      }
-    }, 5000)
-  }
-
-  // 시장 이벤트 체크
-  function checkMarketEvent() {
-    if (marketEventEndTime > 0 && Date.now() >= marketEventEndTime) {
-      currentMarketEvent = null
-      marketEventEndTime = 0
-      Diary.addLog(t('msg.eventEnded'))
-    }
-  }
-
-  // 현재 시장 이벤트 효과 적용
-  function getMarketEventMultiplier(type, category) {
-    if (!currentMarketEvent || !currentMarketEvent.effects) {
-      return 1.0
-    }
-
-    const effects = currentMarketEvent.effects[category]
-    if (!effects || !effects[type]) {
-      return 1.0
-    }
-
-    return effects[type]
   }
 
   // (단순화) 리스크 UI 제거
@@ -3180,7 +2828,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // (버그픽스) 수익 테이블(FINANCIAL_INCOME/BASE_RENT)에만 영향을 주는 업그레이드 효과는
       // 저장값으로 복원되지 않으므로, 기본값으로 리셋 후 1회 재적용하여 재접속 시 수익이 줄어드는 문제를 방지한다.
-      reapplyIncomeTableAffectingUpgradeEffects()
+      reapplyIncomeTableAffectingUpgradeEffects(UPGRADES)
 
       // 시장 이벤트 복원
       marketMultiplier = data.marketMultiplier || 1
@@ -3240,8 +2888,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 모달이 완전히 닫힌 후 프레스티지 실행 (DOM 안정화 대기)
         setTimeout(async () => {
           try {
-            // 초기화 진행 메시지
-            Diary.addLog(t('msg.gameReset'))
+            // 초기화 진행 메시지 (diary가 초기화되었을 때만 로그)
+            if (elLog && typeof Diary.addLog === 'function') {
+              Diary.addLog(t('msg.gameReset'))
+            }
             console.log('✅ User confirmed reset (A안: 수동 프레스티지)') // 디버깅용
 
             // A안: performAutoPrestige() 호출로 런 상태만 초기화
@@ -3270,22 +2920,6 @@ document.addEventListener('DOMContentLoaded', () => {
         secondaryLabel: t('button.cancel'),
       }
     )
-  }
-
-  // 구매 완료 시 반짝 효과 함수
-  function showPurchaseSuccess(element) {
-    // 기존 클래스 제거
-    element.classList.remove('purchase-success')
-
-    // 강제 리플로우
-    void element.offsetHeight
-
-    // 새 클래스 추가
-    element.classList.add('purchase-success')
-
-    setTimeout(() => {
-      element.classList.remove('purchase-success')
-    }, 600)
   }
 
   // 설정 저장 함수
@@ -4308,7 +3942,9 @@ document.addEventListener('DOMContentLoaded', () => {
       updateUpgradeAffordability()
 
       // 순차 해금 시스템 - 잠금 상태 업데이트
-      updateProductLockStates()
+      if (typeof updateProductLockStates === 'function') {
+        updateProductLockStates()
+      }
 
       // 통계 탭 업데이트
       updateStatsTab()
@@ -4319,137 +3955,123 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // [투자] 섹션 각 상품에 현재 시장 이벤트 배수(xN.N) 배지 + 행 하이라이트를 표시합니다.
-  // - 배수 === 1.0이면 배지 숨김/하이라이트 해제
-  // - 배수 > 1.0: bull(연두), 배수 < 1.0: bear(핑크)
-  let __marketImpactCache = null
-  function updateInvestmentMarketImpactUI() {
-    try {
-      const now = Date.now()
-      const isEventActive = !!(currentMarketEvent && marketEventEndTime > now)
-      const remainingSec = isEventActive
-        ? Math.max(0, Math.ceil((marketEventEndTime - now) / 1000))
-        : 0
+  // ======= 투자 탭 UI 시스템 초기화 =======
+  const investmentTab = createInvestmentTab({
+    // State getters/setters
+    getCash: () => cash,
+    setCash: newCash => {
+      cash = newCash
+    },
+    getPurchaseMode: () => purchaseMode,
+    getPurchaseQuantity: () => purchaseQuantity,
+    getSettings: () => settings,
+    getCurrentMarketEvent: () => currentMarketEvent,
+    getMarketEventEndTime: () => marketEventEndTime,
+    setCurrentMarketEvent: event => {
+      currentMarketEvent = event
+    },
+    setMarketEventEndTime: time => {
+      marketEventEndTime = time
+    },
+    getCareerLevel: () => careerLevel,
 
-      // 투자 섹션 상단에 이벤트명/잔여시간 표시
-      const marketEventBar = document.getElementById('marketEventBar')
-      if (marketEventBar) {
-        if (!isEventActive) {
-          marketEventBar.classList.remove('is-visible')
-          marketEventBar.textContent = ''
-        } else {
-          marketEventBar.classList.add('is-visible')
-          const evName = currentMarketEvent?.name
-            ? String(currentMarketEvent.name)
-            : t('ui.marketEvent')
-          const seconds = Math.floor((marketEventEndTime - now) / 1000)
-          const secText =
-            seconds >= 0 ? `${seconds}${t('ui.second', {}, '초')}` : `0${t('ui.second', {}, '초')}`
-          // 영향 요약(배수≠1 항목 5개 이내)
-          const summarize = (effects, names) => {
-            if (!effects) return []
-            return Object.entries(effects)
-              .filter(([, m]) => m !== 1.0)
-              .slice(0, 5)
-              .map(
-                ([k, m]) =>
-                  `${names[k] ?? k} x${(Math.round(m * 10) / 10).toString().replace(/\.0$/, '')}`
-              )
+    // Product counts (getters/setters)
+    getDeposits: () => deposits,
+    setDeposits: count => {
+      deposits = count
+    },
+    getSavings: () => savings,
+    setSavings: count => {
+      savings = count
+    },
+    getBonds: () => bonds,
+    setBonds: count => {
+      bonds = count
+    },
+    getUsStocks: () => usStocks,
+    setUsStocks: count => {
+      usStocks = count
+    },
+    getCryptos: () => cryptos,
+    setCryptos: count => {
+      cryptos = count
+    },
+    getVillas: () => villas,
+    setVillas: count => {
+      villas = count
+    },
+    getOfficetels: () => officetels,
+    setOfficetels: count => {
+      officetels = count
+    },
+    getApartments: () => apartments,
+    setApartments: count => {
+      apartments = count
+    },
+    getShops: () => shops,
+    setShops: count => {
+      shops = count
+    },
+    getBuildings: () => buildings,
+    setBuildings: count => {
+      buildings = count
+    },
+    getTower: () => towers_run,
+    setTower: count => {
+      towers_run = count
+    },
+
+    // Helper functions
+    getFinancialCost,
+    getPropertyCost,
+    getFinancialSellPrice,
+    getPropertySellPrice,
+    updateUI,
+
+    // Constants
+    CAREER_LEVELS,
+    MARKET_EVENTS,
+  })
+
+  // Destructure functions from investmentTab
+  const {
+    getProductName,
+    isProductUnlocked,
+    checkNewUnlocks,
+    handleTransaction,
+    showPurchaseSuccess,
+    getMarketEventMultiplier,
+    startMarketEvent,
+    showMarketEventNotification,
+    checkMarketEvent,
+    updateInvestmentMarketImpactUI,
+    updateProductLockStates,
+    updateButton,
+    initInvestmentEventListeners,
+  } = investmentTab
+
+  // ======= 통계 섹션 접기/펼치기 기능 (TDZ 방지를 위해 여기서 선언) =======
+  let statsCollapsibleInitialized = false
+  function initStatsCollapsible() {
+    if (statsCollapsibleInitialized) return
+    statsCollapsibleInitialized = true
+
+    const statsTab = document.getElementById('statsTab')
+    if (statsTab) {
+      statsTab.addEventListener('click', e => {
+        const toggle = e.target.closest('.stats-toggle')
+        const toggleIcon = e.target.closest('.toggle-icon')
+        if (toggle || toggleIcon) {
+          const section = (toggle || toggleIcon).closest('.stats-section')
+          if (section && section.classList.contains('collapsible')) {
+            const achievementGrid = section.querySelector('#achievementGrid')
+            if (achievementGrid) return
+            section.classList.toggle('collapsed')
+            e.preventDefault()
+            e.stopPropagation()
           }
-          const finNames = {
-            deposit: getProductName('deposit'),
-            savings: getProductName('savings'),
-            bond: getProductName('bond'),
-            usStock: getProductName('usStock'),
-            crypto: getProductName('crypto'),
-          }
-          const propNames = {
-            villa: getProductName('villa'),
-            officetel: getProductName('officetel'),
-            apartment: getProductName('apartment'),
-            shop: getProductName('shop'),
-            building: getProductName('building'),
-          }
-          const fin = summarize(currentMarketEvent?.effects?.financial, finNames)
-          const prop = summarize(currentMarketEvent?.effects?.property, propNames)
-          const parts = [...fin, ...prop].slice(0, 5)
-          const hint = parts.length ? ` · ${parts.join(', ')}` : ''
-          marketEventBar.innerHTML = `📈 <b>${evName}</b> · ${t('ui.remaining')} <span class="good">${secText}</span>${hint}`
         }
-      }
-
-      if (!__marketImpactCache) {
-        const targets = [
-          // 금융
-          { rowId: 'depositItem', category: 'financial', type: 'deposit' },
-          { rowId: 'savingsItem', category: 'financial', type: 'savings' },
-          { rowId: 'bondItem', category: 'financial', type: 'bond' },
-          { rowId: 'usStockItem', category: 'financial', type: 'usStock' },
-          { rowId: 'cryptoItem', category: 'financial', type: 'crypto' },
-          // 부동산
-          { rowId: 'villaItem', category: 'property', type: 'villa' },
-          { rowId: 'officetelItem', category: 'property', type: 'officetel' },
-          { rowId: 'aptItem', category: 'property', type: 'apartment' },
-          { rowId: 'shopItem', category: 'property', type: 'shop' },
-          { rowId: 'buildingItem', category: 'property', type: 'building' },
-        ]
-
-        __marketImpactCache = targets
-          .map(t => {
-            const row = document.getElementById(t.rowId)
-            if (!row) return null
-
-            // 버튼 왼쪽에 배지 삽입(시야성 최고)
-            const btn = row.querySelector('button.btn')
-            if (!btn) return null
-
-            let badge = row.querySelector('.event-mult-badge')
-            if (!badge) {
-              badge = document.createElement('span')
-              badge.className = 'event-mult-badge'
-              badge.setAttribute('aria-hidden', 'true')
-              row.insertBefore(badge, btn)
-            }
-
-            return { ...t, row, badge }
-          })
-          .filter(Boolean)
-      }
-
-      for (const t of __marketImpactCache) {
-        const mult = isEventActive ? getMarketEventMultiplier(t.type, t.category) : 1.0
-        const isNeutral = Math.abs(mult - 1.0) < 1e-9
-
-        // reset
-        t.row.classList.remove('event-bull', 'event-bear')
-        t.badge.classList.remove('is-visible', 'is-bull', 'is-bear')
-        t.badge.removeAttribute('title')
-
-        if (!isEventActive || isNeutral) {
-          t.badge.textContent = ''
-          continue
-        }
-
-        const multNum = Math.round(mult * 10) / 10
-        const multText = `x${multNum.toFixed(1).replace(/\.0$/, '')}`
-
-        t.badge.textContent = multText
-        t.badge.classList.add('is-visible')
-
-        if (mult > 1.0) {
-          t.row.classList.add('event-bull')
-          t.badge.classList.add('is-bull')
-        } else {
-          t.row.classList.add('event-bear')
-          t.badge.classList.add('is-bear')
-        }
-
-        // 툴팁: 이벤트명 + 남은 시간 + 배수
-        const evName = currentMarketEvent?.name ? String(currentMarketEvent.name) : '시장 이벤트'
-        t.badge.title = `${evName} · 남은 ${remainingSec}초 · ${multText}`
-      }
-    } catch (e) {
-      // UI 보조 기능이므로 실패해도 게임 진행은 유지
+      })
     }
   }
 
@@ -4457,134 +4079,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     initStatsCollapsible()
   }, 100)
-
-  // 순차 해금 시스템 - 잠금 상태 업데이트
-  function updateProductLockStates() {
-    // 해금 조건 메시지
-    const unlockHints = {
-      savings: '예금 1개 필요',
-      bond: '적금 1개 필요',
-      usStock: '국내주식 1개 필요',
-      crypto: '미국주식 1개 필요',
-      villa: '코인 1개 필요',
-      officetel: '빌라 1채 필요',
-      apartment: '오피스텔 1채 필요',
-      shop: '아파트 1채 필요',
-      building: '상가 1채 필요',
-      tower: 'CEO 달성 및 빌딩 1개 이상 필요',
-    }
-
-    // 금융상품 잠금 상태
-    const savingsItem = document.getElementById('savingsItem')
-    const bondItem = document.getElementById('bondItem')
-
-    if (savingsItem) {
-      const isLocked = !isProductUnlocked('savings')
-      savingsItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        savingsItem.setAttribute('data-unlock-hint', unlockHints['savings'])
-      } else {
-        savingsItem.removeAttribute('data-unlock-hint')
-      }
-    }
-    if (bondItem) {
-      const isLocked = !isProductUnlocked('bond')
-      bondItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        bondItem.setAttribute('data-unlock-hint', unlockHints['bond'])
-      } else {
-        bondItem.removeAttribute('data-unlock-hint')
-      }
-    }
-
-    // 미국주식과 코인 잠금 상태
-    const usStockItem = document.getElementById('usStockItem')
-    const cryptoItem = document.getElementById('cryptoItem')
-
-    if (usStockItem) {
-      const isLocked = !isProductUnlocked('usStock')
-      usStockItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        usStockItem.setAttribute('data-unlock-hint', unlockHints['usStock'])
-      } else {
-        usStockItem.removeAttribute('data-unlock-hint')
-      }
-    }
-    if (cryptoItem) {
-      const isLocked = !isProductUnlocked('crypto')
-      cryptoItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        cryptoItem.setAttribute('data-unlock-hint', unlockHints['crypto'])
-      } else {
-        cryptoItem.removeAttribute('data-unlock-hint')
-      }
-    }
-
-    // 부동산 잠금 상태
-    const villaItem = document.getElementById('villaItem')
-    const officetelItem = document.getElementById('officetelItem')
-    const aptItem = document.getElementById('aptItem')
-    const shopItem = document.getElementById('shopItem')
-    const buildingItem = document.getElementById('buildingItem')
-
-    if (villaItem) {
-      const isLocked = !isProductUnlocked('villa')
-      villaItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        villaItem.setAttribute('data-unlock-hint', unlockHints['villa'])
-      } else {
-        villaItem.removeAttribute('data-unlock-hint')
-      }
-    }
-    if (officetelItem) {
-      const isLocked = !isProductUnlocked('officetel')
-      officetelItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        officetelItem.setAttribute('data-unlock-hint', unlockHints['officetel'])
-      } else {
-        officetelItem.removeAttribute('data-unlock-hint')
-      }
-    }
-    if (aptItem) {
-      const isLocked = !isProductUnlocked('apartment')
-      aptItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        aptItem.setAttribute('data-unlock-hint', unlockHints['apartment'])
-      } else {
-        aptItem.removeAttribute('data-unlock-hint')
-      }
-    }
-    if (shopItem) {
-      const isLocked = !isProductUnlocked('shop')
-      shopItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        shopItem.setAttribute('data-unlock-hint', unlockHints['shop'])
-      } else {
-        shopItem.removeAttribute('data-unlock-hint')
-      }
-    }
-    if (buildingItem) {
-      const isLocked = !isProductUnlocked('building')
-      buildingItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        buildingItem.setAttribute('data-unlock-hint', unlockHints['building'])
-      } else {
-        buildingItem.removeAttribute('data-unlock-hint')
-      }
-    }
-
-    // 서울타워 잠금 상태
-    const towerItem = document.getElementById('towerItem')
-    if (towerItem) {
-      const isLocked = !isProductUnlocked('tower')
-      towerItem.classList.toggle('locked', isLocked)
-      if (isLocked) {
-        towerItem.setAttribute('data-unlock-hint', unlockHints['tower'])
-      } else {
-        towerItem.removeAttribute('data-unlock-hint')
-      }
-    }
-  }
 
   // ======= 구매 수량 선택 시스템 =======
   elBuyMode.addEventListener('click', () => {
@@ -4670,56 +4164,6 @@ document.addEventListener('DOMContentLoaded', () => {
       elToggleProperties.classList.add('collapsed')
     }
   })
-
-  // 버튼 텍스트 업데이트 함수
-  function updateButtonTexts() {
-    const isBuy = purchaseMode === 'buy'
-    const qty = purchaseQuantity
-
-    // 금융상품 버튼 업데이트
-    updateButton(elBuyDeposit, 'financial', 'deposit', deposits, isBuy, qty)
-    updateButton(elBuySavings, 'financial', 'savings', savings, isBuy, qty)
-    updateButton(elBuyBond, 'financial', 'bond', bonds, isBuy, qty)
-    updateButton(elBuyUsStock, 'financial', 'usStock', usStocks, isBuy, qty)
-    updateButton(elBuyCrypto, 'financial', 'crypto', cryptos, isBuy, qty)
-
-    // 부동산 버튼 업데이트
-    updateButton(elBuyVilla, 'property', 'villa', villas, isBuy, qty)
-    updateButton(elBuyOfficetel, 'property', 'officetel', officetels, isBuy, qty)
-    updateButton(elBuyApt, 'property', 'apartment', apartments, isBuy, qty)
-    updateButton(elBuyShop, 'property', 'shop', shops, isBuy, qty)
-    updateButton(elBuyBuilding, 'property', 'building', buildings, isBuy, qty)
-  }
-
-  // 개별 버튼 텍스트 및 스타일 업데이트 함수
-  function updateButton(button, category, type, count, isBuy, qty) {
-    if (!button) return
-
-    const price = isBuy
-      ? category === 'financial'
-        ? getFinancialCost(type, count, qty)
-        : getPropertyCost(type, count, qty)
-      : category === 'financial'
-        ? getFinancialSellPrice(type, count, qty)
-        : getPropertySellPrice(type, count, qty)
-
-    const modeText = isBuy ? t('button.buy') : t('button.sell')
-    const qtyText = qty > 1 ? ` x${qty}` : ''
-
-    // 버튼 텍스트: 가격 제거, 모드와 수량만 표시
-    button.textContent = `${modeText}${qtyText}`
-
-    // 버튼 색상 및 활성화 상태
-    if (isBuy) {
-      button.style.background = ''
-      button.disabled = cash < price
-    } else {
-      // 판매 모드: 판매 가능하면 빨간색, 불가능하면 회색
-      const canSell = count >= qty
-      button.style.background = canSell ? 'var(--bad)' : 'var(--muted)'
-      button.disabled = !canSell
-    }
-  }
 
   // ======= 액션 =======
   function handleWorkAction(clientX, clientY) {
@@ -4892,227 +4336,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 금융상품 거래 이벤트 (구매/판매 통합)
-  elBuyDeposit.addEventListener('click', () => {
-    if (!isProductUnlocked('deposit')) {
-      Diary.addLog('❌ 예금은 아직 잠겨있습니다.')
-      return
-    }
-    const result = handleTransaction('financial', 'deposit', deposits)
-    if (result.success) {
-      deposits = result.newCount
-      showPurchaseSuccess(elBuyDeposit)
-      checkNewUnlocks('deposit') // 해금 체크
-    }
-    updateUI()
+  // 투자 탭 이벤트 리스너 초기화 (investmentTab 모듈에서 관리)
+  initInvestmentEventListeners({
+    elBuyDeposit,
+    elBuySavings,
+    elBuyBond,
+    elBuyUsStock,
+    elBuyCrypto,
+    elBuyVilla,
+    elBuyOfficetel,
+    elBuyApartment: elBuyApt,
+    elBuyShop,
+    elBuyBuilding,
+    elBuyTower,
   })
-
-  elBuySavings.addEventListener('click', () => {
-    if (!isProductUnlocked('savings')) {
-      Diary.addLog(t('msg.unlock.savings'))
-      return
-    }
-    const result = handleTransaction('financial', 'savings', savings)
-    if (result.success) {
-      savings = result.newCount
-      showPurchaseSuccess(elBuySavings)
-      checkNewUnlocks('savings') // 해금 체크
-    }
-    updateUI()
-  })
-
-  elBuyBond.addEventListener('click', () => {
-    if (!isProductUnlocked('bond')) {
-      Diary.addLog(t('msg.unlock.bond'))
-      return
-    }
-    const result = handleTransaction('financial', 'bond', bonds)
-    if (result.success) {
-      bonds = result.newCount
-      showPurchaseSuccess(elBuyBond)
-      checkNewUnlocks('bond') // 해금 체크
-    }
-    updateUI()
-  })
-
-  // 미국주식 구매 버튼
-  elBuyUsStock.addEventListener('click', () => {
-    if (!isProductUnlocked('usStock')) {
-      Diary.addLog('❌ 미국주식은 국내주식을 1개 이상 보유해야 해금됩니다.')
-      return
-    }
-    const result = handleTransaction('financial', 'usStock', usStocks)
-    if (result.success) {
-      usStocks = result.newCount
-      showPurchaseSuccess(elBuyUsStock)
-      checkNewUnlocks('usStock') // 해금 체크
-    }
-    updateUI()
-  })
-
-  // 코인 구매 버튼
-  elBuyCrypto.addEventListener('click', () => {
-    if (!isProductUnlocked('crypto')) {
-      Diary.addLog('❌ 코인은 미국주식을 1개 이상 보유해야 해금됩니다.')
-      return
-    }
-    const result = handleTransaction('financial', 'crypto', cryptos)
-    if (result.success) {
-      cryptos = result.newCount
-      showPurchaseSuccess(elBuyCrypto)
-      checkNewUnlocks('crypto') // 해금 체크
-    }
-    updateUI()
-  })
-
-  // 부동산 거래 이벤트 (구매/판매 통합)
-  elBuyVilla.addEventListener('click', () => {
-    if (!isProductUnlocked('villa')) {
-      Diary.addLog('❌ 빌라는 코인을 1개 이상 보유해야 해금됩니다.')
-      return
-    }
-    const result = handleTransaction('property', 'villa', villas)
-    if (result.success) {
-      villas = result.newCount
-      showPurchaseSuccess(elBuyVilla)
-      checkNewUnlocks('villa') // 해금 체크
-    }
-    updateUI()
-  })
-
-  elBuyOfficetel.addEventListener('click', () => {
-    if (!isProductUnlocked('officetel')) {
-      Diary.addLog('❌ 오피스텔은 빌라를 1개 이상 보유해야 해금됩니다.')
-      return
-    }
-    const result = handleTransaction('property', 'officetel', officetels)
-    if (result.success) {
-      officetels = result.newCount
-      showPurchaseSuccess(elBuyOfficetel)
-      checkNewUnlocks('officetel') // 해금 체크
-    }
-    updateUI()
-  })
-
-  elBuyApt.addEventListener('click', () => {
-    if (!isProductUnlocked('apartment')) {
-      Diary.addLog('❌ 아파트는 오피스텔을 1개 이상 보유해야 해금됩니다.')
-      return
-    }
-    const result = handleTransaction('property', 'apartment', apartments)
-    if (result.success) {
-      apartments = result.newCount
-      showPurchaseSuccess(elBuyApt)
-      checkNewUnlocks('apartment') // 해금 체크
-    }
-    updateUI()
-  })
-
-  elBuyShop.addEventListener('click', () => {
-    if (!isProductUnlocked('shop')) {
-      Diary.addLog('❌ 상가는 아파트를 1개 이상 보유해야 해금됩니다.')
-      return
-    }
-    const result = handleTransaction('property', 'shop', shops)
-    if (result.success) {
-      shops = result.newCount
-      showPurchaseSuccess(elBuyShop)
-      checkNewUnlocks('shop') // 해금 체크
-    }
-    updateUI()
-  })
-
-  elBuyBuilding.addEventListener('click', () => {
-    if (!isProductUnlocked('building')) {
-      Diary.addLog('❌ 빌딩은 상가를 1개 이상 보유해야 해금됩니다.')
-      return
-    }
-    const result = handleTransaction('property', 'building', buildings)
-    if (result.success) {
-      buildings = result.newCount
-      showPurchaseSuccess(elBuyBuilding)
-      checkNewUnlocks('building') // 해금 체크
-    }
-    updateUI()
-  })
-
-  // 서울타워 구매 (프레스티지)
-  if (elBuyTower) {
-    elBuyTower.addEventListener('click', async () => {
-      if (!isProductUnlocked('tower')) {
-        Diary.addLog('❌ 서울타워는 CEO 달성 및 빌딩 1개 이상 보유 시 해금됩니다.')
-        return
-      }
-
-      const towerCost = BASE_COSTS.tower
-      if (cash < towerCost) {
-        Diary.addLog(
-          `💸 자금이 부족합니다. (필요: ${NumberFormat.formatKoreanNumber(towerCost)}원)`
-        )
-        return
-      }
-
-      // 구매 처리
-      cash -= towerCost
-      towers_run += 1
-      towers_lifetime += 1
-
-      // 타워 구매 시점의 자산 계산 (리더보드 업데이트용)
-      // bigint 컬럼에 안전하게 저장하기 위해 정수로 변환 (0 바운딩)
-      const rawTotalAssetsAtPurchase = cash + calculateTotalAssetValue()
-      const totalAssetsAtPurchase = Math.max(0, Math.floor(rawTotalAssetsAtPurchase))
-
-      const currentSessionTime = Math.max(0, Math.floor(Date.now() - sessionStartTime))
-      const rawTotalPlayTimeMs = totalPlayTime + currentSessionTime
-      const totalPlayTimeMs = Math.max(0, Math.floor(rawTotalPlayTimeMs))
-
-      const towerCount = Math.max(0, Math.floor(towers_lifetime || 0))
-
-      // 리더보드 업데이트 (누적 타워 개수 사용, 즉시 업데이트)
-      if (playerNickname) {
-        try {
-          await updateLeaderboard(
-            playerNickname,
-            totalAssetsAtPurchase,
-            totalPlayTimeMs,
-            towerCount,
-            true // forceImmediate: 서울타워 구매는 즉시 업데이트
-          )
-          if (__IS_DEV__) {
-            console.log(
-              '리더보드: 서울타워 구매 시점 자산으로 업데이트 완료 (누적 타워:',
-              towers_lifetime,
-              ')'
-            )
-          }
-        } catch (error) {
-          console.error('리더보드 업데이트 실패:', error)
-        }
-      }
-
-      // 일기장 기록
-      Diary.addLog(`🗼 서울타워 완성.\n서울의 정상에 도달했다.\n이제야 진짜 시작인가?`)
-
-      // 서울타워 이펙트 (하늘에서 이모지 떨어지는 애니메이션)
-      Animations.createTowerFallEffect()
-
-      // 엔딩 모달 표시 (자동 프레스티지 실행)
-      Modal.showEndingModal(towers_lifetime, async () => {
-        try {
-          await performAutoPrestige('ending')
-        } catch (error) {
-          console.error('❌ 프레스티지 실행 중 오류:', error)
-        }
-      })
-
-      // 파티클 애니메이션
-      if (settings.particles) {
-        Animations.createFallingBuilding('🗼', 1)
-      }
-
-      updateUI()
-      saveGame()
-    })
-  }
 
   // 런(현재 게임) 보유 수량 일괄 초기화 함수
   // 상품 정의 리스트(FINANCIAL_INCOME, BASE_COSTS)를 순회하여 모든 보유 수량을 0으로 초기화
@@ -5429,7 +4666,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 초기 렌더 (async IIFE로 감싸서 await 사용 가능하게 함)
   ;(async () => {
+    console.log('[Main] Async IIFE started')
+    console.log('[Main] elLog element:', elLog)
+    console.log('[Main] gameStartTime:', gameStartTime, 'sessionStartTime:', sessionStartTime)
+
     const gameLoaded = loadGame() // 게임 데이터 불러오기 시도
+    console.log('[Main] Game loaded:', gameLoaded)
+    console.log('[Main] After loadGame - gameStartTime:', gameStartTime, 'sessionStartTime:', sessionStartTime)
+
+    // ======= 일기장 시스템 초기화 (loadGame 이후에 초기화하여 정확한 gameStartTime 사용) =======
+    if (elLog) {
+      console.log('[Main] Calling Diary.initDiary with:', { elLog, gameStartTime, sessionStartTime })
+      Diary.initDiary(elLog, { gameStartTime, sessionStartTime })
+    } else {
+      console.error('[Main] ❌ elLog element not found - diary system NOT initialized')
+      console.log('[Main] Trying to find log element again:', document.getElementById('log'))
+    }
 
     // 게임 로드 후 서버에서 최신 닉네임 동기화 (로그인 상태인 경우)
     try {
@@ -5485,6 +4737,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (elWorkArea && initialCareer && initialCareer.bgImage) {
     elWorkArea.style.backgroundImage = `url('${initialCareer.bgImage}')`
   }
+
+  // ======= 리더보드 UI 시스템 초기화 =======
+  LeaderboardUI.initLeaderboardUI(() => ({
+    playerNickname,
+    cash,
+    calculateTotalAssetValue,
+    sessionStartTime,
+    totalPlayTime,
+    towers_lifetime,
+    __IS_DEV__,
+  }))
+
+  // 초기 UI 업데이트 (동적 텍스트 포함)
+  updateUI()
+  updateProductLockStates()
 
   // 설정 탭 UI 초기화
   const elToggleParticles = document.getElementById('toggleParticles')
@@ -6158,38 +5425,6 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('✅ 수량 선택: 1개/10개/100개')
   console.log('💡 사용법: 상단 "구매/판매" 버튼으로 모드 전환 후 거래하세요!')
 
-  // ======= 통계 섹션 접기/펼치기 기능 =======
-  let statsCollapsibleInitialized = false
-  function initStatsCollapsible() {
-    if (statsCollapsibleInitialized) return
-    statsCollapsibleInitialized = true
-
-    // 이벤트 위임 사용 (동적으로 추가되는 요소도 처리)
-    const statsTab = document.getElementById('statsTab')
-    if (statsTab) {
-      statsTab.addEventListener('click', e => {
-        // toggle 아이콘이나 toggle 제목을 클릭했을 때
-        const toggle = e.target.closest('.stats-toggle')
-        const toggleIcon = e.target.closest('.toggle-icon')
-        if (toggle || toggleIcon) {
-          const section = (toggle || toggleIcon).closest('.stats-section')
-          // 업적 섹션은 접기 기능 제거 (항상 펼침 고정)
-          if (section && section.classList.contains('collapsible')) {
-            // 업적 섹션 체크: achievementGrid가 있으면 스킵
-            const achievementGrid = section.querySelector('#achievementGrid')
-            if (achievementGrid) {
-              // 업적 섹션은 토글하지 않음
-              return
-            }
-            section.classList.toggle('collapsed')
-            e.preventDefault()
-            e.stopPropagation()
-          }
-        }
-      })
-    }
-  }
-
   // ======= 성장 추적 데이터 저장 =======
   let hourlyEarningsHistory = [] // 최근 1시간 수익 기록
   let dailyEarningsHistory = [] // 최근 24시간 수익 기록
@@ -6454,14 +5689,18 @@ document.addEventListener('DOMContentLoaded', () => {
         buildingsLifetime +
         totalLaborIncome
 
-      safeText(
-        document.getElementById('totalAssets'),
-        NumberFormat.formatStatsNumber(totalAssets, settings)
-      )
-      safeText(
-        document.getElementById('totalEarnings'),
-        NumberFormat.formatStatsNumber(totalEarnings, settings)
-      )
+      console.log('[Stats] Updating - totalEarnings:', totalEarnings, 'totalAssets:', totalAssets)
+
+      const totalAssetsEl = document.getElementById('totalAssets')
+      const totalEarningsEl = document.getElementById('totalEarnings')
+
+      if (!totalAssetsEl || !totalEarningsEl) {
+        console.error('[Stats] Critical elements not found! totalAssets:', totalAssetsEl, 'totalEarnings:', totalEarningsEl)
+        return
+      }
+
+      safeText(totalAssetsEl, NumberFormat.formatStatsNumber(totalAssets, settings))
+      safeText(totalEarningsEl, NumberFormat.formatStatsNumber(totalEarnings, settings))
       // 통계 탭에서는 축약 표기/고정 소수점 규칙을 그대로 사용
       const perSecUnit = t('stats.unit.perSec')
       safeText(
@@ -6773,7 +6012,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // 8. 리더보드는 통계 탭이 활성화될 때만 업데이트 (updateUI에서 매번 호출하지 않음)
       // 리더보드 업데이트는 navBtns 이벤트 리스너에서 처리
     } catch (e) {
-      console.error('Stats tab update failed:', e)
+      console.error('[Stats] ❌ Stats tab update failed:', e)
+      console.error('[Stats] Error stack:', e.stack)
+      // Re-throw to make error visible in console
+      throw e
     }
   }
 

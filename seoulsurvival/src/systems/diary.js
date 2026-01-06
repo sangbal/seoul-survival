@@ -24,9 +24,11 @@ let sessionStartTimeRef = null
  * @param {number} timeRefs.sessionStartTimeRef - 세션 시작 시간
  */
 export function initDiary(logElement, timeRefs) {
+  console.log('[Diary] initDiary called with:', { logElement, timeRefs })
   elLog = logElement
-  gameStartTimeRef.gameStartTimeRef = timeRefs
-  sessionStartTimeRefRef = timeRefs.sessionStartTimeRef
+  gameStartTimeRef = timeRefs
+  sessionStartTimeRef = timeRefs.sessionStartTime
+  console.log('[Diary] After init:', { gameStartTimeRef, sessionStartTimeRef })
 }
 
 /**
@@ -72,6 +74,13 @@ export function addLog(text) {
   const timeStamp = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`
 
   function updateDiaryMeta() {
+    console.log('[Diary] updateDiaryMeta called, gameStartTimeRef:', gameStartTimeRef)
+
+    if (!gameStartTimeRef) {
+      console.error('[Diary] gameStartTimeRef is null in updateDiaryMeta! Diary not initialized.')
+      return
+    }
+
     const y = now.getFullYear()
     const m = pad2(now.getMonth() + 1)
     const d = pad2(now.getDate())
@@ -1370,5 +1379,11 @@ export function addLog(text) {
     `<span class="diary-voice">${voiceLine}</span>` +
     (infoLines.length ? `\n<span class="diary-info">${infoLines.join('\n')}</span>` : '')
   p.innerHTML = `<span class="diary-time">${timeStamp}</span>${bodyHtml}`
+
+  if (!elLog) {
+    console.error('[Diary] ❌ elLog is null in addLog! Cannot add log entry. Diary was not initialized.')
+    return
+  }
+
   elLog.prepend(p)
 }

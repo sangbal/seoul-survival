@@ -15,10 +15,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (footerMount) {
     renderFooter(footerMount);
   }
-  
-  // 계정 삭제 기능은 account/main.js의 로직을 재사용하거나 여기에 구현
-  // (현재는 account/main.js에서 처리)
+
+  // 계정 삭제 버튼 활성화 로직
+  initDeleteButtonLogic();
 });
+
+// 계정 삭제 버튼 활성화 로직
+function initDeleteButtonLogic() {
+  const deleteCheckbox = document.getElementById('delete-confirm-checkbox');
+  const deleteInput = document.getElementById('delete-confirm-input');
+  const deleteBtn = document.getElementById('delete-account-btn');
+
+  if (!deleteCheckbox || !deleteInput || !deleteBtn) return;
+
+  function updateDeleteButtonState() {
+    const isChecked = deleteCheckbox.checked;
+    const inputValue = deleteInput.value.trim();
+
+    // 체크박스가 체크되고 입력값이 "DELETE"일 때만 활성화
+    if (isChecked && inputValue === 'DELETE') {
+      deleteBtn.disabled = false;
+    } else {
+      deleteBtn.disabled = true;
+    }
+  }
+
+  // 이벤트 리스너 등록
+  deleteCheckbox.addEventListener('change', updateDeleteButtonState);
+  deleteInput.addEventListener('input', updateDeleteButtonState);
+
+  // 초기 상태 설정
+  updateDeleteButtonState();
+}
 
 // 헤더 계정 버튼 인증 UI 초기화 (account/main.js와 동일한 로직)
 async function initHeaderAuth() {

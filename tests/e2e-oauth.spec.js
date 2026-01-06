@@ -20,9 +20,9 @@ test.describe('OAuth E2E Tests', () => {
       // Login 버튼 확인
       const loginBtn = page.locator('button:has-text("Login"), #headerLoginBtn');
       await expect(loginBtn).toBeVisible();
-      
-      // Play Now 버튼 확인
-      const playNowBtn = page.locator('a:has-text("Play Now")');
+
+      // 메인 히어로 버튼 확인
+      const playNowBtn = page.locator('.btn-hero, a.btn-primary:has-text("SeoulSurvival Play")');
       await expect(playNowBtn).toBeVisible();
     });
   });
