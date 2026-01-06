@@ -59,4 +59,8 @@ playwright/.auth/user.json
 .env.local
 .env
 .env.*.local
+.env.mcp
+
+# MCP 설정 파일 (API 키 포함)
+mcp.json
 

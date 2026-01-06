@@ -1,0 +1,33 @@
+# Build outputs
+dist
+build
+
+# Dependencies
+node_modules
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE
+.vscode
+.idea
+
+# Git
+.git
+
+# Legacy code
+legacy
+mma-promotion-manager/backup
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Generated files
+coverage
+playwright-report
+test-results

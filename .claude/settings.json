@@ -1,0 +1,12 @@
+{
+  "allowedTools": [
+    "Bash(wsl*)",
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "WebFetch",
+    "WebSearch"
+  ]
+}
