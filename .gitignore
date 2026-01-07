@@ -61,6 +61,9 @@ playwright/.auth/user.json
 .env.*.local
 .env.mcp
 
-# MCP 설정 파일 (API 키 포함)
-mcp.json
+# Claude Code 로컬 설정 (개인 API 키, 토큰 포함)
+.claude/settings.local.json
+
+# MCP 설정 파일
+# .mcp.json은 환경변수 참조만 포함하므로 커밋 가능
 

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/mcp.json",
+  "mcpServers": {
+    "brave-search": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@brave/brave-search-mcp-server"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "description": "웹 검색 (최신 라이브러리 문서, API 레퍼런스)"
+    },
+    "filesystem": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-filesystem", "."],
+      "description": "로컬 파일시스템 접근 (읽기/쓰기/디렉토리 관리)"
+    },
+    "context7": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@upstash/context7-mcp"],
+      "description": "Context7 - 라이브러리 문서 자동 검색 및 컨텍스트 제공"
+    },
+    "sequential-thinking": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Sequential Thinking - 단계별 문제 해결 및 추론 지원"
+    },
+    "playwright": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@playwright/mcp"],
+      "description": "Playwright - 브라우저 자동화 및 E2E 테스트"
+    },
+    "sentry": {
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp",
+      "description": "Sentry - 에러 모니터링 및 이슈 추적 (OAuth 인증 필요)"
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp",
+      "description": "Supabase - 데이터베이스, 인증, 스토리지 관리 (OAuth 인증)"
+    }
+  }
+}
