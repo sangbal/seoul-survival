@@ -402,7 +402,32 @@
       opacity: 0.7 !important;
       cursor: not-allowed !important;
     }
-    
+
+    /* 판매 모드 버튼 스타일 */
+    .btn.affordable-sell {
+      background: var(--bad) !important;
+      color: white !important;
+      opacity: 1 !important;
+      box-shadow: 0 0 10px rgba(244, 67, 54, 0.3);
+      animation: pulse-sell 2s infinite;
+    }
+
+    .btn.unaffordable-sell {
+      background: var(--muted) !important;
+      color: var(--text) !important;
+      opacity: 0.7 !important;
+      cursor: not-allowed !important;
+    }
+
+    @keyframes pulse-sell {
+      0%, 100% {
+        box-shadow: 0 0 10px rgba(244, 67, 54, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(244, 67, 54, 0.6);
+      }
+    }
+
     /* 리스크 표시 스타일 */
     .risk-indicator {
       display: flex;
@@ -520,7 +545,13 @@
       background: var(--good);
       color: white;
     }
-    
+
+    /* 판매 모드 버튼 활성화 시 빨간색 */
+    #sellMode.active {
+      background: var(--bad) !important;
+      color: white !important;
+    }
+
     .quantity-selector {
       display: flex;
       gap: 4px;
@@ -560,13 +591,47 @@
     
     .building-item.unaffordable {
       opacity: 0.7;
+      border-color: transparent;
+      box-shadow: none;
     }
-    
+
     .building-item.unaffordable .cost {
       color: var(--bad);
       font-weight: 600;
     }
-    
+
+    /* 판매 모드 building-item 스타일 */
+    .building-item.affordable-sell {
+      border-color: var(--bad);
+      box-shadow: 0 0 10px rgba(244, 67, 54, 0.3);
+      animation: sellGlow 2s infinite;
+    }
+
+    .building-item.affordable-sell .cost {
+      color: var(--bad);
+      font-weight: 600;
+    }
+
+    .building-item.unaffordable-sell {
+      opacity: 0.7;
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    .building-item.unaffordable-sell .cost {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    @keyframes sellGlow {
+      0%, 100% {
+        box-shadow: 0 0 10px rgba(244, 67, 54, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(244, 67, 54, 0.6);
+      }
+    }
+
     .building-item.locked {
       opacity: 0.5;
       cursor: not-allowed;
@@ -2293,13 +2358,13 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/seoulsurvival-BtJGvRLW.js"></script>
+  <script type="module" crossorigin src="../assets/seoulsurvival-ulTcvU_E.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-B5Qt9EMX.js">
   <link rel="modulepreload" crossorigin href="../assets/preload-helper-Bo3zgFBI.js">
   <link rel="modulepreload" crossorigin href="../assets/supabaseClient-DfMY2obf.js">
   <link rel="modulepreload" crossorigin href="../assets/core-Cq47966W.js">
-  <link rel="modulepreload" crossorigin href="../assets/config-BXlfH7ts.js">
   <link rel="modulepreload" crossorigin href="../assets/leaderboard-CYUKjqx6.js">
+  <link rel="modulepreload" crossorigin href="../assets/config-BXlfH7ts.js">
   <link rel="stylesheet" crossorigin href="../assets/preload-helper-DFlHEO2w.css">
   <link rel="stylesheet" crossorigin href="../assets/header-DtkDAqYt.css">
 </head>
@@ -2343,7 +2408,7 @@
       <div id="workTab" class="tab-content active">
       <section class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <h2 style="margin: 0;" data-i18n="ui.work">🛠️ 노동</h2>
+          <h2 style="margin: 0;"><span class="tab-icon" aria-hidden="true">🛠️</span> <span data-i18n="ui.work">노동</span></h2>
         </div>
         <div class="work">
           <button id="workBtn" class="btn btn-lg" aria-label="노동하기 버튼, 클릭당 수익" aria-describedby="clickIncomeButton"><span data-i18n="work.button">🛠️ 노동</span> +<span id="clickIncomeButton" aria-label="클릭당 수익 금액">1만</span><span data-i18n="ui.currencyShort">원</span></button>
@@ -2379,7 +2444,7 @@
     <div id="shopTab" class="tab-content">
       <section>
         <div class="card">
-          <h2 data-i18n="tab.investment">💰 투자</h2>
+          <h2><span class="tab-icon" aria-hidden="true">💰</span> <span data-i18n="tab.investment">투자</span></h2>
           <div id="marketEventBar" class="market-event-bar" aria-live="polite"></div>
           
           <!-- 업그레이드 리스트 - Cookie Clicker 스타일 -->
@@ -2598,7 +2663,7 @@
     <!-- 통계 탭 -->
     <div id="statsTab" class="tab-content">
       <section class="card">
-        <h2 data-i18n="ui.stats">📊 통계</h2>
+        <h2><span class="tab-icon" aria-hidden="true">📊</span> <span data-i18n="ui.stats">통계</span></h2>
         
         <!-- 1. 핵심 지표 (고정) -->
         <div class="stats-section stats-pinned">
@@ -2853,7 +2918,7 @@
     <!-- 랭킹 탭 -->
     <div id="rankingTab" class="tab-content">
       <section class="card">
-        <h2 data-i18n="ui.ranking">🏅 랭킹</h2>
+        <h2><span class="tab-icon" aria-hidden="true">🏅</span> <span data-i18n="ui.ranking">랭킹</span></h2>
         <p class="leaderboard-refresh-note">
           <span data-i18n="ranking.refreshNote">기록은 주기적으로 갱신됩니다.</span> <span id="leaderboardLastUpdated"></span>
         </p>
@@ -2894,7 +2959,7 @@
     <!-- 설정 탭 -->
     <div id="settingsTab" class="tab-content">
       <section class="card">
-        <h2 data-i18n="ui.settings">⚙️ 설정</h2>
+        <h2><span class="tab-icon" aria-hidden="true">⚙️</span> <span data-i18n="ui.settings">설정</span></h2>
 
         <!-- 게임 정보 (맨 위로 이동) -->
         <div class="stats-section game-info-section">
