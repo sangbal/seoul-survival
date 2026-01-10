@@ -1,83 +1,70 @@
 // 가격/판매 계산 로직
 // - 수량 구매/판매 시 누적합을 정확히 계산
-// - 판매 가격은 "현재가의 100%" 정책 적용 (현실성/재미)
+// - 판매 가격은 balance 설정 파일의 환급률을 사용
 
-export const FINANCIAL_COSTS = {
-  deposit: 50_000,
-  savings: 500_000,
-  bond: 5_000_000,
-  usStock: 25_000_000,
-  crypto: 100_000_000,
-};
+import {
+  FINANCIAL_COSTS as BALANCE_FINANCIAL_COSTS,
+  FINANCIAL_COST_GROWTH,
+  FINANCIAL_SELL_RATE,
+} from '../balance/financial.js'
+import { BASE_COSTS as BALANCE_PROPERTY_COSTS, PROPERTY_SELL_RATE } from '../balance/property.js'
 
-export const PROPERTY_COSTS = {
-  villa: 250_000_000,
-  officetel: 350_000_000,
-  apartment: 800_000_000,
-  shop: 1_200_000_000,
-  building: 3_000_000_000,
-};
+// 레거시 호환성을 위해 export (실제로는 balance 파일 값 사용)
+export const FINANCIAL_COSTS = BALANCE_FINANCIAL_COSTS
+export const PROPERTY_COSTS = BALANCE_PROPERTY_COSTS
 
-const DEFAULT_GROWTH = 1.05; // 밸런싱: 1.10 → 1.05로 완화
-const SELL_RATE = 1.0; // 100% 환급 (현실성/재미)
+const DEFAULT_GROWTH = FINANCIAL_COST_GROWTH // balance 파일에서 가져옴
 
 function sumGeometricCost(baseCost, startIndex, quantity, growth = DEFAULT_GROWTH) {
-  let total = 0;
+  let total = 0
   for (let i = 0; i < quantity; i++) {
-    const idx = startIndex + i;
-    total += baseCost * Math.pow(growth, idx);
+    const idx = startIndex + i
+    total += baseCost * Math.pow(growth, idx)
   }
-  return Math.floor(total);
+  return Math.floor(total)
 }
 
 export function getFinancialCost(type, count, quantity = 1) {
-  const baseCost = FINANCIAL_COSTS[type];
-  if (!baseCost || quantity <= 0) return 0;
-  return sumGeometricCost(baseCost, count, quantity);
+  const baseCost = FINANCIAL_COSTS[type]
+  if (!baseCost || quantity <= 0) return 0
+  return sumGeometricCost(baseCost, count, quantity)
 }
 
 export function getPropertyCost(type, count, quantity = 1) {
-  const baseCost = PROPERTY_COSTS[type];
-  if (!baseCost || quantity <= 0) return 0;
-  return sumGeometricCost(baseCost, count, quantity);
+  const baseCost = PROPERTY_COSTS[type]
+  if (!baseCost || quantity <= 0) return 0
+  return sumGeometricCost(baseCost, count, quantity)
 }
 
 export function getFinancialSellPrice(type, count, quantity = 1) {
-  if (count <= 0 || quantity <= 0) return 0;
+  if (count <= 0 || quantity <= 0) return 0
 
-  let total = 0;
+  let total = 0
   for (let i = 0; i < quantity; i++) {
-    if (count - i <= 0) break;
-    const buyPrice = getFinancialCost(type, count - i - 1, 1);
-    total += Math.floor(buyPrice * SELL_RATE);
+    if (count - i <= 0) break
+    const buyPrice = getFinancialCost(type, count - i - 1, 1)
+    total += Math.floor(buyPrice * FINANCIAL_SELL_RATE)
   }
-  return total;
+  return total
 }
 
 export function getPropertySellPrice(type, count, quantity = 1) {
-  if (count <= 0 || quantity <= 0) return 0;
+  if (count <= 0 || quantity <= 0) return 0
 
-  let total = 0;
+  let total = 0
   for (let i = 0; i < quantity; i++) {
-    if (count - i <= 0) break;
-    const buyPrice = getPropertyCost(type, count - i - 1, 1);
-    total += Math.floor(buyPrice * SELL_RATE);
+    if (count - i <= 0) break
+    const buyPrice = getPropertyCost(type, count - i - 1, 1)
+    total += Math.floor(buyPrice * PROPERTY_SELL_RATE)
   }
-  return total;
+  return total
 }
 
 // (레거시) 단계별 가격 증가율 시스템: 현재 main.js에서는 사용하지 않지만
 // 추후 난이도 곡선 변경 시 활용할 수 있도록 남겨둠.
 export function getPriceMultiplierByTier(count) {
-  if (count < 5) return 1.05;
-  if (count < 15) return 1.10;
-  if (count < 30) return 1.15;
-  return 1.20;
+  if (count < 5) return 1.05
+  if (count < 15) return 1.1
+  if (count < 30) return 1.15
+  return 1.2
 }
-
-
-
-
-
-
-

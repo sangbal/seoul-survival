@@ -8,7 +8,7 @@ export default {
   'tab.stats': '통계',
   'tab.ranking': '랭킹',
   'tab.settings': '설정',
-  
+
   // 직급 이름
   'career.alba': '알바',
   'career.contract': '계약직',
@@ -20,14 +20,14 @@ export default {
   'career.executive': '상무',
   'career.senior': '전무',
   'career.ceo': 'CEO',
-  
+
   // 금융상품 이름
   'product.deposit': '예금',
   'product.savings': '적금',
   'product.bond': '국내주식',
   'product.usStock': '미국주식',
   'product.crypto': '코인',
-  
+
   // 부동산 이름
   'property.villa': '빌라',
   'property.officetel': '오피스텔',
@@ -35,7 +35,7 @@ export default {
   'property.shop': '상가',
   'property.building': '빌딩',
   'property.tower': '서울타워',
-  
+
   // 버튼 텍스트
   'button.buy': '구입',
   'button.sell': '판매',
@@ -45,7 +45,7 @@ export default {
   'button.no': '아니오',
   'button.load': '불러오기',
   'button.newStart': '새로운 시작',
-  
+
   // 메시지 (addLog)
   'msg.insufficientFunds': '💸 자금이 부족합니다. (필요: {amount}원)',
   'msg.purchased': '✅ {product} {qty}{unit}를 구입했습니다. (보유 {count}{unit})',
@@ -72,7 +72,7 @@ export default {
   'msg.manualSave': '💾 수동 저장 완료!',
   'msg.cloudSaved': '☁️ 클라우드에 저장했습니다.',
   'msg.cloudApplied': '☁️ 클라우드 세이브를 적용했습니다. 페이지를 새로고침합니다...',
-  
+
   // 모달 메시지
   'modal.error.nicknameLength.title': '닉네임 길이 오류',
   'modal.error.nicknameLength.message': '닉네임은 1~6자여야 합니다.',
@@ -83,9 +83,11 @@ export default {
   'modal.error.nicknameTaken.title': '닉네임 중복',
   'modal.error.nicknameTaken.message': '이미 사용 중인 닉네임입니다.\n다른 닉네임을 입력해주세요.',
   'modal.error.resetError.title': '오류',
-  'modal.error.resetError.message': '게임 초기화 중 오류가 발생했습니다.\n페이지를 새로고침해주세요.',
+  'modal.error.resetError.message':
+    '게임 초기화 중 오류가 발생했습니다.\n페이지를 새로고침해주세요.',
   'modal.confirm.reset.title': '게임 새로 시작',
-  'modal.confirm.reset.message': '이번 런을 초기화하고 새로 시작합니다.\n\n🗼 누적 기록(서울타워)과 ⏱ 누적 시간은 유지됩니다.\n\n계속하시겠습니까?',
+  'modal.confirm.reset.message':
+    '이번 런을 초기화하고 새로 시작합니다.\n\n🗼 누적 기록(서울타워)과 ⏱ 누적 시간은 유지됩니다.\n\n계속하시겠습니까?',
   'modal.confirm.reset.primaryLabel': '새로 시작',
   'modal.nickname.title': '닉네임 설정',
   'modal.nickname.message': '리더보드에 표시될 닉네임을 입력하세요.\n(1~6자, 공백 불가)',
@@ -95,7 +97,8 @@ export default {
   'modal.error.loginRequired.title': '로그인 필요',
   'modal.error.loginRequired.message': '클라우드 세이브는 로그인 사용자만 사용할 수 있습니다.',
   'modal.error.noSaveData.title': '저장 데이터 없음',
-  'modal.error.noSaveData.message': '로컬 저장 데이터가 없습니다. 먼저 게임을 진행한 뒤 저장해 주세요.',
+  'modal.error.noSaveData.message':
+    '로컬 저장 데이터가 없습니다. 먼저 게임을 진행한 뒤 저장해 주세요.',
   'modal.error.invalidSaveData.title': '오류',
   'modal.error.invalidSaveData.message': '로컬 저장 데이터 형식이 올바르지 않습니다.',
   'modal.error.uploadFailed.title': '업로드 실패',
@@ -107,16 +110,18 @@ export default {
   'modal.error.cloudApplyFailed.title': '오류',
   'modal.error.cloudApplyFailed.message': '클라우드 세이브 적용에 실패했습니다.\n{error}',
   'modal.confirm.cloudRestore.title': '클라우드 세이브 복구',
-  'modal.confirm.cloudRestore.message': '클라우드 세이브가 있습니다.\n\n저장 시간: {time}\n\n불러오시겠습니까?',
+  'modal.confirm.cloudRestore.message':
+    '클라우드 세이브가 있습니다.\n\n저장 시간: {time}\n\n불러오시겠습니까?',
   'modal.confirm.cloudLoad.title': '클라우드 불러오기',
-  'modal.confirm.cloudLoad.message': '저장 시간: {time}\n\n불러오기를 실행하면 로컬 저장 데이터가 클라우드 데이터로 덮어쓰여지고 페이지가 새로고침됩니다.\n계속하시겠습니까?',
+  'modal.confirm.cloudLoad.message':
+    '저장 시간: {time}\n\n불러오기를 실행하면 로컬 저장 데이터가 클라우드 데이터로 덮어쓰여지고 페이지가 새로고침됩니다.\n계속하시겠습니까?',
   'modal.confirm.cloudSaveFound.title': '클라우드 세이브 발견',
   'modal.confirm.cloudSaveFound.message': '{message}',
   'modal.error.progressSwitchFailed.title': '오류',
   'modal.error.progressSwitchFailed.message': '진행 상황 전환에 실패했습니다.\n{error}',
   'achievement.status.unlocked': '✅ 달성!',
   'achievement.status.locked': '🔒 미달성',
-  
+
   // 설정 탭
   'settings.language.title': '🌐 언어',
   'settings.gameInfo.title': '📋 게임 정보',
@@ -125,7 +130,7 @@ export default {
   'settings.account.title': '👤 계정 (소셜 로그인)',
   'settings.saveManagement.title': '💾 저장 관리',
   'settings.reset.title': '🔄 게임 새로 시작',
-  
+
   // 헤더
   'header.cash': '💵 현금',
   'header.financial': '💰 금융',
@@ -133,14 +138,14 @@ export default {
   'header.rps': '📈 초당',
   'header.favorite_btn': '즐겨찾기',
   'header.share_btn': '공유',
-  
+
   // Work Tab
-  'work.title': '🛠️ 노동',
-  'work.button': '🛠️ 노동',
-  
+  'work.title': '노동',
+  'work.button': '노동',
+
   // 기타 UI 텍스트
-  'ui.work': '🛠️ 노동',
-  'ui.diary': '📓 일기장',
+  'ui.work': '노동',
+  'ui.diary': '일기장',
   'ui.upgrades': '업그레이드',
   'ui.financial': '금융상품',
   'ui.properties': '부동산',
@@ -157,38 +162,37 @@ export default {
   'ui.leaderboard': '리더보드에 기록됨',
   'ui.nextPromotion': '다음 승진까지 {remaining}클릭 남음',
   'ui.progress': '진행률',
-  'ui.stats': '📊 통계',
-  'ui.ranking': '🏅 랭킹',
-  'ui.settings': '⚙️ 설정',
+  'ui.stats': '통계',
+  'ui.ranking': '랭킹',
+  'ui.settings': '설정',
   'ui.marketEvent': '시장 이벤트',
   'ui.second': '초',
   'ui.currency': '원',
   'ui.currencyShort': '원',
   'ui.noTimeInfo': '시간 정보 없음',
-  
+
   // 헤더 툴팁
   'header.tooltip.financialIncome': '금융 수익: {amount}',
   'header.tooltip.propertyIncome': '부동산 수익: {amount}',
   'header.tooltip.marketMultiplier': '시장배수: x{multiplier}',
-  
+
   // 단위
   'ui.unit.count': '개',
   'ui.unit.property': '채',
-  
+
   // 상품 설명 템플릿
   'product.desc.perUnit': '각 {product}이 초당 {amount} 생산',
   'product.desc.total': '{count}{unit} {product}이 초당 {amount} 생산 (총 수익의 {percent}%)',
   'product.desc.lifetime': '지금까지 {amount} 생산',
   'product.desc.currentPrice': '현재가: {price}',
-  
+
   // 기타
   'ui.noUpgrades': '해금된 업그레이드가 없습니다',
   'ui.day': '일차',
-  'ui.owned': '보유',
   'tower.desc.prestige': '프레스티지 상품 (수익 없음)',
   'tower.desc.owned': '{count}개 보유',
   'tower.desc.leaderboard': '리더보드에 기록됨: 🗼x{count}',
-  
+
   // 통계 탭
   'stats.totalAssets': '총 자산',
   'stats.totalEarnings': '총 누적 수익',
@@ -216,7 +220,7 @@ export default {
   'stats.property': '부동산',
   'stats.cash': '현금',
   'stats.growthTracking': '성장 추적',
-  
+
   // 랭킹 탭
   'ranking.myRecord': '내 기록',
   'ranking.globalLeaderboard': '글로벌 리더보드 (TOP 10)',
@@ -231,7 +235,7 @@ export default {
   'ranking.table.assets': '자산',
   'ranking.table.playtime': '누적',
   'ranking.table.playtime.full': '누적 시간',
-  
+
   // 설정 탭
   'settings.gameTitle': '게임 제목',
   'settings.version': '버전',
@@ -251,12 +255,15 @@ export default {
   'settings.loginGoogle': 'Google로 로그인',
   'settings.logout': '로그아웃',
   'settings.resetWarning': '이번 런을 초기화합니다. 🗼 누적 기록과 ⏱ 누적 시간은 유지됩니다.',
-  'settings.saveManagement.cloudSaveDesc': '☁️ 클라우드 세이브: 로그인한 사용자는 클라우드에 저장하여 여러 기기에서 진행 상황을 동기화할 수 있습니다.',
+  'settings.saveManagement.cloudSaveDesc':
+    '☁️ 클라우드 세이브: 로그인한 사용자는 클라우드에 저장하여 여러 기기에서 진행 상황을 동기화할 수 있습니다.',
   'settings.saveManagement.cloudSaveBtn': '☁️ 클라우드 저장',
   'settings.saveManagement.cloudLoadBtn': '☁️ 클라우드 불러오기',
-  'settings.saveManagement.cloudSaveHint': '로컬 저장은 5초마다 자동으로 이루어집니다. 클라우드 저장은 탭을 닫을 때 자동으로 업로드되며, 수동으로도 저장/불러오기가 가능합니다.',
+  'settings.saveManagement.cloudSaveHint':
+    '로컬 저장은 5초마다 자동으로 이루어집니다. 클라우드 저장은 탭을 닫을 때 자동으로 업로드되며, 수동으로도 저장/불러오기가 가능합니다.',
   'settings.saveManagement.lastCloudSync': '마지막 클라우드 동기화',
-  'settings.saveManagement.guestSaveInfo': '게스트 모드에서는 브라우저 LocalStorage에만 저장됩니다. 여러 기기에서 진행 상황을 동기화하려면 로그인이 필요합니다.',
+  'settings.saveManagement.guestSaveInfo':
+    '게스트 모드에서는 브라우저 LocalStorage에만 저장됩니다. 여러 기기에서 진행 상황을 동기화하려면 로그인이 필요합니다.',
   'settings.saveManagement.autoSaveInterval': '자동 저장 주기',
   'settings.saveManagement.saveLocation': '저장 위치',
   'settings.saveManagement.lastSave': '마지막 저장',
@@ -275,22 +282,21 @@ export default {
   'settings.nickname.change.loginRequired': '리더보드에 반영하려면 로그인이 필요합니다.',
   'settings.nickname.change.banned': '사용할 수 없는 닉네임입니다.',
   'settings.nickname.change.cooldown': '닉네임 변경 후 {seconds}초 후에 다시 시도할 수 있습니다.',
-  'settings.nickname.change.claimFailed': '닉네임 변경 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+  'settings.nickname.change.claimFailed':
+    '닉네임 변경 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
   'settings.nickname.change.needRename': '닉네임이 중복되어 변경이 필요합니다.',
   'settings.nickname.migrationConflict.title': '닉네임 변경 필요',
-  'settings.nickname.migrationConflict.message': '닉네임이 중복되어 변경이 필요합니다.\n리더보드에 반영되려면 새 닉네임을 설정해주세요.',
+  'settings.nickname.migrationConflict.message':
+    '닉네임이 중복되어 변경이 필요합니다.\n리더보드에 반영되려면 새 닉네임을 설정해주세요.',
   'settings.nickname.modal.title': '닉네임 변경',
-  'settings.nickname.modal.message': '1~6자, 공백 불가\n금칙어 및 중복 닉네임은 사용할 수 없습니다.',
+  'settings.nickname.modal.message':
+    '1~6자, 공백 불가\n금칙어 및 중복 닉네임은 사용할 수 없습니다.',
   'settings.nickname.modal.placeholder': '2~6자 닉네임',
   'settings.nickname.modal.cancel': '취소',
   'settings.nickname.modal.submit': '변경',
-  
+
   // 통계 탭 추가
   'stats.totalEarningsTitle': '전체 수익',
-  'stats.totalAssets': '총 자산',
-  'stats.totalEarnings': '총 누적 수익',
-  'stats.rps': '초당 수익',
-  'stats.clickIncome': '클릭당 수익',
   'stats.playInfo': '플레이 정보',
   'stats.totalClicks': '총 클릭 횟수',
   'stats.unit.sec': '초',
@@ -299,7 +305,7 @@ export default {
   'stats.unit.minute': '분',
   'stats.unit.perSec': '/초',
   'stats.unit.perHour': '/시간',
-  
+
   // 기타 동적 텍스트
   'ui.dayCount': '{days}일차',
   'ui.today': '오늘: {date}',
@@ -312,7 +318,7 @@ export default {
   'ranking.error': '리더보드를 불러오는 중 오류가 발생했습니다: {error}',
   'ranking.emptyMessage': '아직 리더보드에 기록이 없습니다.',
   'ranking.emptyHint': '게임을 플레이하고 저장하면 순위가 표시됩니다.',
-  
+
   // 일기장 메시지
   'diary.justWrite': '그냥 적어둔다.',
   'diary.todayRecord': '오늘의 기록.',
@@ -323,11 +329,11 @@ export default {
   'diary.recordForLater': '나중을 위해 기록.',
   'diary.goodToWrite': '적어두는 게 좋겠다.',
   'diary.leaveRecord': '기록에 남긴다.',
-  
+
   // 해금 메시지
   'msg.unlock.savings': '❌ 적금은 예금을 1개 이상 보유해야 해금됩니다.',
   'msg.unlock.bond': '❌ 국내주식은 적금을 1개 이상 보유해야 해금됩니다.',
-  
+
   // 업적 번역 키
   // 기본 업적
   'achievement.first_click.name': '첫 노동',
@@ -346,7 +352,7 @@ export default {
   'achievement.first_property.desc': '첫 번째 부동산을 구입했다',
   'achievement.first_upgrade.name': '첫 업그레이드',
   'achievement.first_upgrade.desc': '첫 번째 업그레이드를 구입했다',
-  
+
   // 전문가 업적
   'achievement.financial_expert.name': '금융 전문가',
   'achievement.financial_expert.desc': '모든 금융상품을 보유했다',
@@ -364,7 +370,7 @@ export default {
   'achievement.crypto_expert.desc': '코인 투자 5억원을 달성했다',
   'achievement.real_estate_agent.name': '부동산 중개사',
   'achievement.real_estate_agent.desc': '부동산 20채를 보유했다',
-  
+
   // 자산 업적
   'achievement.millionaire.name': '백만장자',
   'achievement.millionaire.desc': '총 자산 1억원을 달성했다',
@@ -382,7 +388,7 @@ export default {
   'achievement.legendary_rich.desc': '총 자산 100조원을 달성했다',
   'achievement.god_rich.name': '신의 부자',
   'achievement.god_rich.desc': '총 자산 1,000조원을 달성했다',
-  
+
   // 커리어 업적
   'achievement.career_starter.name': '직장인',
   'achievement.career_starter.desc': '계약직으로 승진했다',
@@ -400,7 +406,7 @@ export default {
   'achievement.global_ceo.desc': '해외 진출을 달성했다',
   'achievement.legendary_ceo.name': '전설의 CEO',
   'achievement.legendary_ceo.desc': '모든 목표를 달성했다',
-  
+
   // 업그레이드 번역 키
   // 노동 관련
   'upgrade.part_time_job.name': '🍕 아르바이트 경험',
@@ -433,7 +439,7 @@ export default {
   'upgrade.global_experience.desc': '클릭 수익 2.0배',
   'upgrade.entrepreneurship.name': '🚀 창업',
   'upgrade.entrepreneurship.desc': '클릭 수익 2.0배',
-  
+
   // 예금 관련
   'upgrade.deposit_boost_1.name': '💰 예금 이자율 상승',
   'upgrade.deposit_boost_1.desc': '예금 수익 2배',
@@ -445,7 +451,7 @@ export default {
   'upgrade.deposit_boost_4.desc': '예금 수익 2배',
   'upgrade.deposit_boost_5.name': '👑 킹 예금',
   'upgrade.deposit_boost_5.desc': '예금 수익 2배',
-  
+
   // 적금 관련
   'upgrade.savings_boost_1.name': '🏦 적금 복리 효과',
   'upgrade.savings_boost_1.desc': '적금 수익 2배',
@@ -457,7 +463,7 @@ export default {
   'upgrade.savings_boost_4.desc': '적금 수익 2배',
   'upgrade.savings_boost_5.name': '👑 킹 적금',
   'upgrade.savings_boost_5.desc': '적금 수익 2배',
-  
+
   // 주식 관련
   'upgrade.bond_boost_1.name': '📈 주식 수익률 향상',
   'upgrade.bond_boost_1.desc': '주식 수익 2배',
@@ -469,7 +475,7 @@ export default {
   'upgrade.bond_boost_4.desc': '주식 수익 2배',
   'upgrade.bond_boost_5.name': '👑 킹 주식',
   'upgrade.bond_boost_5.desc': '주식 수익 2배',
-  
+
   // 미국주식 관련
   'upgrade.usstock_boost_1.name': '🇺🇸 S&P 500 투자',
   'upgrade.usstock_boost_1.desc': '미국주식 수익 2배',
@@ -481,7 +487,7 @@ export default {
   'upgrade.usstock_boost_4.desc': '미국주식 수익 2배',
   'upgrade.usstock_boost_5.name': '👑 킹 글로벌 주식',
   'upgrade.usstock_boost_5.desc': '미국주식 수익 2배',
-  
+
   // 코인 관련
   'upgrade.crypto_boost_1.name': '₿ 비트코인 투자',
   'upgrade.crypto_boost_1.desc': '코인 수익 2배',
@@ -493,7 +499,7 @@ export default {
   'upgrade.crypto_boost_4.desc': '코인 수익 2배',
   'upgrade.crypto_boost_5.name': '👑 킹 암호화폐',
   'upgrade.crypto_boost_5.desc': '코인 수익 2배',
-  
+
   // 빌라 관련
   'upgrade.villa_boost_1.name': '🏘️ 빌라 리모델링',
   'upgrade.villa_boost_1.desc': '빌라 수익 2배',
@@ -505,7 +511,7 @@ export default {
   'upgrade.villa_boost_4.desc': '빌라 수익 2배',
   'upgrade.villa_boost_5.name': '👑 킹 빌라',
   'upgrade.villa_boost_5.desc': '빌라 수익 2배',
-  
+
   // 오피스텔 관련
   'upgrade.officetel_boost_1.name': '🏢 오피스텔 스마트화',
   'upgrade.officetel_boost_1.desc': '오피스텔 수익 2배',
@@ -517,7 +523,7 @@ export default {
   'upgrade.officetel_boost_4.desc': '오피스텔 수익 2배',
   'upgrade.officetel_boost_5.name': '👑 킹 오피스텔',
   'upgrade.officetel_boost_5.desc': '오피스텔 수익 2배',
-  
+
   // 아파트 관련
   'upgrade.apartment_boost_1.name': '🏡 아파트 프리미엄화',
   'upgrade.apartment_boost_1.desc': '아파트 수익 2배',
@@ -529,7 +535,7 @@ export default {
   'upgrade.apartment_boost_4.desc': '아파트 수익 2배',
   'upgrade.apartment_boost_5.name': '👑 킹 아파트',
   'upgrade.apartment_boost_5.desc': '아파트 수익 2배',
-  
+
   // 상가 관련
   'upgrade.shop_boost_1.name': '🏪 상가 입지 개선',
   'upgrade.shop_boost_1.desc': '상가 수익 2배',
@@ -541,7 +547,7 @@ export default {
   'upgrade.shop_boost_4.desc': '상가 수익 2배',
   'upgrade.shop_boost_5.name': '👑 킹 상권',
   'upgrade.shop_boost_5.desc': '상가 수익 2배',
-  
+
   // 빌딩 관련
   'upgrade.building_boost_1.name': '🏙️ 빌딩 테넌트 확보',
   'upgrade.building_boost_1.desc': '빌딩 수익 2배',
@@ -553,7 +559,7 @@ export default {
   'upgrade.building_boost_4.desc': '빌딩 수익 2배',
   'upgrade.building_boost_5.name': '👑 킹 빌딩',
   'upgrade.building_boost_5.desc': '빌딩 수익 2배',
-  
+
   // 전역 업그레이드
   'upgrade.rent_multiplier.name': '📊 부동산 관리 전문화',
   'upgrade.rent_multiplier.desc': '모든 부동산 수익 +10%',
@@ -563,5 +569,4 @@ export default {
   'upgrade.financial_expert.desc': '모든 금융 수익 +20%',
   'upgrade.auto_work_system.name': '🤖 AI 업무 처리 시스템',
   'upgrade.auto_work_system.desc': '1초마다 자동으로 1회 클릭 (초당 수익 추가)',
-};
-
+}

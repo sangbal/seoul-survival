@@ -8,6 +8,9 @@ import * as NumberFormat from '../utils/numberFormat.js'
 import { t } from '../i18n/index.js'
 import * as Diary from './diary.js'
 
+// 개발 모드 체크 (디버깅 로그 제어용)
+const __IS_DEV__ = !!import.meta?.env?.DEV
+
 /**
  * 업그레이드 관리 시스템 생성
  * @param {Object} deps - 의존성
@@ -111,7 +114,9 @@ export function createUpgradeManager(deps) {
 
     upgradeList.innerHTML = ''
 
-    console.log(`🔄 Regenerating upgrade list with ${availableUpgrades.length} items`)
+    if (__IS_DEV__) {
+      console.log(`🔄 Regenerating upgrade list with ${availableUpgrades.length} items`)
+    }
 
     availableUpgrades.forEach(([id, upgrade]) => {
       const item = document.createElement('div')
@@ -184,19 +189,23 @@ export function createUpgradeManager(deps) {
         'click',
         e => {
           e.stopPropagation()
-          console.log('🖱️ Upgrade item clicked!', id)
+          if (__IS_DEV__) console.log('🖱️ Upgrade item clicked!', id)
           purchaseUpgrade(id)
         },
         false
       )
 
-      item.addEventListener('mousedown', e => {
-        console.log('🖱️ Mousedown detected on upgrade:', id)
-      })
+      if (__IS_DEV__) {
+        item.addEventListener('mousedown', e => {
+          console.log('🖱️ Mousedown detected on upgrade:', id)
+        })
+      }
 
       upgradeList.appendChild(item)
 
-      console.log(`✅ Upgrade item created and appended: ${id}`, item)
+      if (__IS_DEV__) {
+        console.log(`✅ Upgrade item created and appended: ${id}`, item)
+      }
     })
   }
 
@@ -204,30 +213,34 @@ export function createUpgradeManager(deps) {
    * 업그레이드 구매
    */
   function purchaseUpgrade(upgradeId) {
-    console.log('=== PURCHASE UPGRADE DEBUG ===')
-    console.log('Attempting to purchase:', upgradeId)
+    if (__IS_DEV__) {
+      console.log('=== PURCHASE UPGRADE DEBUG ===')
+      console.log('Attempting to purchase:', upgradeId)
+    }
 
     const cash = getCash()
-    console.log('Current cash:', cash)
+    if (__IS_DEV__) console.log('Current cash:', cash)
 
     const upgrade = UPGRADES[upgradeId]
 
     if (!upgrade) {
       console.error('업그레이드를 찾을 수 없습니다:', upgradeId)
-      console.log('Available upgrade IDs:', Object.keys(UPGRADES))
+      if (__IS_DEV__) console.log('Available upgrade IDs:', Object.keys(UPGRADES))
       return
     }
 
-    console.log('Upgrade found:', {
-      name: upgrade.name,
-      cost: upgrade.cost,
-      unlocked: upgrade.unlocked,
-      purchased: upgrade.purchased,
-    })
+    if (__IS_DEV__) {
+      console.log('Upgrade found:', {
+        name: upgrade.name,
+        cost: upgrade.cost,
+        unlocked: upgrade.unlocked,
+        purchased: upgrade.purchased,
+      })
+    }
 
     if (upgrade.purchased) {
       Diary.addLog(t('msg.upgradeAlreadyPurchased'))
-      console.log('Already purchased')
+      if (__IS_DEV__) console.log('Already purchased')
       return
     }
 
@@ -235,11 +248,11 @@ export function createUpgradeManager(deps) {
       Diary.addLog(
         t('msg.upgradeInsufficientFunds', { cost: NumberFormat.formatFinancialPrice(upgrade.cost) })
       )
-      console.log('Not enough cash. Need:', upgrade.cost, 'Have:', cash)
+      if (__IS_DEV__) console.log('Not enough cash. Need:', upgrade.cost, 'Have:', cash)
       return
     }
 
-    console.log('Purchase successful! Applying effect...')
+    if (__IS_DEV__) console.log('Purchase successful! Applying effect...')
     setCash(cash - upgrade.cost)
     upgrade.purchased = true
 
@@ -251,7 +264,7 @@ export function createUpgradeManager(deps) {
           desc: t(`upgrade.${upgradeId}.desc`, {}, upgrade.desc),
         })
       )
-      console.log('Effect applied successfully')
+      if (__IS_DEV__) console.log('Effect applied successfully')
     } catch (error) {
       console.error(`업그레이드 효과 적용 실패 (${upgradeId}):`, error)
       Diary.addLog(`⚠️ 업그레이드 효과 적용 중 오류 발생`)

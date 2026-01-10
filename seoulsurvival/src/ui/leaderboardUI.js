@@ -17,6 +17,35 @@ import { isSupabaseConfigured } from '../../../shared/auth/config.js'
 const LEADERBOARD_UPDATE_INTERVAL = 30000 // 30초
 const LEADERBOARD_TIMEOUT = 7000 // 7초
 
+// ======= XSS 방지 헬퍼 함수 =======
+/**
+ * 에러 메시지 UI를 안전하게 생성 (XSS 방지)
+ * @param {HTMLElement} container - 컨테이너 요소
+ * @param {string} message - 표시할 메시지
+ * @param {boolean} showRetry - 재시도 버튼 표시 여부
+ */
+function renderErrorUI(container, message, showRetry = true) {
+  container.innerHTML = ''
+  const errorDiv = document.createElement('div')
+  errorDiv.className = 'leaderboard-error'
+
+  const msgDiv = document.createElement('div')
+  msgDiv.textContent = message
+  errorDiv.appendChild(msgDiv)
+
+  if (showRetry) {
+    const retryBtn = document.createElement('button')
+    retryBtn.className = 'leaderboard-retry-btn'
+    retryBtn.textContent = '다시 시도'
+    retryBtn.addEventListener('click', () => {
+      updateLeaderboardUI(true)
+    })
+    errorDiv.appendChild(retryBtn)
+  }
+
+  container.appendChild(errorDiv)
+}
+
 // ======= 상태 변수 =======
 let __leaderboardLoading = false
 let __leaderboardLastUpdate = 0
@@ -52,11 +81,11 @@ export async function updateLeaderboardUI(force = false) {
 
   // Supabase 키가 설정되지 않은 경우: 네트워크 호출을 스킵하고 안내만 표시
   if (!isSupabaseConfigured()) {
-    container.innerHTML = `
-          <div class="leaderboard-error">
-            <div>리더보드 설정이 아직 완료되지 않았어요. 나중에 다시 확인해 주세요.</div>
-          </div>
-        `
+    renderErrorUI(
+      container,
+      '리더보드 설정이 아직 완료되지 않았어요. 나중에 다시 확인해 주세요.',
+      false
+    )
     __leaderboardLoading = false
     __leaderboardLastUpdate = Date.now()
     return
@@ -64,7 +93,6 @@ export async function updateLeaderboardUI(force = false) {
 
   // 이미 로딩 중이면 스킵 (force일 때는 강제 실행)
   if (__leaderboardLoading && !force) {
-    console.log('리더보드: 이미 로딩 중, 스킵')
     return
   }
 
@@ -75,7 +103,6 @@ export async function updateLeaderboardUI(force = false) {
     __leaderboardLastUpdate > 0 &&
     now - __leaderboardLastUpdate < LEADERBOARD_UPDATE_INTERVAL
   ) {
-    console.log('리더보드: 최근 업데이트로부터 시간이 짧음, 스킵')
     return
   }
 
@@ -95,32 +122,22 @@ export async function updateLeaderboardUI(force = false) {
       const timeoutId = setTimeout(() => {
         if (__leaderboardLoading) {
           console.error('리더보드: 타임아웃 발생')
-          container.innerHTML = `
-              <div class="leaderboard-error">
-                <div>리더보드 불러오기 실패 (타임아웃)</div>
-                <button class="leaderboard-retry-btn">다시 시도</button>
-              </div>
-            `
-          const retryBtn = container.querySelector('.leaderboard-retry-btn')
-          if (retryBtn) {
-            retryBtn.addEventListener('click', () => {
-              updateLeaderboardUI(true)
-            })
-          }
+          renderErrorUI(container, '리더보드 불러오기 실패 (타임아웃)')
           __leaderboardLoading = false
           __leaderboardLastUpdate = Date.now()
         }
       }, LEADERBOARD_TIMEOUT)
 
       try {
-        // 로딩 메시지 표시
-        container.innerHTML = `<div class="leaderboard-loading">${t('ranking.loadingText')}</div>`
+        // 로딩 메시지 표시 (XSS 방지)
+        container.innerHTML = ''
+        const loadingDiv = document.createElement('div')
+        loadingDiv.className = 'leaderboard-loading'
+        loadingDiv.textContent = t('ranking.loadingText')
+        container.appendChild(loadingDiv)
 
-        console.log('리더보드: API 호출 시작')
         const result = await getLeaderboard(10, 'assets')
         clearTimeout(timeoutId)
-
-        console.log('리더보드: API 응답 받음', result)
 
         if (!result.success) {
           const errorMsg = result.error || '알 수 없는 오류'
@@ -142,20 +159,7 @@ export async function updateLeaderboardUI(force = false) {
             userMessage = `리더보드를 불러올 수 없습니다: ${errorMsg}`
           }
 
-          container.innerHTML = `
-              <div class="leaderboard-error">
-                <div>${userMessage}</div>
-                <button class="leaderboard-retry-btn">다시 시도</button>
-              </div>
-            `
-
-          const retryBtn = container.querySelector('.leaderboard-retry-btn')
-          if (retryBtn) {
-            retryBtn.addEventListener('click', () => {
-              updateLeaderboardUI(true)
-            })
-          }
-
+          renderErrorUI(container, userMessage)
           __leaderboardLoading = false
           __leaderboardLastUpdate = Date.now()
           return
@@ -163,23 +167,25 @@ export async function updateLeaderboardUI(force = false) {
 
         const entries = result.data || []
         if (entries.length === 0) {
-          console.log('리더보드: 기록 없음')
-          container.innerHTML = `<div class="leaderboard-empty">${t('ranking.empty')}</div>`
+          // XSS 방지: DOM API 사용
+          container.innerHTML = ''
+          const emptyDiv = document.createElement('div')
+          emptyDiv.className = 'leaderboard-empty'
+          emptyDiv.textContent = t('ranking.empty')
+          container.appendChild(emptyDiv)
           __leaderboardLoading = false
           __leaderboardLastUpdate = Date.now()
           // 내 순위 영역도 비움
           const myRankContent = document.getElementById('myRankContent')
           if (myRankContent) {
-            myRankContent.innerHTML = `
-                <div class="leaderboard-my-rank-empty">
-                  리더보드 기록이 아직 없습니다.
-                </div>
-              `
+            myRankContent.innerHTML = ''
+            const myRankEmpty = document.createElement('div')
+            myRankEmpty.className = 'leaderboard-my-rank-empty'
+            myRankEmpty.textContent = '리더보드 기록이 아직 없습니다.'
+            myRankContent.appendChild(myRankEmpty)
           }
           return
         }
-
-        console.log('리더보드: 항목 수', entries.length)
 
         // 리더보드 HTML 생성 (테이블 형태)
         const table = document.createElement('table')
@@ -254,7 +260,6 @@ export async function updateLeaderboardUI(force = false) {
         container.innerHTML = ''
         container.appendChild(table)
         __leaderboardLastUpdate = Date.now()
-        console.log('리더보드: 업데이트 완료')
 
         // 마지막 갱신 시각 표시
         const lastUpdatedEl = document.getElementById('leaderboardLastUpdated')
@@ -302,17 +307,10 @@ export async function updateLeaderboardUI(force = false) {
               `
           } else {
             // 닉네임은 있지만 Top10 밖인 경우: RPC로 실제 순위 조회
-            // 먼저 로그인 상태 확인
-            console.log('[LB] 내 기록 조회 시작', {
-              playerNickname: gameStateRef().playerNickname,
-              currentNickLower,
-            })
             const user = await getUser()
-            console.log('[LB] 로그인 상태 확인', { hasUser: !!user, userId: user?.id })
 
             if (!user) {
               // 비로그인 상태: 간단한 문구 + 버튼만 표시
-              console.log('[LB] 로그인되지 않음, 로그인 버튼 표시')
               myRankContent.innerHTML = `
                   <div class="leaderboard-my-rank-empty">
                     ${t('ranking.loginRequired')}
@@ -344,7 +342,6 @@ export async function updateLeaderboardUI(force = false) {
             }
 
             // 로그인 상태: RPC로 순위 조회
-            console.log('[LB] 로그인 확인됨, 내 순위 조회 시작')
             myRankContent.innerHTML = `
                 <div class="leaderboard-my-rank-loading">
                   내 순위를 불러오는 중...
@@ -353,11 +350,6 @@ export async function updateLeaderboardUI(force = false) {
 
             try {
               const rankResult = await getMyRank(gameStateRef().playerNickname, 'assets')
-              console.log('[LB] 내 순위 조회 결과', {
-                success: rankResult.success,
-                errorType: rankResult.errorType,
-                hasData: !!rankResult.data,
-              })
 
               if (!rankResult.success || !rankResult.data) {
                 let innerHtml = ''
@@ -383,8 +375,6 @@ export async function updateLeaderboardUI(force = false) {
                     `
                 } else if (rankResult.errorType === 'not_found') {
                   // 리더보드에 기록이 없음: 로그인 상태면 리더보드 업데이트 시도
-                  console.log('[LB] 리더보드에 기록 없음, 리더보드 업데이트 시도')
-                  // 로그인 상태이고 닉네임이 있으면 리더보드 업데이트 시도
                   if (user && gameStateRef().playerNickname) {
                     try {
                       // bigint 컬럼에 안전하게 저장하기 위해 정수로 변환 (0 바운딩)
@@ -419,7 +409,6 @@ export async function updateLeaderboardUI(force = false) {
                         towerCount
                       )
                       if (updateResult.success) {
-                        console.log('[LB] 리더보드 업데이트 성공, 다시 조회')
                         // 업데이트 성공 후 다시 조회
                         const retryResult = await getMyRank(gameStateRef().playerNickname, 'assets')
                         if (retryResult.success && retryResult.data) {
@@ -492,7 +481,6 @@ export async function updateLeaderboardUI(force = false) {
                 }
               } else {
                 const me = rankResult.data
-                console.log('[LB] 내 순위 조회 성공', { rank: me.rank, nickname: me.nickname })
                 const playTimeText = NumberFormat.formatPlaytimeMs(me.play_time_ms || 0)
                 const towerCount = me.tower_count || 0
                 const displayName =

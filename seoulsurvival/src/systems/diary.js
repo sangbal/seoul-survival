@@ -24,11 +24,9 @@ let sessionStartTimeRef = null
  * @param {number} timeRefs.sessionStartTimeRef - 세션 시작 시간
  */
 export function initDiary(logElement, timeRefs) {
-  console.log('[Diary] initDiary called with:', { logElement, timeRefs })
   elLog = logElement
   gameStartTimeRef = timeRefs
   sessionStartTimeRef = timeRefs.sessionStartTime
-  console.log('[Diary] After init:', { gameStartTimeRef, sessionStartTimeRef })
 }
 
 /**
@@ -36,6 +34,11 @@ export function initDiary(logElement, timeRefs) {
  * @param {string} text - 추가할 로그 텍스트
  */
 export function addLog(text) {
+  // 초기화 전에 호출되면 조용히 무시 (게임 시작 시 타이밍 이슈)
+  if (!elLog || !gameStartTimeRef) {
+    return
+  }
+
   // 개발/디버깅 관련 메시지 필터링
   const devKeywords = [
     '🧪',
@@ -74,10 +77,7 @@ export function addLog(text) {
   const timeStamp = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`
 
   function updateDiaryMeta() {
-    console.log('[Diary] updateDiaryMeta called, gameStartTimeRef:', gameStartTimeRef)
-
     if (!gameStartTimeRef) {
-      console.error('[Diary] gameStartTimeRef is null in updateDiaryMeta! Diary not initialized.')
       return
     }
 
@@ -1381,7 +1381,9 @@ export function addLog(text) {
   p.innerHTML = `<span class="diary-time">${timeStamp}</span>${bodyHtml}`
 
   if (!elLog) {
-    console.error('[Diary] ❌ elLog is null in addLog! Cannot add log entry. Diary was not initialized.')
+    console.error(
+      '[Diary] ❌ elLog is null in addLog! Cannot add log entry. Diary was not initialized.'
+    )
     return
   }
 

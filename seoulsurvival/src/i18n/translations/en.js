@@ -8,7 +8,7 @@ export default {
   'tab.stats': 'Stats',
   'tab.ranking': 'Ranking',
   'tab.settings': 'Settings',
-  
+
   // Career names
   'career.alba': 'Part-time',
   'career.contract': 'Contract',
@@ -20,14 +20,14 @@ export default {
   'career.executive': 'Executive',
   'career.senior': 'Senior Executive',
   'career.ceo': 'CEO',
-  
+
   // Financial product names
   'product.deposit': 'Deposit',
   'product.savings': 'Savings',
   'product.bond': 'Domestic Stock',
   'product.usStock': 'US Stock',
   'product.crypto': 'Crypto',
-  
+
   // Property names
   'property.villa': 'Villa',
   'property.officetel': 'Officetel',
@@ -35,7 +35,7 @@ export default {
   'property.shop': 'Shop',
   'property.building': 'Building',
   'property.tower': 'Seoul Tower',
-  
+
   // Button text
   'button.buy': 'Buy',
   'button.sell': 'Sell',
@@ -45,7 +45,7 @@ export default {
   'button.no': 'No',
   'button.load': 'Load',
   'button.later': 'Later',
-  
+
   // Messages (addLog)
   'msg.insufficientFunds': '💸 Insufficient funds. (Required: {amount})',
   'msg.purchased': '✅ Purchased {qty}{unit} of {product}. (Owned: {count}{unit})',
@@ -72,7 +72,7 @@ export default {
   'msg.manualSave': '💾 Manual save completed!',
   'msg.cloudSaved': '☁️ Saved to cloud.',
   'msg.cloudApplied': '☁️ Cloud save applied. Refreshing page...',
-  
+
   // Modal messages
   'modal.error.nicknameLength.title': 'Nickname Length Error',
   'modal.error.nicknameLength.message': 'Nickname must be 1-6 characters.',
@@ -81,21 +81,26 @@ export default {
   'modal.error.nicknameFormatInvalid.title': 'Nickname Format Error',
   'modal.error.nicknameFormatInvalid.message': 'Nickname cannot contain %, _ characters.',
   'modal.error.nicknameTaken.title': 'Nickname Taken',
-  'modal.error.nicknameTaken.message': 'This nickname is already in use.\nPlease enter a different nickname.',
+  'modal.error.nicknameTaken.message':
+    'This nickname is already in use.\nPlease enter a different nickname.',
   'modal.error.resetError.title': 'Error',
-  'modal.error.resetError.message': 'An error occurred while resetting the game.\nPlease refresh the page.',
+  'modal.error.resetError.message':
+    'An error occurred while resetting the game.\nPlease refresh the page.',
   'modal.confirm.reset.title': 'Reset Game',
-  'modal.confirm.reset.message': 'This will reset the current run and start fresh.\n\n🗼 Cumulative records (Seoul Tower) and ⏱ cumulative time will be preserved.\n\nContinue?',
+  'modal.confirm.reset.message':
+    'This will reset the current run and start fresh.\n\n🗼 Cumulative records (Seoul Tower) and ⏱ cumulative time will be preserved.\n\nContinue?',
   'modal.confirm.reset.primaryLabel': 'Reset',
   'modal.nickname.title': 'Nickname Setting',
-  'modal.nickname.message': 'Please enter the nickname to be displayed on the leaderboard.\n(1-6 characters, spaces not allowed)',
+  'modal.nickname.message':
+    'Please enter the nickname to be displayed on the leaderboard.\n(1-6 characters, spaces not allowed)',
   'modal.nickname.placeholder': '1-6 character nickname',
   'modal.info.cloudSaveComplete.title': 'Complete',
   'modal.info.cloudSaveComplete.message': 'Cloud save completed!',
   'modal.error.loginRequired.title': 'Login Required',
   'modal.error.loginRequired.message': 'Cloud save is only available for logged-in users.',
   'modal.error.noSaveData.title': 'No Save Data',
-  'modal.error.noSaveData.message': 'No local save data found. Please play the game first and then save.',
+  'modal.error.noSaveData.message':
+    'No local save data found. Please play the game first and then save.',
   'modal.error.invalidSaveData.title': 'Error',
   'modal.error.invalidSaveData.message': 'Local save data format is invalid.',
   'modal.error.uploadFailed.title': 'Upload Failed',
@@ -111,19 +116,19 @@ export default {
   'modal.error.progressSwitchFailed.title': 'Error',
   'modal.error.progressSwitchFailed.message': 'Failed to switch progress.\n{error}',
   'modal.error.cloudTableMissing.title': 'Cloud Table Missing',
-  'modal.error.cloudTableMissing.message': 'The game_saves table does not exist in Supabase yet.\nPlease run supabase/game_saves.sql in Supabase SQL Editor.',
+  'modal.error.cloudTableMissing.message':
+    'The game_saves table does not exist in Supabase yet.\nPlease run supabase/game_saves.sql in Supabase SQL Editor.',
   'achievement.status.unlocked': '✅ Unlocked!',
   'achievement.status.locked': '🔒 Locked',
   'modal.confirm.cloudLoad.title': 'Cloud Load',
-  'modal.confirm.cloudLoad.message': 'Save time: {time}\n\nLoading will overwrite local save with cloud data and refresh the page.\nContinue?',
+  'modal.confirm.cloudLoad.message':
+    'Save time: {time}\n\nLoading will overwrite local save with cloud data and refresh the page.\nContinue?',
   'modal.confirm.cloudSaveFound.title': 'Cloud Save Found',
   'modal.confirm.cloudSaveFound.message': '{message}',
   'modal.confirm.progressSwitch.title': 'Progress Selection',
   'modal.confirm.progressSwitch.message': '{message}',
   'msg.cloudProgressLoaded': '☁️ Loaded progress from another device. Refreshing page...',
-  'modal.info.cloudSaveComplete.title': 'Complete',
-  'modal.info.cloudSaveComplete.message': 'Cloud save completed!',
-  
+
   // Settings tab
   'settings.language.title': '🌐 Language',
   'settings.gameInfo.title': '📋 Game Info',
@@ -132,7 +137,7 @@ export default {
   'settings.account.title': '👤 Account (Social Login)',
   'settings.saveManagement.title': '💾 Save Management',
   'settings.reset.title': '🔄 Reset Game',
-  
+
   // Header
   'header.cash': '💵 Cash',
   'header.financial': '💰 Financial',
@@ -140,14 +145,14 @@ export default {
   'header.rps': '📈 Per Sec',
   'header.favorite_btn': 'Favorite',
   'header.share_btn': 'Share',
-  
+
   // Work Tab
-  'work.title': '🛠️ Work',
-  'work.button': '🛠️ Work',
-  
+  'work.title': 'Work',
+  'work.button': 'Work',
+
   // Other UI text
-  'ui.work': '🛠️ Labor',
-  'ui.diary': '📓 Diary',
+  'ui.work': 'Labor',
+  'ui.diary': 'Diary',
   'ui.upgrades': 'Upgrades',
   'ui.financial': 'Financial Products',
   'ui.properties': 'Properties',
@@ -166,38 +171,38 @@ export default {
   'ui.promotionAvailable': 'Promotion available!',
   'ui.remaining': 'remaining',
   'ui.progress': 'Progress',
-  'ui.stats': '📊 Stats',
-  'ui.ranking': '🏅 Ranking',
-  'ui.settings': '⚙️ Settings',
+  'ui.stats': 'Stats',
+  'ui.ranking': 'Ranking',
+  'ui.settings': 'Settings',
   'ui.marketEvent': 'Market Event',
   'ui.second': 'sec',
   'ui.currency': ' KRW',
   'ui.currencyShort': ' KRW',
   'ui.noTimeInfo': 'No time info',
-  
+
   // Header tooltips
   'header.tooltip.financialIncome': 'Financial Income: {amount}',
   'header.tooltip.propertyIncome': 'Property Income: {amount}',
   'header.tooltip.marketMultiplier': 'Market Multiplier: x{multiplier}',
-  
+
   // Units
   'ui.unit.count': 'pcs',
   'ui.unit.property': 'units',
-  
+
   // Product description templates
   'product.desc.perUnit': 'Each {product} produces {amount} per second',
-  'product.desc.total': '{count} {unit} {product} producing {amount} per second ({percent}% of total)',
+  'product.desc.total':
+    '{count} {unit} {product} producing {amount} per second ({percent}% of total)',
   'product.desc.lifetime': 'Lifetime production: {amount}',
   'product.desc.currentPrice': 'Current price: {price}',
-  
+
   // Other
   'ui.noUpgrades': 'No upgrades unlocked',
   'ui.day': 'day',
-  'ui.owned': 'owned',
   'tower.desc.prestige': 'Prestige item (no income)',
   'tower.desc.owned': '{count} owned',
   'tower.desc.leaderboard': 'Recorded on leaderboard: 🗼x{count}',
-  
+
   // Stats tab
   'stats.totalAssets': 'Total Assets',
   'stats.totalEarnings': 'Total Lifetime Earnings',
@@ -225,7 +230,7 @@ export default {
   'stats.property': 'Property',
   'stats.cash': 'Cash',
   'stats.growthTracking': 'Growth Tracking',
-  
+
   // Ranking tab
   'ranking.myRecord': 'My Record',
   'ranking.globalLeaderboard': 'Global Leaderboard (TOP 10)',
@@ -240,7 +245,7 @@ export default {
   'ranking.table.assets': 'Assets',
   'ranking.table.playtime': 'Cumulative',
   'ranking.table.playtime.full': 'Cumulative Time',
-  
+
   // Settings tab
   'settings.gameTitle': 'Game Title',
   'settings.version': 'Version',
@@ -261,13 +266,17 @@ export default {
   'settings.loginGoogle': 'Login with Google',
   'settings.language.korean': 'Korean',
   'settings.logout': 'Logout',
-  'settings.resetWarning': 'This will reset the current run. 🗼 Cumulative records and ⏱ cumulative time will be preserved.',
-  'settings.saveManagement.cloudSaveDesc': '☁️ Cloud Save: Logged-in users can save to the cloud to sync progress across devices.',
+  'settings.resetWarning':
+    'This will reset the current run. 🗼 Cumulative records and ⏱ cumulative time will be preserved.',
+  'settings.saveManagement.cloudSaveDesc':
+    '☁️ Cloud Save: Logged-in users can save to the cloud to sync progress across devices.',
   'settings.saveManagement.cloudSaveBtn': '☁️ Cloud Save',
   'settings.saveManagement.cloudLoadBtn': '☁️ Cloud Load',
-  'settings.saveManagement.cloudSaveHint': 'Local saves are automatic every 5 seconds. Cloud saves are uploaded automatically when closing the tab, and can also be manually saved/loaded.',
+  'settings.saveManagement.cloudSaveHint':
+    'Local saves are automatic every 5 seconds. Cloud saves are uploaded automatically when closing the tab, and can also be manually saved/loaded.',
   'settings.saveManagement.lastCloudSync': 'Last Cloud Sync',
-  'settings.saveManagement.guestSaveInfo': 'In Guest Mode, saves are stored only in browser LocalStorage. Login is required to sync progress across multiple devices.',
+  'settings.saveManagement.guestSaveInfo':
+    'In Guest Mode, saves are stored only in browser LocalStorage. Login is required to sync progress across multiple devices.',
   'settings.saveManagement.autoSaveInterval': 'Auto Save Interval',
   'settings.saveManagement.saveLocation': 'Save Location',
   'settings.saveManagement.lastSave': 'Last Save',
@@ -285,23 +294,23 @@ export default {
   'settings.nickname.change.taken': 'This nickname is already in use.',
   'settings.nickname.change.loginRequired': 'Login is required to reflect on leaderboard.',
   'settings.nickname.change.banned': 'This nickname cannot be used.',
-  'settings.nickname.change.cooldown': 'Please wait {seconds} seconds before changing nickname again.',
-  'settings.nickname.change.claimFailed': 'An error occurred while changing nickname. Please try again later.',
+  'settings.nickname.change.cooldown':
+    'Please wait {seconds} seconds before changing nickname again.',
+  'settings.nickname.change.claimFailed':
+    'An error occurred while changing nickname. Please try again later.',
   'settings.nickname.change.needRename': 'Your nickname is duplicated and needs to be changed.',
   'settings.nickname.migrationConflict.title': 'Nickname Change Required',
-  'settings.nickname.migrationConflict.message': 'Your nickname is duplicated and needs to be changed.\nPlease set a new nickname to be reflected on the leaderboard.',
+  'settings.nickname.migrationConflict.message':
+    'Your nickname is duplicated and needs to be changed.\nPlease set a new nickname to be reflected on the leaderboard.',
   'settings.nickname.modal.title': 'Change Nickname',
-  'settings.nickname.modal.message': '1-6 characters, no spaces\nBanned words and duplicate nicknames cannot be used.',
+  'settings.nickname.modal.message':
+    '1-6 characters, no spaces\nBanned words and duplicate nicknames cannot be used.',
   'settings.nickname.modal.placeholder': '2-6 character nickname',
   'settings.nickname.modal.cancel': 'Cancel',
   'settings.nickname.modal.submit': 'Change',
-  
+
   // Stats tab additional
   'stats.totalEarningsTitle': 'Total Earnings',
-  'stats.totalAssets': 'Total Assets',
-  'stats.totalEarnings': 'Total Cumulative Earnings',
-  'stats.rps': 'Earnings Per Second',
-  'stats.clickIncome': 'Earnings Per Click',
   'stats.playInfo': 'Play Info',
   'stats.totalClicks': 'Total Clicks',
   'stats.unit.sec': 'sec',
@@ -310,7 +319,7 @@ export default {
   'stats.unit.minute': 'min',
   'stats.unit.perSec': '/sec',
   'stats.unit.perHour': '/hour',
-  
+
   // Other dynamic text
   'ui.dayCount': 'Day {days}',
   'ui.today': 'Today: {date}',
@@ -323,10 +332,10 @@ export default {
   'ranking.error': 'Error loading leaderboard: {error}',
   'ranking.emptyMessage': 'You are not yet on the leaderboard.',
   'ranking.emptyHint': 'Play the game and save to see your rank here.',
-  
+
   // Diary messages
   'diary.justWrite': 'Just writing it down.',
-  'diary.todayRecord': 'Today\'s record.',
+  'diary.todayRecord': "Today's record.",
   'diary.anyway': 'Anyway,',
   'diary.justRecord': 'Just recording.',
   'diary.memo': 'Making a memo.',
@@ -334,15 +343,15 @@ export default {
   'diary.recordForLater': 'Recording for later.',
   'diary.goodToWrite': 'It would be good to write it down.',
   'diary.leaveRecord': 'Leaving a record.',
-  
+
   // Unlock messages
   'msg.unlock.savings': '❌ Savings requires at least 1 Deposit to unlock.',
   'msg.unlock.bond': '❌ Domestic Stock requires at least 1 Savings to unlock.',
-  
+
   // Achievement translations (dynamically added)
   // Achievement translations are generated dynamically from ACHIEVEMENTS array in main.js
   // Can be added here if needed
-  
+
   // Basic achievements
   'achievement.first_click.name': 'First Labor',
   'achievement.first_click.desc': 'Made your first click',
@@ -360,7 +369,7 @@ export default {
   'achievement.first_property.desc': 'Purchased your first property',
   'achievement.first_upgrade.name': 'First Upgrade',
   'achievement.first_upgrade.desc': 'Purchased your first upgrade',
-  
+
   // Expert achievements
   'achievement.financial_expert.name': 'Financial Expert',
   'achievement.financial_expert.desc': 'Own all financial products',
@@ -378,7 +387,7 @@ export default {
   'achievement.crypto_expert.desc': 'Achieved 500M KRW in crypto investments',
   'achievement.real_estate_agent.name': 'Real Estate Agent',
   'achievement.real_estate_agent.desc': 'Own 20 properties',
-  
+
   // Asset achievements
   'achievement.millionaire.name': 'Millionaire',
   'achievement.millionaire.desc': 'Achieved 100M KRW in total assets',
@@ -396,7 +405,7 @@ export default {
   'achievement.legendary_rich.desc': 'Achieved 100T KRW in total assets',
   'achievement.god_rich.name': 'God Rich',
   'achievement.god_rich.desc': 'Achieved 1,000T KRW in total assets',
-  
+
   // Career achievements
   'achievement.career_starter.name': 'Employee',
   'achievement.career_starter.desc': 'Promoted to contract worker',
@@ -414,7 +423,7 @@ export default {
   'achievement.global_ceo.desc': 'Achieved overseas expansion',
   'achievement.legendary_ceo.name': 'Legendary CEO',
   'achievement.legendary_ceo.desc': 'Achieved all goals',
-  
+
   // Upgrade translations
   // Labor related
   'upgrade.part_time_job.name': '🍕 Part-time Experience',
@@ -447,7 +456,7 @@ export default {
   'upgrade.global_experience.desc': 'Click income x2.0',
   'upgrade.entrepreneurship.name': '🚀 Entrepreneurship',
   'upgrade.entrepreneurship.desc': 'Click income x2.0',
-  
+
   // Deposit related
   'upgrade.deposit_boost_1.name': '💰 Deposit Interest Rate Up',
   'upgrade.deposit_boost_1.desc': 'Deposit income x2',
@@ -459,7 +468,7 @@ export default {
   'upgrade.deposit_boost_4.desc': 'Deposit income x2',
   'upgrade.deposit_boost_5.name': '👑 King Deposit',
   'upgrade.deposit_boost_5.desc': 'Deposit income x2',
-  
+
   // Savings related
   'upgrade.savings_boost_1.name': '🏦 Savings Compound Effect',
   'upgrade.savings_boost_1.desc': 'Savings income x2',
@@ -471,7 +480,7 @@ export default {
   'upgrade.savings_boost_4.desc': 'Savings income x2',
   'upgrade.savings_boost_5.name': '👑 King Savings',
   'upgrade.savings_boost_5.desc': 'Savings income x2',
-  
+
   // Stock related
   'upgrade.bond_boost_1.name': '📈 Stock Yield Enhancement',
   'upgrade.bond_boost_1.desc': 'Stock income x2',
@@ -483,7 +492,7 @@ export default {
   'upgrade.bond_boost_4.desc': 'Stock income x2',
   'upgrade.bond_boost_5.name': '👑 King Stock',
   'upgrade.bond_boost_5.desc': 'Stock income x2',
-  
+
   // US Stock related
   'upgrade.usstock_boost_1.name': '🇺🇸 S&P 500 Investment',
   'upgrade.usstock_boost_1.desc': 'US Stock income x2',
@@ -495,7 +504,7 @@ export default {
   'upgrade.usstock_boost_4.desc': 'US Stock income x2',
   'upgrade.usstock_boost_5.name': '👑 King Global Stock',
   'upgrade.usstock_boost_5.desc': 'US Stock income x2',
-  
+
   // Crypto related
   'upgrade.crypto_boost_1.name': '₿ Bitcoin Investment',
   'upgrade.crypto_boost_1.desc': 'Crypto income x2',
@@ -507,7 +516,7 @@ export default {
   'upgrade.crypto_boost_4.desc': 'Crypto income x2',
   'upgrade.crypto_boost_5.name': '👑 King Cryptocurrency',
   'upgrade.crypto_boost_5.desc': 'Crypto income x2',
-  
+
   // Villa related
   'upgrade.villa_boost_1.name': '🏘️ Villa Remodeling',
   'upgrade.villa_boost_1.desc': 'Villa income x2',
@@ -519,7 +528,7 @@ export default {
   'upgrade.villa_boost_4.desc': 'Villa income x2',
   'upgrade.villa_boost_5.name': '👑 King Villa',
   'upgrade.villa_boost_5.desc': 'Villa income x2',
-  
+
   // Officetel related
   'upgrade.officetel_boost_1.name': '🏢 Officetel Smartification',
   'upgrade.officetel_boost_1.desc': 'Officetel income x2',
@@ -531,7 +540,7 @@ export default {
   'upgrade.officetel_boost_4.desc': 'Officetel income x2',
   'upgrade.officetel_boost_5.name': '👑 King Officetel',
   'upgrade.officetel_boost_5.desc': 'Officetel income x2',
-  
+
   // Apartment related
   'upgrade.apartment_boost_1.name': '🏡 Apartment Premiumization',
   'upgrade.apartment_boost_1.desc': 'Apartment income x2',
@@ -543,7 +552,7 @@ export default {
   'upgrade.apartment_boost_4.desc': 'Apartment income x2',
   'upgrade.apartment_boost_5.name': '👑 King Apartment',
   'upgrade.apartment_boost_5.desc': 'Apartment income x2',
-  
+
   // Shop related
   'upgrade.shop_boost_1.name': '🏪 Shop Location Improvement',
   'upgrade.shop_boost_1.desc': 'Shop income x2',
@@ -555,7 +564,7 @@ export default {
   'upgrade.shop_boost_4.desc': 'Shop income x2',
   'upgrade.shop_boost_5.name': '👑 King Commercial Area',
   'upgrade.shop_boost_5.desc': 'Shop income x2',
-  
+
   // Building related
   'upgrade.building_boost_1.name': '🏙️ Building Tenant Acquisition',
   'upgrade.building_boost_1.desc': 'Building income x2',
@@ -567,7 +576,7 @@ export default {
   'upgrade.building_boost_4.desc': 'Building income x2',
   'upgrade.building_boost_5.name': '👑 King Building',
   'upgrade.building_boost_5.desc': 'Building income x2',
-  
+
   // Global upgrades
   'upgrade.rent_multiplier.name': '📊 Real Estate Management Specialization',
   'upgrade.rent_multiplier.desc': 'All property income +10%',
@@ -577,5 +586,4 @@ export default {
   'upgrade.financial_expert.desc': 'All financial income +20%',
   'upgrade.auto_work_system.name': '🤖 AI Work Automation',
   'upgrade.auto_work_system.desc': 'Automatically clicks once per second (adds per-second income)',
-};
-
+}

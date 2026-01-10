@@ -49,18 +49,19 @@ import {
 } from './state/gameState.js'
 
 // ===== 밸런스 설정 import =====
-import { MARKET_EVENTS } from './balance/index.js'
+import { MARKET_EVENTS, BASE_COSTS } from './balance/index.js'
 
-// 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 로그를 무력화합니다.
+// 개발 모드에서는 콘솔을 유지하고, 프로덕션에서는 게임 로그만 무력화합니다.
 // - Vite 빌드/개발서버: import.meta.env.DEV 사용
 // - GitHub Pages처럼 번들 없이 ESM으로 직접 로드하는 경우: import.meta.env가 없을 수 있음
 // DEV 모드 체크 (Vite 기준, optional chaining 사용)
 const __IS_DEV__ = !!import.meta?.env?.DEV
-if (!__IS_DEV__) {
-  console.log = () => {}
-  console.warn = () => {}
-  console.error = () => {}
-}
+
+// 게임 전용 로거 - 프로덕션에서는 무력화, 개발 모드에서는 활성화
+// 외부 SDK(Supabase 등)의 console.error는 유지하여 중요 오류 추적 가능
+const gameLog = __IS_DEV__ ? console.log.bind(console) : () => {}
+const gameWarn = __IS_DEV__ ? console.warn.bind(console) : () => {}
+const gameError = __IS_DEV__ ? console.error.bind(console) : () => {}
 
 // 인앱 브라우저(카카오톡/인스타 등) 감지
 function detectInAppBrowser() {
@@ -688,6 +689,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // 구매 수량 선택 시스템
   let purchaseMode = 'buy' // 'buy' or 'sell'
   let purchaseQuantity = 1 // 1, 10, 100
+
+  // 성장 추적 데이터 저장
+  let hourlyEarningsHistory = [] // 최근 1시간 수익 기록
+  let dailyEarningsHistory = [] // 최근 24시간 수익 기록
+  let lastEarningsSnapshot = 0 // 마지막 수익 스냅샷
+  let lastSnapshotTime = Date.now()
+
+  // 업적 스크롤 관련 플래그
+  let __achievementScrollActive = false
+  let __achievementUpdatePending = false
+  let __achievementScrollDebounceTimer = null
 
   // 자동 저장 시스템
   const SAVE_KEY = 'seoulTycoonSaveV1'
@@ -2227,11 +2239,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // 번역 키가 없으면 fallback으로 한글 사용 (개발 중)
     const achievementName = t(`achievement.${achievement.id}.name`)
     const achievementDesc = t(`achievement.${achievement.id}.desc`)
-    notification.innerHTML = `
-        <div style="font-size: 24px; margin-bottom: 10px;">🏆</div>
-        <div style="font-size: 18px; margin-bottom: 5px;">${achievementName}</div>
-        <div style="font-size: 14px; opacity: 0.8;">${achievementDesc}</div>
-      `
+
+    // XSS 방지: innerHTML 대신 DOM API 사용
+    const iconDiv = document.createElement('div')
+    iconDiv.style.cssText = 'font-size: 24px; margin-bottom: 10px;'
+    iconDiv.textContent = '🏆'
+
+    const nameDiv = document.createElement('div')
+    nameDiv.style.cssText = 'font-size: 18px; margin-bottom: 5px;'
+    nameDiv.textContent = achievementName
+
+    const descDiv = document.createElement('div')
+    descDiv.style.cssText = 'font-size: 14px; opacity: 0.8;'
+    descDiv.textContent = achievementDesc
+
+    notification.appendChild(iconDiv)
+    notification.appendChild(nameDiv)
+    notification.appendChild(descDiv)
 
     document.body.appendChild(notification)
 
@@ -2342,14 +2366,6 @@ document.addEventListener('DOMContentLoaded', () => {
         )
       }
 
-      // 승진 후 즉시 UI 업데이트
-      console.log('=== PROMOTION DEBUG ===')
-      console.log('Promoted to:', getCareerName(careerLevel))
-      console.log('New career level:', careerLevel)
-      console.log('New multiplier:', newCareer.multiplier)
-      console.log('Click income:', NumberFormat.formatKoreanNumber(clickIncome))
-      console.log('======================')
-
       return true
     }
     return false
@@ -2359,47 +2375,133 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateButtonStates() {
     const qty = purchaseQuantity
     const isBuy = purchaseMode === 'buy'
+    const modeText = isBuy ? t('button.buy') : t('button.sell')
+    const qtyText = qty > 1 ? ` x${qty}` : ''
 
-    // 금융상품 버튼 상태 업데이트
+    // 금융상품 버튼 상태 및 텍스트 업데이트
     const depositCanBuy = isBuy && cash >= getFinancialCost('deposit', deposits, qty)
+    const depositCanSell = !isBuy && deposits >= qty
     const savingsCanBuy = isBuy && cash >= getFinancialCost('savings', savings, qty)
+    const savingsCanSell = !isBuy && savings >= qty
     const bondCanBuy = isBuy && cash >= getFinancialCost('bond', bonds, qty)
+    const bondCanSell = !isBuy && bonds >= qty
     const usStockCanBuy = isBuy && cash >= getFinancialCost('usStock', usStocks, qty)
+    const usStockCanSell = !isBuy && usStocks >= qty
     const cryptoCanBuy = isBuy && cash >= getFinancialCost('crypto', cryptos, qty)
+    const cryptoCanSell = !isBuy && cryptos >= qty
 
-    elBuyDeposit.classList.toggle('affordable', depositCanBuy)
-    elBuyDeposit.classList.toggle('unaffordable', isBuy && !depositCanBuy)
-    elBuySavings.classList.toggle('affordable', savingsCanBuy)
-    elBuySavings.classList.toggle('unaffordable', isBuy && !savingsCanBuy)
-    elBuyBond.classList.toggle('affordable', bondCanBuy)
-    elBuyBond.classList.toggle('unaffordable', isBuy && !bondCanBuy)
-    elBuyUsStock.classList.toggle('affordable', usStockCanBuy)
-    elBuyUsStock.classList.toggle('unaffordable', isBuy && !usStockCanBuy)
-    elBuyCrypto.classList.toggle('affordable', cryptoCanBuy)
-    elBuyCrypto.classList.toggle('unaffordable', isBuy && !cryptoCanBuy)
+    // 버튼 텍스트 업데이트
+    elBuyDeposit.textContent = `${modeText}${qtyText}`
+    elBuySavings.textContent = `${modeText}${qtyText}`
+    elBuyBond.textContent = `${modeText}${qtyText}`
+    elBuyUsStock.textContent = `${modeText}${qtyText}`
+    elBuyCrypto.textContent = `${modeText}${qtyText}`
 
-    // 부동산 버튼 상태 업데이트
+    // 버튼 상태 클래스 업데이트 (구매/판매 모드 모두 지원)
+    const affordableClass = isBuy ? 'affordable' : 'affordable-sell'
+    const unaffordableClass = isBuy ? 'unaffordable' : 'unaffordable-sell'
+
+    // 금융상품 버튼 클래스 업데이트
+    elBuyDeposit.classList.remove(
+      'affordable',
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    elBuyDeposit.classList.add(
+      depositCanBuy || depositCanSell ? affordableClass : unaffordableClass
+    )
+
+    elBuySavings.classList.remove(
+      'affordable',
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    elBuySavings.classList.add(
+      savingsCanBuy || savingsCanSell ? affordableClass : unaffordableClass
+    )
+
+    elBuyBond.classList.remove('affordable', 'unaffordable', 'affordable-sell', 'unaffordable-sell')
+    elBuyBond.classList.add(bondCanBuy || bondCanSell ? affordableClass : unaffordableClass)
+
+    elBuyUsStock.classList.remove(
+      'affordable',
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    elBuyUsStock.classList.add(
+      usStockCanBuy || usStockCanSell ? affordableClass : unaffordableClass
+    )
+
+    elBuyCrypto.classList.remove(
+      'affordable',
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    elBuyCrypto.classList.add(cryptoCanBuy || cryptoCanSell ? affordableClass : unaffordableClass)
+
+    // 부동산 버튼 상태 및 텍스트 업데이트
     const villaCanBuy = isBuy && cash >= getPropertyCost('villa', villas, qty)
+    const villaCanSell = !isBuy && villas >= qty
     const officetelCanBuy = isBuy && cash >= getPropertyCost('officetel', officetels, qty)
+    const officetelCanSell = !isBuy && officetels >= qty
     const aptCanBuy = isBuy && cash >= getPropertyCost('apartment', apartments, qty)
+    const aptCanSell = !isBuy && apartments >= qty
     const shopCanBuy = isBuy && cash >= getPropertyCost('shop', shops, qty)
+    const shopCanSell = !isBuy && shops >= qty
     const buildingCanBuy = isBuy && cash >= getPropertyCost('building', buildings, qty)
+    const buildingCanSell = !isBuy && buildings >= qty
 
-    elBuyVilla.classList.toggle('affordable', villaCanBuy)
-    elBuyVilla.classList.toggle('unaffordable', isBuy && !villaCanBuy)
-    elBuyOfficetel.classList.toggle('affordable', officetelCanBuy)
-    elBuyOfficetel.classList.toggle('unaffordable', isBuy && !officetelCanBuy)
-    elBuyApt.classList.toggle('affordable', aptCanBuy)
-    elBuyApt.classList.toggle('unaffordable', isBuy && !aptCanBuy)
-    elBuyShop.classList.toggle('affordable', shopCanBuy)
-    elBuyShop.classList.toggle('unaffordable', isBuy && !shopCanBuy)
-    elBuyBuilding.classList.toggle('affordable', buildingCanBuy)
-    elBuyBuilding.classList.toggle('unaffordable', isBuy && !buildingCanBuy)
+    // 부동산 버튼 텍스트 업데이트
+    elBuyVilla.textContent = `${modeText}${qtyText}`
+    elBuyOfficetel.textContent = `${modeText}${qtyText}`
+    elBuyApt.textContent = `${modeText}${qtyText}`
+    elBuyShop.textContent = `${modeText}${qtyText}`
+    elBuyBuilding.textContent = `${modeText}${qtyText}`
+
+    // 부동산 버튼 상태 클래스 업데이트 (구매/판매 모드 모두 지원)
+    elBuyVilla.classList.remove(
+      'affordable',
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    elBuyVilla.classList.add(villaCanBuy || villaCanSell ? affordableClass : unaffordableClass)
+
+    elBuyOfficetel.classList.remove(
+      'affordable',
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    elBuyOfficetel.classList.add(
+      officetelCanBuy || officetelCanSell ? affordableClass : unaffordableClass
+    )
+
+    elBuyApt.classList.remove('affordable', 'unaffordable', 'affordable-sell', 'unaffordable-sell')
+    elBuyApt.classList.add(aptCanBuy || aptCanSell ? affordableClass : unaffordableClass)
+
+    elBuyShop.classList.remove('affordable', 'unaffordable', 'affordable-sell', 'unaffordable-sell')
+    elBuyShop.classList.add(shopCanBuy || shopCanSell ? affordableClass : unaffordableClass)
+
+    elBuyBuilding.classList.remove(
+      'affordable',
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    elBuyBuilding.classList.add(
+      buildingCanBuy || buildingCanSell ? affordableClass : unaffordableClass
+    )
 
     // 서울타워 버튼 상태 (구매만 가능, 판매 불가)
     if (elBuyTower) {
       const towerCost = BASE_COSTS.tower
       const towerCanBuy = isBuy && cash >= towerCost && isProductUnlocked('tower')
+      elBuyTower.textContent = isBuy ? `${t('button.buy')}${qtyText}` : t('button.sell')
       elBuyTower.classList.toggle('affordable', towerCanBuy)
       elBuyTower.classList.toggle(
         'unaffordable',
@@ -2415,52 +2517,167 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateBuildingItemStates() {
     const qty = purchaseQuantity
     const isBuy = purchaseMode === 'buy'
+    const affordableClass = isBuy ? 'affordable' : 'affordable-sell'
+    const unaffordableClass = isBuy ? 'unaffordable' : 'unaffordable-sell'
 
-    // 금융상품 아이템 상태 업데이트 (구매 모드일 때만 affordable 적용)
+    // 금융상품 아이템 상태 업데이트 (구매/판매 모드 모두 지원)
     const depositItem = document.getElementById('depositItem')
     const savingsItem = document.getElementById('savingsItem')
     const bondItem = document.getElementById('bondItem')
     const usStockItem = document.getElementById('usStockItem')
     const cryptoItem = document.getElementById('cryptoItem')
 
-    depositItem.classList.toggle(
+    const depositCanBuy = cash >= getFinancialCost('deposit', deposits, qty)
+    const depositCanSell = deposits >= qty
+    const savingsCanBuy = cash >= getFinancialCost('savings', savings, qty)
+    const savingsCanSell = savings >= qty
+    const bondCanBuy = cash >= getFinancialCost('bond', bonds, qty)
+    const bondCanSell = bonds >= qty
+    const usStockCanBuy = cash >= getFinancialCost('usStock', usStocks, qty)
+    const usStockCanSell = usStocks >= qty
+    const cryptoCanBuy = cash >= getFinancialCost('crypto', cryptos, qty)
+    const cryptoCanSell = cryptos >= qty
+
+    depositItem.classList.remove(
       'affordable',
-      isBuy && cash >= getFinancialCost('deposit', deposits, qty)
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
     )
-    savingsItem.classList.toggle(
+    depositItem.classList.add(depositCanBuy || depositCanSell ? affordableClass : unaffordableClass)
+
+    savingsItem.classList.remove(
       'affordable',
-      isBuy && cash >= getFinancialCost('savings', savings, qty)
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
     )
-    bondItem.classList.toggle('affordable', isBuy && cash >= getFinancialCost('bond', bonds, qty))
-    usStockItem.classList.toggle(
-      'affordable',
-      isBuy && cash >= getFinancialCost('usStock', usStocks, qty)
-    )
-    cryptoItem.classList.toggle(
-      'affordable',
-      isBuy && cash >= getFinancialCost('crypto', cryptos, qty)
+    savingsItem.classList.add(savingsCanBuy || savingsCanSell ? affordableClass : unaffordableClass)
+
+    bondItem.classList.remove('affordable', 'unaffordable', 'affordable-sell', 'unaffordable-sell')
+    bondItem.classList.add(
+      isBuy
+        ? bondCanBuy
+          ? affordableClass
+          : unaffordableClass
+        : bondCanSell
+          ? affordableClass
+          : unaffordableClass
     )
 
-    // 부동산 아이템 상태 업데이트 (구매 모드일 때만 affordable 적용)
+    usStockItem.classList.remove(
+      'affordable',
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    usStockItem.classList.add(
+      isBuy
+        ? usStockCanBuy
+          ? affordableClass
+          : unaffordableClass
+        : usStockCanSell
+          ? affordableClass
+          : unaffordableClass
+    )
+
+    cryptoItem.classList.remove(
+      'affordable',
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    cryptoItem.classList.add(
+      isBuy
+        ? cryptoCanBuy
+          ? affordableClass
+          : unaffordableClass
+        : cryptoCanSell
+          ? affordableClass
+          : unaffordableClass
+    )
+
+    // 부동산 아이템 상태 업데이트
     const villaItem = document.getElementById('villaItem')
     const officetelItem = document.getElementById('officetelItem')
     const aptItem = document.getElementById('aptItem')
     const shopItem = document.getElementById('shopItem')
     const buildingItem = document.getElementById('buildingItem')
 
-    villaItem.classList.toggle('affordable', isBuy && cash >= getPropertyCost('villa', villas, qty))
-    officetelItem.classList.toggle(
-      'affordable',
-      isBuy && cash >= getPropertyCost('officetel', officetels, qty)
+    const villaCanBuy = cash >= getPropertyCost('villa', villas, qty)
+    const villaCanSell = villas >= qty
+    const officetelCanBuy = cash >= getPropertyCost('officetel', officetels, qty)
+    const officetelCanSell = officetels >= qty
+    const aptCanBuy = cash >= getPropertyCost('apartment', apartments, qty)
+    const aptCanSell = apartments >= qty
+    const shopCanBuy = cash >= getPropertyCost('shop', shops, qty)
+    const shopCanSell = shops >= qty
+    const buildingCanBuy = cash >= getPropertyCost('building', buildings, qty)
+    const buildingCanSell = buildings >= qty
+
+    villaItem.classList.remove('affordable', 'unaffordable', 'affordable-sell', 'unaffordable-sell')
+    villaItem.classList.add(
+      isBuy
+        ? villaCanBuy
+          ? affordableClass
+          : unaffordableClass
+        : villaCanSell
+          ? affordableClass
+          : unaffordableClass
     )
-    aptItem.classList.toggle(
+
+    officetelItem.classList.remove(
       'affordable',
-      isBuy && cash >= getPropertyCost('apartment', apartments, qty)
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
     )
-    shopItem.classList.toggle('affordable', isBuy && cash >= getPropertyCost('shop', shops, qty))
-    buildingItem.classList.toggle(
+    officetelItem.classList.add(
+      isBuy
+        ? officetelCanBuy
+          ? affordableClass
+          : unaffordableClass
+        : officetelCanSell
+          ? affordableClass
+          : unaffordableClass
+    )
+
+    aptItem.classList.remove('affordable', 'unaffordable', 'affordable-sell', 'unaffordable-sell')
+    aptItem.classList.add(
+      isBuy
+        ? aptCanBuy
+          ? affordableClass
+          : unaffordableClass
+        : aptCanSell
+          ? affordableClass
+          : unaffordableClass
+    )
+
+    shopItem.classList.remove('affordable', 'unaffordable', 'affordable-sell', 'unaffordable-sell')
+    shopItem.classList.add(
+      isBuy
+        ? shopCanBuy
+          ? affordableClass
+          : unaffordableClass
+        : shopCanSell
+          ? affordableClass
+          : unaffordableClass
+    )
+
+    buildingItem.classList.remove(
       'affordable',
-      isBuy && cash >= getPropertyCost('building', buildings, qty)
+      'unaffordable',
+      'affordable-sell',
+      'unaffordable-sell'
+    )
+    buildingItem.classList.add(
+      isBuy
+        ? buildingCanBuy
+          ? affordableClass
+          : unaffordableClass
+        : buildingCanSell
+          ? affordableClass
+          : unaffordableClass
     )
 
     // 서울타워 아이템 상태 (구매만 가능, 판매 불가)
@@ -2551,7 +2768,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(saveData))
       lastSaveTime = new Date()
-      console.log('게임 저장 완료:', lastSaveTime.toLocaleTimeString())
       updateSaveStatus() // 저장 상태 UI 업데이트
 
       // 로그인 사용자면 탭 숨김/닫기 시 플러시를 위해 대기 중인 저장으로 설정
@@ -2579,7 +2795,49 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('게임 저장 실패:', error)
+      // 저장 실패 시 사용자 알림 (연속 실패 시에만)
+      __saveFailCount = (__saveFailCount || 0) + 1
+      if (__saveFailCount >= 3) {
+        // 3회 이상 연속 실패 시 경고 표시
+        showSaveWarning()
+        __saveFailCount = 0 // 경고 후 카운트 리셋
+      }
     }
+  }
+
+  // 저장 실패 경고 표시 (연속 실패 시)
+  let __saveFailCount = 0
+  let __saveWarningShown = false
+  function showSaveWarning() {
+    if (__saveWarningShown) return // 이미 경고 표시 중이면 스킵
+    __saveWarningShown = true
+
+    const warning = document.createElement('div')
+    warning.className = 'save-warning-toast'
+    warning.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 3000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      animation: slideUp 0.3s ease-out;
+    `
+    warning.textContent = '⚠️ 게임 저장에 실패했습니다. 저장 공간을 확인해주세요.'
+    document.body.appendChild(warning)
+
+    setTimeout(() => {
+      warning.style.animation = 'slideDown 0.3s ease-in forwards'
+      setTimeout(() => {
+        if (warning.parentElement) warning.remove()
+        __saveWarningShown = false
+      }, 300)
+    }, 5000)
   }
 
   // ======= 닉네임 관리 함수 =======
@@ -2616,12 +2874,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (finalNickname) {
       // 닉네임이 있으면 playerNickname 업데이트하고 스킵
       playerNickname = finalNickname
-      console.log('✅ 닉네임 확인됨:', finalNickname)
       return
     }
 
     // 닉네임이 없으면 모달 오픈
-    console.log('📝 닉네임 없음: 모달 오픈')
     __nicknameModalShown = true // 플래그 설정 (모달 오픈 전에 설정하여 중복 방지)
 
     // 닉네임 결정이 끝날 때까지 클라우드 복구를 세션 단위로 차단
@@ -2851,7 +3107,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // 누적 플레이시간 시스템 복원
       if (data.totalPlayTime !== undefined) {
         totalPlayTime = data.totalPlayTime
-        console.log('🕐 이전 누적 플레이시간 복원:', totalPlayTime, 'ms')
       }
       // 닉네임 복원
       playerNickname = data.nickname || ''
@@ -2859,17 +3114,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 이전 세션의 플레이시간을 누적 (정수로 보정)
         const previousSessionTime = Math.max(0, Math.floor(Date.now() - data.sessionStartTime))
         totalPlayTime = Math.max(0, Math.floor(totalPlayTime + previousSessionTime))
-        console.log('🕐 이전 세션 플레이시간 누적:', previousSessionTime, 'ms')
       }
       // 새 세션 시작
       sessionStartTime = Date.now()
-      console.log('🕐 새 세션 시작:', new Date(sessionStartTime).toLocaleString())
-      console.log('🕐 총 누적 플레이시간:', totalPlayTime, 'ms')
 
-      console.log(
-        '게임 불러오기 완료:',
-        data.saveTime ? new Date(data.saveTime).toLocaleString() : '시간 정보 없음'
-      )
       return true
     } catch (error) {
       console.error('게임 불러오기 실패:', error)
@@ -3119,15 +3367,6 @@ document.addEventListener('DOMContentLoaded', () => {
               safeText(elCareerRemaining, t('ui.promotionAvailable'))
             }
           }
-
-          // 디버깅: 승진 진행률 확인 (강화된 로깅)
-          console.log('=== CAREER PROGRESS DEBUG ===')
-          console.log('totalClicks:', totalClicks)
-          console.log('nextCareer.requiredClicks:', nextCareer.requiredClicks)
-          console.log('progress:', progress)
-          console.log('currentCareer:', currentCareer.name)
-          console.log('nextCareer:', nextCareer.name)
-          console.log('=============================')
         } else {
           if (elCareerProgress) {
             elCareerProgress.style.width = '100%'
@@ -3232,27 +3471,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       safeText(elClickMultiplier, clickMultiplier.toFixed(1))
       safeText(elRentMultiplier, rentMultiplier.toFixed(1))
-
-      // 디버깅: 전체 게임 상태 확인
-      console.log('=== GAME STATE DEBUG ===')
-      console.log('Cash:', cash)
-      console.log('Total clicks:', totalClicks)
-      console.log('Career level:', careerLevel)
-      console.log('Financial products:', {
-        deposits,
-        savings,
-        bonds,
-        total: getTotalFinancialProducts(),
-      })
-      console.log('Properties:', {
-        villas,
-        officetels,
-        apartments,
-        shops,
-        buildings,
-        total: getTotalProperties(),
-      })
-      console.log('========================')
 
       // 금융상품 UI 업데이트 (동적 가격 계산) - 안전장치 추가
       try {
@@ -3590,17 +3808,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cryptoPercent').textContent = cryptoPercent + '%'
         document.getElementById('cryptoLifetimeDisplay').textContent = cryptoLifetimeAmount
         document.getElementById('cryptoCurrentPrice').textContent = cryptoPrice
-
-        // 디버깅: 금융상품 카운트 확인 (강화된 로깅)
-        console.log('=== FINANCIAL PRODUCTS DEBUG ===')
-        console.log('Financial counts:', { deposits, savings, bonds, usStocks, cryptos })
-        console.log('Total financial products:', getTotalFinancialProducts())
-        console.log('Financial elements:', {
-          depositCount: elDepositCount,
-          savingsCount: elSavingsCount,
-          bondCount: elBondCount,
-        })
-        console.log('================================')
       } catch (e) {
         console.error('Financial products UI update failed:', e)
         console.error('Error details:', { deposits, savings, bonds })
@@ -3922,15 +4129,9 @@ document.addEventListener('DOMContentLoaded', () => {
         elTowerCurrentPrice.textContent = towerPrice
       }
 
-      // 디버깅: 부동산 카운트 확인
-      console.log('Property counts:', { villas, officetels, apartments, shops, buildings })
-
       // 커리어 UI 업데이트는 함수 최상단으로 이동됨
 
       // 업그레이드 UI 업데이트 (제거됨 - 새 시스템 사용)
-
-      // 버튼 텍스트 및 상태 업데이트 (구매/판매 통합)
-      updateButtonTexts()
 
       // 버튼 상태 업데이트 (Cookie Clicker 스타일)
       updateButtonStates()
@@ -4085,14 +4286,14 @@ document.addEventListener('DOMContentLoaded', () => {
     purchaseMode = 'buy'
     elBuyMode.classList.add('active')
     elSellMode.classList.remove('active')
-    updateButtonTexts()
+    updateUI()
   })
 
   elSellMode.addEventListener('click', () => {
     purchaseMode = 'sell'
     elSellMode.classList.add('active')
     elBuyMode.classList.remove('active')
-    updateButtonTexts()
+    updateUI()
   })
 
   elQty1.addEventListener('click', () => {
@@ -4100,7 +4301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elQty1.classList.add('active')
     elQty5.classList.remove('active')
     elQty10.classList.remove('active')
-    updateButtonTexts()
+    updateUI()
   })
 
   elQty5.addEventListener('click', () => {
@@ -4108,7 +4309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elQty5.classList.add('active')
     elQty1.classList.remove('active')
     elQty10.classList.remove('active')
-    updateButtonTexts()
+    updateUI()
   })
 
   elQty10.addEventListener('click', () => {
@@ -4116,7 +4317,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elQty10.classList.add('active')
     elQty1.classList.remove('active')
     elQty5.classList.remove('active')
-    updateButtonTexts()
+    updateUI()
   })
 
   // ======= 토글 기능 =======
@@ -4543,7 +4744,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      Diary.addLog('🗼 새로운 시작. 다시 한 번.')
+      try {
+        Diary.addLog('🗼 새로운 시작. 다시 한 번.')
+      } catch (diaryError) {
+        console.error('일기장 로그 실패:', diaryError)
+        // 일기장 오류는 치명적이지 않으므로 무시
+      }
       if (__IS_DEV__) {
         console.log('✅ 프레스티지 완료 (누적 데이터 유지)')
       }
@@ -4582,12 +4788,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ======= 수익 틱 =======
   const TICK = 50 // ms (성능 최적화: 250ms → 50ms)
+  let lastTickTime = performance.now() // 정확한 deltaTime 계산을 위한 타임스탬프
   setInterval(() => {
     checkMarketEvent() // 시장 이벤트 체크
     checkAchievements() // 업적 체크
     checkUpgradeUnlocks() // 업그레이드 해금 체크
 
-    const deltaTime = TICK / 1000
+    // 실제 경과 시간 계산 (탭 백그라운드/CPU 부하 시 정확도 보장)
+    const now = performance.now()
+    const deltaTime = Math.min((now - lastTickTime) / 1000, 1) // 최대 1초 제한 (비정상 지연 방지)
+    lastTickTime = now
     cash += getRps() * deltaTime
 
     // 누적 생산량 계산 (Cookie Clicker 스타일)
@@ -4666,21 +4876,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 초기 렌더 (async IIFE로 감싸서 await 사용 가능하게 함)
   ;(async () => {
-    console.log('[Main] Async IIFE started')
-    console.log('[Main] elLog element:', elLog)
-    console.log('[Main] gameStartTime:', gameStartTime, 'sessionStartTime:', sessionStartTime)
-
     const gameLoaded = loadGame() // 게임 데이터 불러오기 시도
-    console.log('[Main] Game loaded:', gameLoaded)
-    console.log('[Main] After loadGame - gameStartTime:', gameStartTime, 'sessionStartTime:', sessionStartTime)
 
     // ======= 일기장 시스템 초기화 (loadGame 이후에 초기화하여 정확한 gameStartTime 사용) =======
     if (elLog) {
-      console.log('[Main] Calling Diary.initDiary with:', { elLog, gameStartTime, sessionStartTime })
       Diary.initDiary(elLog, { gameStartTime, sessionStartTime })
-    } else {
-      console.error('[Main] ❌ elLog element not found - diary system NOT initialized')
-      console.log('[Main] Trying to find log element again:', document.getElementById('log'))
     }
 
     // 게임 로드 후 서버에서 최신 닉네임 동기화 (로그인 상태인 경우)
@@ -5417,20 +5617,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 판매 시스템 테스트 로그
-  console.log('=== 판매 시스템 초기화 완료 ===')
-  console.log('✅ 구매/판매 모드 토글 시스템 활성화')
-  console.log('✅ 금융상품 통합 거래 시스템 (예금/적금/주식)')
-  console.log('✅ 부동산 통합 거래 시스템 (빌라/오피스텔/아파트/상가/빌딩)')
-  console.log('✅ 판매 가격: 현재가의 80%')
-  console.log('✅ 수량 선택: 1개/10개/100개')
-  console.log('💡 사용법: 상단 "구매/판매" 버튼으로 모드 전환 후 거래하세요!')
-
-  // ======= 성장 추적 데이터 저장 =======
-  let hourlyEarningsHistory = [] // 최근 1시간 수익 기록
-  let dailyEarningsHistory = [] // 최근 24시간 수익 기록
-  let lastEarningsSnapshot = 0 // 마지막 수익 스냅샷
-  let lastSnapshotTime = Date.now()
-
+  // ======= 성장 추적 함수 =======
   function updateGrowthTracking() {
     const now = Date.now()
     const currentEarnings =
@@ -5491,11 +5678,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // UI 업데이트
     safeText(
       document.getElementById('hourlyEarnings'),
-      NumberFormat.formatCashDisplay(Math.max(0, hourlyEarnings, settings))
+      NumberFormat.formatCashDisplay(Math.max(0, hourlyEarnings), settings)
     )
     safeText(
       document.getElementById('dailyEarnings'),
-      NumberFormat.formatCashDisplay(Math.max(0, dailyEarnings, settings))
+      NumberFormat.formatCashDisplay(Math.max(0, dailyEarnings), settings)
     )
     // "+0.0%/시간" 처럼 소수점 1자리 고정 + -0.0 방지
     const growthRateStable = Math.abs(growthRate) < 0.05 ? 0 : growthRate
@@ -5689,13 +5876,16 @@ document.addEventListener('DOMContentLoaded', () => {
         buildingsLifetime +
         totalLaborIncome
 
-      console.log('[Stats] Updating - totalEarnings:', totalEarnings, 'totalAssets:', totalAssets)
-
       const totalAssetsEl = document.getElementById('totalAssets')
       const totalEarningsEl = document.getElementById('totalEarnings')
 
       if (!totalAssetsEl || !totalEarningsEl) {
-        console.error('[Stats] Critical elements not found! totalAssets:', totalAssetsEl, 'totalEarnings:', totalEarningsEl)
+        console.error(
+          '[Stats] Critical elements not found! totalAssets:',
+          totalAssetsEl,
+          'totalEarnings:',
+          totalEarningsEl
+        )
         return
       }
 
@@ -5736,15 +5926,6 @@ document.addEventListener('DOMContentLoaded', () => {
         playTimeHours > 0
           ? `${playTimeHours}${hourUnit} ${remainingMinutes}${minuteUnit}`
           : `${playTimeMinutes}${minuteUnit}`
-
-      // 디버깅 로그
-      console.log('🕐 플레이시간 계산:', {
-        totalPlayTime: totalPlayTime,
-        currentSessionTime: currentSessionTime,
-        totalPlayTimeMs: totalPlayTimeMs,
-        playTimeMinutes: playTimeMinutes,
-        playTimeText: playTimeText,
-      })
 
       safeText(document.getElementById('playTimeStats'), playTimeText)
 
@@ -6299,11 +6480,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 업적 그리드 업데이트
-  // 스크롤 중 DOM 업데이트 방지를 위한 플래그
-  let __achievementScrollActive = false
-  let __achievementUpdatePending = false
-  let __achievementScrollDebounceTimer = null
-
   function updateAchievementGrid() {
     const achievementGrid = document.getElementById('achievementGrid')
     if (!achievementGrid) return
@@ -6730,7 +6906,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const upgradeListElement = document.getElementById('upgradeList')
   if (upgradeListElement) {
     upgradeListElement.classList.remove('collapsed-section')
-    console.log('✅ Upgrade list initialized and opened')
   }
 
   updateUpgradeList() // 초기 업그레이드 리스트 생성
@@ -6967,92 +7142,32 @@ document.addEventListener('DOMContentLoaded', () => {
     nicknameConflictChangeBtn.addEventListener('click', openNicknameChangeModal)
   }
 
-  // 디버깅: 업그레이드 시스템 상태 확인
-  console.log('=== UPGRADE SYSTEM DEBUG ===')
-  console.log('Total upgrades defined:', Object.keys(UPGRADES).length)
-  console.log('Unlocked upgrades:', Object.values(UPGRADES).filter(u => u.unlocked).length)
-  console.log('Purchased upgrades:', Object.values(UPGRADES).filter(u => u.purchased).length)
-  console.log(
-    'First 3 upgrades:',
-    Object.entries(UPGRADES)
-      .slice(0, 3)
-      .map(([id, u]) => ({
-        id,
-        unlocked: u.unlocked,
-        purchased: u.purchased,
-        cost: u.cost,
-      }))
-  )
-  console.log('===========================')
-
   // 치트 코드 (테스트용 - 콘솔에서 사용 가능)
   window.cheat = {
     addCash: amount => {
       cash += amount
       updateUI()
-      console.log(`💰 Added ${amount} cash. New total: ${cash}`)
     },
     unlockAllUpgrades: () => {
       Object.values(UPGRADES).forEach(u => (u.unlocked = true))
       updateUpgradeList()
-      console.log('🔓 All upgrades unlocked!')
-      console.log('Upgrade list element:', document.getElementById('upgradeList'))
-      console.log('Upgrade list children:', document.getElementById('upgradeList')?.children.length)
     },
     unlockFirstUpgrade: () => {
       const firstId = Object.keys(UPGRADES)[0]
       UPGRADES[firstId].unlocked = true
       updateUpgradeList()
-      console.log('🔓 First upgrade unlocked:', UPGRADES[firstId].name)
     },
     setClicks: count => {
       totalClicks = count
       updateUI()
       checkUpgradeUnlocks()
-      console.log(`👆 Set clicks to ${count}`)
     },
     testUpgrade: () => {
-      // 빠른 테스트용
       const firstId = Object.keys(UPGRADES)[0]
       UPGRADES[firstId].unlocked = true
       cash += 10000000
       updateUpgradeList()
       updateUI()
-      console.log('🧪 Test setup complete:')
-      console.log('  - First upgrade unlocked')
-      console.log('  - Cash: 1000만원')
-      console.log(
-        '  - Upgrade list visible:',
-        !document.getElementById('upgradeList')?.classList.contains('collapsed-section')
-      )
-      console.log('  - Upgrade items count:', document.querySelectorAll('.upgrade-item').length)
     },
   }
-  console.log('💡 치트 코드 사용 가능:')
-  console.log('  - cheat.testUpgrade() : 빠른 테스트 (첫 업그레이드 해금 + 1000만원)')
-  console.log('  - cheat.addCash(1000000000) : 10억원 추가')
-  console.log('  - cheat.unlockAllUpgrades() : 모든 업그레이드 해금')
-  console.log('  - cheat.setClicks(100) : 클릭 수 설정')
-
-  // 유닛성 테스트 로그
-  Diary.addLog('🧪 v2.6 Cookie Clicker 스타일 업그레이드 시스템 구현 완료')
-  Diary.addLog('✅ DOM 참조 오류 수정 완료')
-  Diary.addLog('✅ 커리어 진행률 시스템 정상화')
-  Diary.addLog('✅ 업그레이드 클릭 기능 활성화')
-  Diary.addLog('✅ 자동 저장 시스템 작동 중')
-  Diary.addLog('⚡ 성능 최적화: 업그레이드 리스트 깜빡임 해결')
-
-  // 디버깅: 초기 상태 확인
-  console.log('Initial state:', {
-    cash,
-    totalClicks,
-    deposits,
-    savings,
-    bonds,
-    villas,
-    officetels,
-    apartments,
-    shops,
-    buildings,
-  })
 })

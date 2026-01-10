@@ -12,6 +12,10 @@ import { t } from '../i18n/index.js'
 
 // ======= DOM 참조 =======
 let elModalRoot = null
+
+// ======= 이벤트 핸들러 저장소 (메모리 누수 방지) =======
+// window 전역 객체 대신 Map 사용
+const modalKeyHandlers = new Map()
 let elModalTitle = null
 let elModalMessage = null
 let elModalPrimary = null
@@ -200,13 +204,15 @@ export function openInputModal(title, message, onConfirm, options = {}) {
   }
 
   // 이벤트 리스너 중복 등록 방지 (기존 리스너 제거 후 추가)
-  const existingHandler = inputEl.dataset.keydownHandler
-  if (existingHandler) {
-    inputEl.removeEventListener('keydown', window[existingHandler])
+  // 메모리 누수 방지: window 전역 객체 대신 Map 사용
+  const existingHandlerId = inputEl.dataset.keydownHandler
+  if (existingHandlerId && modalKeyHandlers.has(existingHandlerId)) {
+    inputEl.removeEventListener('keydown', modalKeyHandlers.get(existingHandlerId))
+    modalKeyHandlers.delete(existingHandlerId)
   }
   const handlerId = 'modalKeyDown_' + Date.now()
   inputEl.dataset.keydownHandler = handlerId
-  window[handlerId] = handleKeyDown
+  modalKeyHandlers.set(handlerId, handleKeyDown)
   inputEl.addEventListener('keydown', handleKeyDown)
 
   // 자동 포커스 및 전체 선택
@@ -222,11 +228,11 @@ export function openInputModal(title, message, onConfirm, options = {}) {
       }, 1000)
       return
     }
-    // 이벤트 리스너 정리
-    const handlerId = inputEl.dataset.keydownHandler
-    if (handlerId && window[handlerId]) {
-      inputEl.removeEventListener('keydown', window[handlerId])
-      delete window[handlerId]
+    // 이벤트 리스너 정리 (Map 사용)
+    const hId = inputEl.dataset.keydownHandler
+    if (hId && modalKeyHandlers.has(hId)) {
+      inputEl.removeEventListener('keydown', modalKeyHandlers.get(hId))
+      modalKeyHandlers.delete(hId)
       delete inputEl.dataset.keydownHandler
     }
     closeModal()
@@ -237,11 +243,11 @@ export function openInputModal(title, message, onConfirm, options = {}) {
   // secondary 버튼은 options.secondaryLabel이 있을 때만 의미 있음
   if (options.secondaryLabel) {
     elModalSecondary.onclick = () => {
-      // 이벤트 리스너 정리
-      const handlerId = inputEl.dataset.keydownHandler
-      if (handlerId && window[handlerId]) {
-        inputEl.removeEventListener('keydown', window[handlerId])
-        delete window[handlerId]
+      // 이벤트 리스너 정리 (Map 사용)
+      const hId = inputEl.dataset.keydownHandler
+      if (hId && modalKeyHandlers.has(hId)) {
+        inputEl.removeEventListener('keydown', modalKeyHandlers.get(hId))
+        modalKeyHandlers.delete(hId)
         delete inputEl.dataset.keydownHandler
       }
       closeModal()

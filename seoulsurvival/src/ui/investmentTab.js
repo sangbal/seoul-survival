@@ -9,6 +9,9 @@ import * as NumberFormat from '../utils/numberFormat.js'
 import * as Diary from '../systems/diary.js'
 import * as Animations from './animations.js'
 
+// 개발 모드 체크 (디버깅 로그 제어용)
+const __IS_DEV__ = !!import.meta?.env?.DEV
+
 /**
  * 투자 탭 UI 관리 시스템 생성
  * @param {Object} deps - 의존성
@@ -89,7 +92,7 @@ export function createInvestmentTab(deps) {
       deposit: () => true, // 항상 해금
       savings: () => {
         const deposits = getDeposits()
-        console.log('[Unlock] Checking savings unlock - deposits:', deposits)
+        if (__IS_DEV__) console.log('[Unlock] Checking savings unlock - deposits:', deposits)
         return deposits >= 1
       },
       bond: () => getSavings() >= 1,
@@ -107,7 +110,7 @@ export function createInvestmentTab(deps) {
     }
 
     const result = unlockConditions[productName] ? unlockConditions[productName]() : false
-    console.log('[Unlock] isProductUnlocked:', productName, '→', result)
+    if (__IS_DEV__) console.log('[Unlock] isProductUnlocked:', productName, '→', result)
     return result
   }
 
@@ -115,7 +118,7 @@ export function createInvestmentTab(deps) {
    * 새로운 상품 해금 체크
    */
   function checkNewUnlocks(productName) {
-    console.log('[Unlock] Checking unlocks for:', productName)
+    if (__IS_DEV__) console.log('[Unlock] Checking unlocks for:', productName)
 
     const unlockChain = {
       deposit: 'savings',
@@ -131,15 +134,16 @@ export function createInvestmentTab(deps) {
     }
 
     const nextProduct = unlockChain[productName]
-    console.log('[Unlock] Next product in chain:', nextProduct)
+    if (__IS_DEV__) console.log('[Unlock] Next product in chain:', nextProduct)
 
     if (nextProduct) {
       const isUnlocked = isProductUnlocked(nextProduct)
-      console.log('[Unlock] Is next product unlocked?', nextProduct, '→', isUnlocked)
+      if (__IS_DEV__)
+        console.log('[Unlock] Is next product unlocked?', nextProduct, '→', isUnlocked)
 
       if (isUnlocked) {
         const nextProductName = getProductName(nextProduct)
-        console.log('[Unlock] ✅ Unlocking:', nextProductName)
+        if (__IS_DEV__) console.log('[Unlock] ✅ Unlocking:', nextProductName)
         Diary.addLog(t('msg.unlocked', { product: nextProductName }))
       }
     }
@@ -421,7 +425,7 @@ export function createInvestmentTab(deps) {
    * 상품 잠금 상태 업데이트
    */
   function updateProductLockStates() {
-    console.log('[Unlock] updateProductLockStates called')
+    if (__IS_DEV__) console.log('[Unlock] updateProductLockStates called')
 
     // 해금 조건 메시지
     const unlockHints = {
@@ -467,7 +471,16 @@ export function createInvestmentTab(deps) {
       const itemElement = document.getElementById(itemIdMap[product])
       if (itemElement) {
         const isLocked = !isProductUnlocked(product)
-        console.log('[Unlock] Product:', product, 'isLocked:', isLocked, 'element found:', !!itemElement)
+        if (__IS_DEV__) {
+          console.log(
+            '[Unlock] Product:',
+            product,
+            'isLocked:',
+            isLocked,
+            'element found:',
+            !!itemElement
+          )
+        }
         itemElement.classList.toggle('locked', isLocked)
         if (isLocked) {
           itemElement.setAttribute('data-unlock-hint', unlockHints[product])
@@ -475,7 +488,12 @@ export function createInvestmentTab(deps) {
           itemElement.removeAttribute('data-unlock-hint')
         }
       } else {
-        console.warn('[Unlock] ⚠️ Element not found for product:', product, 'ID:', itemIdMap[product])
+        console.warn(
+          '[Unlock] ⚠️ Element not found for product:',
+          product,
+          'ID:',
+          itemIdMap[product]
+        )
       }
     })
   }
